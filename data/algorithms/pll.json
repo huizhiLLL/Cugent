@@ -1,0 +1,28 @@
+[
+  {
+    "id": "pll-t-01",
+    "set": "PLL",
+    "caseId": "T",
+    "name": "T Perm",
+    "alg": "R U R' U' R' F R2 U' R' U' R U R' F'",
+    "tags": ["right-hand", "no-rotation", "common"],
+    "metrics": {
+      "moveCount": 14,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-u-a-01",
+    "set": "PLL",
+    "caseId": "Ua",
+    "name": "Ua Perm",
+    "alg": "R U' R U R U R U' R' U' R2",
+    "tags": ["right-hand", "no-rotation", "common"],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  }
+]

@@ -14,6 +14,7 @@ CubeAgent 要做的是一个魔方智能教练 AI 客户端，而不是单次输
 - 分段解法文本解析。
 - `SolveReview` 数据结构。
 - 基础指标计算：步数、耗时、TPS、停顿。
+- 基于 `cubing.js` 的 scramble + solution 状态追踪。
 - 可嵌入播放链接生成。
 
 这些能力先独立于前端和 LLM 跑通，确保后续接入 AI Chat 时有稳定工具边界。
@@ -41,6 +42,7 @@ CubeAgent 要做的是一个魔方智能教练 AI 客户端，而不是单次输
 ## 当前验证方式
 
 ```bash
+npm install
 npm test
 npm run poc
 ```

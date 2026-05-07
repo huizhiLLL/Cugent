@@ -1,0 +1,28 @@
+[
+  {
+    "id": "f2l-basic-insert-right",
+    "set": "F2L",
+    "caseId": "basic-insert",
+    "name": "Right slot basic insert",
+    "alg": "U R U' R'",
+    "tags": ["right-hand", "beginner-friendly", "no-rotation"],
+    "metrics": {
+      "moveCount": 4,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "f2l-basic-insert-left",
+    "set": "F2L",
+    "caseId": "basic-insert",
+    "name": "Left slot basic insert",
+    "alg": "U' L' U L",
+    "tags": ["left-hand", "beginner-friendly", "no-rotation"],
+    "metrics": {
+      "moveCount": 4,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  }
+]

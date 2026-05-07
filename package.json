@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "poc": "node scripts/poc.js"
+    "poc": "node scripts/poc.js",
+    "agent:poc": "node scripts/agent-poc.js"
   },
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "cubing": "^0.63.3"
   }
 }

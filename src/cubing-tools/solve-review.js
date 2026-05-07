@@ -1,7 +1,10 @@
 import { parseSegmentedSolution, parseTimedMoves } from "./parsers.js";
 import { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";
+import { analyzeCFOP } from "./cfop-analyzer.js";
+import { generateCoachSuggestions } from "./coach-suggestions.js";
+import { traceCubeState } from "./state-tracer.js";
 
-export function createSolveReview({
+export async function createSolveReview({
   puzzle = "333",
   source = "manual",
   scramble,
@@ -15,10 +18,12 @@ export function createSolveReview({
 
   const moves = parseTimedMoves(timedMoves);
   const parsedSegments = parseSegmentedSolution(segmentedSolution);
+  const validation = validateSegmentAlignment(moves, parsedSegments);
   const segments = assignSegments(moves, parsedSegments, pauseThresholdMs);
   const solutionAlg = moves.map((item) => item.move).join(" ");
-
-  return {
+  const stateTrace = await traceCubeState({ scramble, solution: solutionAlg });
+  const segmentsWithState = attachSegmentStates(segments, stateTrace);
+  const baseReview = {
     puzzle,
     source,
     scramble,
@@ -27,12 +32,62 @@ export function createSolveReview({
       segmentedSolution
     },
     summary: buildSummary(moves, pauseThresholdMs),
+    validation,
     moves,
-    segments,
+    segments: segmentsWithState,
+    stateTrace,
     playback: {
       url: buildAlgCubingNetUrl({ setup: scramble, alg: solutionAlg }),
       bbcode: buildPlaybackBBCode({ setup: scramble, alg: solutionAlg, label: "Full solve" })
     }
+  };
+
+  const reviewWithAnalysis = {
+    ...baseReview,
+    cfopAnalysis: analyzeCFOP(baseReview)
+  };
+
+  return {
+    ...reviewWithAnalysis,
+    coachSuggestions: generateCoachSuggestions(reviewWithAnalysis)
+  };
+}
+
+function validateSegmentAlignment(moves, parsedSegments) {
+  const warnings = [];
+  const flattenedSegmentMoves = parsedSegments.flatMap((segment) => segment.moves);
+
+  if (!parsedSegments.length) {
+    warnings.push({
+      code: "NO_SEGMENTS",
+      message: "未提供分段解法文本，只能输出整段 timeline 与总览指标。"
+    });
+  }
+
+  if (flattenedSegmentMoves.length !== moves.length) {
+    warnings.push({
+      code: "SEGMENT_MOVE_COUNT_MISMATCH",
+      message: `分段 move 数为 ${flattenedSegmentMoves.length}，timedMoves 数为 ${moves.length}。`
+    });
+  }
+
+  const maxComparableMoves = Math.min(flattenedSegmentMoves.length, moves.length);
+  for (let index = 0; index < maxComparableMoves; index += 1) {
+    if (flattenedSegmentMoves[index] !== moves[index].move) {
+      warnings.push({
+        code: "SEGMENT_MOVE_MISMATCH",
+        message: `第 ${index + 1} 步不一致：分段为 ${flattenedSegmentMoves[index]}，timedMoves 为 ${moves[index].move}。`,
+        index,
+        segmentedMove: flattenedSegmentMoves[index],
+        timedMove: moves[index].move
+      });
+      break;
+    }
+  }
+
+  return {
+    ok: warnings.length === 0,
+    warnings
   };
 }
 
@@ -65,6 +120,60 @@ function assignSegments(moves, parsedSegments, pauseThresholdMs) {
       }
     };
   });
+}
+
+function attachSegmentStates(segments, stateTrace) {
+  return segments.map((segment) => {
+    const beforeState = getStateBeforeMove(stateTrace, segment.startMove);
+    const afterState = getStateAfterMove(stateTrace, segment.endMove);
+
+    return {
+      ...segment,
+      state: {
+        before: beforeState,
+        after: afterState,
+        changed: beforeState.stateHash !== afterState.stateHash
+      }
+    };
+  });
+}
+
+function getStateBeforeMove(stateTrace, moveIndex) {
+  if (moveIndex <= 0) {
+    return {
+      moveIndex: null,
+      patternData: stateTrace.afterScramble.patternData,
+      stateHash: stateTrace.afterScramble.stateHash,
+      isSolved: stateTrace.afterScramble.isSolved
+    };
+  }
+
+  const previous = stateTrace.timeline[moveIndex - 1];
+  return {
+    moveIndex: previous.index,
+    patternData: previous.patternData,
+    stateHash: previous.stateHash,
+    isSolved: previous.isSolved
+  };
+}
+
+function getStateAfterMove(stateTrace, moveIndex) {
+  const current = stateTrace.timeline[moveIndex];
+  if (!current) {
+    return {
+      moveIndex: null,
+      patternData: stateTrace.final.patternData,
+      stateHash: stateTrace.final.stateHash,
+      isSolved: stateTrace.final.isSolved
+    };
+  }
+
+  return {
+    moveIndex: current.index,
+    patternData: current.patternData,
+    stateHash: current.stateHash,
+    isSolved: current.isSolved
+  };
 }
 
 function buildSummary(moves, pauseThresholdMs) {

@@ -26,12 +26,13 @@ Cubing Domain Tools
   |-- parseTimedMoves
   |-- parseSegmentedSolution
   |-- createSolveReview
+  |-- traceCubeState
   |-- analyzeCFOP
   |-- searchAlgorithms
   |-- buildPlaybackUrl
 ```
 
-当前仓库先实现 `Cubing Domain Tools` 的最小 PoC。
+当前仓库先实现 `Cubing Domain Tools` 和轻量 `Agent Runtime` 的最小 PoC。
 
 ## 关键边界
 
@@ -43,6 +44,21 @@ Cubing Domain Tools
 
 负责判断用户意图、选择工具、保存当前 solve 上下文、组织回答。第一版轻量自研，不直接引入 LangGraph/Mastra 这类重型 agent 框架。
 
+当前 runtime 是规则原型，不包含 LLM：
+
+- `solve-import`：识别 scramble、timedMoves、segmentedSolution，调用 `createSolveReview`。
+- `algorithm-query`：识别 F2L/OLL/PLL 公式查询，调用 `searchAlgorithms`。
+- `local-followup`：基于当前 `currentSolveReview` 返回指定分段的状态、阶段分析和建议。
+- `chat`：未命中特定工具时交给普通聊天模型处理。
+
+每个 turn 会返回：
+
+- `intent`：识别结果。
+- `toolCalls`：本轮调用的工具及参数摘要。
+- `toolResult`：结构化工具输出。
+- `contextPatch`：需要合并到会话上下文的状态。
+- `response`：由 `response-composer` 生成的中文 fallback 摘要。
+
 ### Cubing Domain Tools
 
 负责所有确定性事实：
@@ -51,8 +67,11 @@ Cubing Domain Tools
 - 分段解析。
 - 指标计算。
 - cube state tracing。
+- 分段前后状态快照。
+- 分段与时间戳序列的对齐校验。
 - CFOP 阶段分析。
 - 公式检索。
+- 结构化教练建议。
 - 播放链接生成。
 
 LLM 只能使用这些工具输出的结构化结果，不直接凭文本猜测魔方状态。
@@ -83,12 +102,55 @@ PoC 阶段需要的流程是：
 
 ### 公式库采用本地只读快照
 
-第一版可参考 CubingApp / SpeedCubeDB 等现成数据源，但运行时应使用本地 JSON 快照，避免依赖第三方在线接口稳定性。
+第一版已在 `data/algorithms/` 下放入小型手写 F2L / OLL / PLL JSON 快照，用于验证检索协议。后续可参考 CubingApp / SpeedCubeDB 等现成数据源扩展数据，但运行时仍应使用本地 JSON 快照，避免依赖第三方在线接口稳定性。
+
+`searchAlgorithms` 当前支持：
+
+- 按 `set` 检索：F2L / OLL / PLL。
+- 按 `caseId` 检索。
+- 按 `tags` 过滤，例如 right-hand、no-rotation、beginner-friendly。
+- 返回候选公式、基础 metrics 和可嵌入播放 BBCode。
+
+### CFOP 分析先做阶段目标验证
+
+当前 `analyzeCFOP` 只判断阶段目标是否达成：
+
+- Cross：D 面 4 条棱是否回到 solved 状态。
+- F2L：D 层 4 个角和中层 4 条棱是否回到 solved 状态。
+- OLL：U 层角/棱朝向是否完成。
+- PLL：整 cube 是否 solved。
+
+它暂不做 F2L case 识别、OLL/PLL case 命名或公式推荐。
+
+### 教练建议是结构化证据，不是最终话术
+
+`coachSuggestions` 会综合输入校验、阶段目标、停顿、TPS 和公式候选，生成建议对象。每条建议包含 type、priority、target、evidence、action，供 Agent/LLM 在 chat 中组织成自然语言回答。
+
+当前建议类型：
+
+- `input-validation`：输入对齐或数据质量问题。
+- `stage-goal`：阶段目标未完成。
+- `pause`：阶段中存在明显停顿。
+- `tempo`：阶段 TPS 偏低。
+- `algorithm-candidates`：从本地公式库命中的候选公式。
+
+### Response composer 是本地 fallback
+
+`response-composer` 负责把 `toolResult` 转为稳定中文摘要，便于命令行 PoC 和未来前端直接展示。它不替代最终 LLM 回复；接入 LLM 后，可以把 `toolResult` 和 `response` 一起作为模型组织回答的上下文。
 
 ## 当前模块
 
 - `src/cubing-tools/parsers.js`：时间戳 moves 与分段文本解析。
 - `src/cubing-tools/playback-url.js`：播放链接和 BBCode 生成。
-- `src/cubing-tools/solve-review.js`：`SolveReview` 组装和基础指标计算。
+- `src/cubing-tools/state-tracer.js`：基于 `cubing.js` 的 3x3 状态追踪。
+- `src/cubing-tools/cfop-analyzer.js`：CFOP 阶段目标验证。
+- `src/cubing-tools/algorithm-search.js`：本地公式库检索。
+- `src/cubing-tools/coach-suggestions.js`：结构化教练建议生成。
+- `src/cubing-tools/solve-review.js`：`SolveReview` 组装、基础指标计算、分段状态快照与输入校验。
+- `data/algorithms/*.json`：本地公式库快照。
 - `src/cubing-tools/index.js`：工具导出入口。
+- `src/agent-runtime/intent-detector.js`：轻量意图识别。
+- `src/agent-runtime/agent-runtime.js`：工具路由与上下文 patch。
+- `src/agent-runtime/response-composer.js`：结构化结果到中文 fallback 回复。
+- `scripts/agent-poc.js`：agent runtime 演示脚本。
 - `scripts/poc.js`：内置样例验证脚本。

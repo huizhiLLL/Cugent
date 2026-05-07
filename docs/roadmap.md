@@ -8,24 +8,27 @@
 - 实现 `SolveReview` 结构与基础指标。
 - 实现可嵌入播放链接生成。
 - 使用内置样例完成命令行验证。
+- 引入 `cubing.js` 并验证 scramble + solution 状态追踪。
 
 ## Phase 1：真实 cube state 与 CFOP 分析
 
-- 引入 `cubing.js`。
-- 用 scramble + solution 追踪 cube state。
-- 校验阶段前后状态。
+- 扩展 cube state trace 到阶段级前后状态。已完成基础快照。
+- 校验分段文本与时间戳 moves 是否对齐。已完成基础 warning。
+- 校验阶段前后状态。已完成第一版 CFOP 目标验证。
 - 支持无分段时的 CFOP 阶段推断，并标记置信度。
 - 对非法 move、timestamp 异常输出结构化错误。
 
 ## Phase 2：公式库与建议
 
-- 导入 F2L / OLL / PLL 本地 JSON 快照。
-- 实现公式检索和候选排序。
-- 初步支持用户偏好：右手流、少转体、少 S/M、保留熟悉公式。
-- 每条建议必须附带证据：阶段、耗时、停顿、步数、候选公式差异。
+- 导入 F2L / OLL / PLL 本地 JSON 快照。已完成小型手写样例。
+- 实现公式检索和候选排序。已完成第一版 `searchAlgorithms`。
+- 初步支持用户偏好：右手流、少转体、少 S/M、保留熟悉公式。已完成基于 tags 的基础过滤。
+- 每条建议必须附带证据：阶段、耗时、停顿、步数、候选公式差异。已完成第一版 `coachSuggestions`。
 
 ## Phase 3：AI Chat 客户端
 
+- 实现轻量 agent runtime 原型。已完成 solve 导入、公式查询、局部追问三条路径。
+- 实现本地 response composer。已完成结构化结果到中文 fallback 回复。
 - 建立 React / Next.js 客户端。
 - 接入 chat streaming。
 - 实现 solve context panel。

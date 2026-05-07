@@ -1,0 +1,28 @@
+[
+  {
+    "id": "oll-21-01",
+    "set": "OLL",
+    "caseId": "21",
+    "name": "OLL 21 H",
+    "alg": "R U R' U R U' R' U R U2 R'",
+    "tags": ["right-hand", "no-rotation", "common"],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-27-01",
+    "set": "OLL",
+    "caseId": "27",
+    "name": "OLL 27 Sune",
+    "alg": "R U R' U R U2 R'",
+    "tags": ["right-hand", "no-rotation", "common"],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  }
+]
