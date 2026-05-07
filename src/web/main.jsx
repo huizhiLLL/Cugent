@@ -46,6 +46,7 @@ const welcomeMessage = {
 function App() {
   const [messages, setMessages] = useState([welcomeMessage]);
   const [smartInput, setSmartInput] = useState(sampleSmartInput);
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [context, setContext] = useState({});
   const [busy, setBusy] = useState(false);
@@ -94,18 +95,16 @@ function App() {
     convertMessage
   });
 
-  function quickSend(text) {
-    void submitMessage(text);
-  }
-
   function importSampleSolve() {
     setSmartInput(sampleSmartInput);
+    setActionDialogOpen(false);
     void submitMessage(sampleSolve);
   }
 
   function createConversation() {
     setMessages([welcomeMessage]);
     setSmartInput(sampleSmartInput);
+    setActionDialogOpen(false);
     setSmartDialogOpen(false);
     setContext({});
   }
@@ -127,6 +126,16 @@ ${smartInput.segmentedSolution}`.trim();
   async function submitSmartSolve() {
     await submitMessage(buildSmartSolveInput());
     setSmartDialogOpen(false);
+  }
+
+  function openSmartCubeDialog() {
+    setActionDialogOpen(false);
+    setSmartDialogOpen(true);
+  }
+
+  function runQuickAction(text) {
+    setActionDialogOpen(false);
+    void submitMessage(text);
   }
 
   return (
@@ -157,28 +166,37 @@ ${smartInput.segmentedSolution}`.trim();
         </aside>
 
         <section className="chat-pane" aria-label="Chat">
-          <header className="topbar">
-            <div>
-              <p className="eyebrow">CubeAgent</p>
-              <h1>魔方 AI 教练 PoC</h1>
-            </div>
-            <div className="topbar-actions">
-              <TooltipIconButton tooltip="导入样例" className="topbar-action" onClick={importSampleSolve}>
-                <FileInput />
-              </TooltipIconButton>
-              <TooltipIconButton tooltip="查询 OLL 27" className="topbar-action" onClick={() => quickSend("给我一个右手 no-rotation 的 OLL 27 公式")}>
-                <Search />
-              </TooltipIconButton>
-              <TooltipIconButton tooltip="追问 F2L 1" className="topbar-action" onClick={() => quickSend("F2L 1 这里怎么样？")}>
-                <Sparkles />
-              </TooltipIconButton>
-            </div>
-          </header>
-
           <AssistantRuntimeProvider runtime={runtime}>
-            <Thread onOpenSmartCube={() => setSmartDialogOpen(true)} />
+            <Thread onOpenSmartCube={() => setActionDialogOpen(true)} />
           </AssistantRuntimeProvider>
         </section>
+
+        <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+          <DialogContent className="action-dialog-content sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>添加内容</DialogTitle>
+              <DialogDescription>从这里导入结构化复盘，或运行开发调试用的快捷消息。</DialogDescription>
+            </DialogHeader>
+            <div className="action-list">
+              <Button type="button" variant="outline" className="action-list-item" onClick={openSmartCubeDialog}>
+                <Sparkles data-icon="inline-start" />
+                <span>智能魔方</span>
+              </Button>
+              <Button type="button" variant="ghost" className="action-list-item" onClick={importSampleSolve}>
+                <FileInput data-icon="inline-start" />
+                <span>导入样例</span>
+              </Button>
+              <Button type="button" variant="ghost" className="action-list-item" onClick={() => runQuickAction("给我一个右手 no-rotation 的 OLL 27 公式")}>
+                <Search data-icon="inline-start" />
+                <span>查询 OLL 27</span>
+              </Button>
+              <Button type="button" variant="ghost" className="action-list-item" onClick={() => runQuickAction("F2L 1 这里怎么样？")}>
+                <MessageSquarePlus data-icon="inline-start" />
+                <span>追问 F2L 1</span>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={smartDialogOpen} onOpenChange={setSmartDialogOpen}>
           <DialogContent className="smart-dialog-content sm:max-w-xl">

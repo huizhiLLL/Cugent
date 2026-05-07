@@ -156,7 +156,6 @@ button {
 
 .sidebar-action:active,
 .collapse-button:active,
-.topbar-action:active,
 .composer button:active {
   transform: scale(0.95);
 }
@@ -189,7 +188,7 @@ button {
 
 .chat-pane {
   display: grid;
-  grid-template-rows: max-content minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -209,17 +208,6 @@ button {
 
 .aui-composer-root {
   font-family: var(--font-sans);
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 68px;
-  padding: 14px 24px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in oklch, var(--background) 92%, transparent);
 }
 
 .eyebrow {
@@ -255,22 +243,6 @@ h3 {
   margin-bottom: 10px;
   font-size: 0.98rem;
   font-weight: 600;
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--muted);
-}
-
-.topbar-action {
-  width: 32px;
-  height: 32px;
-  color: var(--muted-foreground);
 }
 
 .message-list {
@@ -550,6 +522,21 @@ code {
   box-shadow: 0 24px 80px rgba(29, 43, 58, 0.16);
 }
 
+.action-dialog-content {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.action-list {
+  display: grid;
+  gap: 6px;
+}
+
+.action-list-item {
+  justify-content: flex-start;
+  width: 100%;
+}
+
 .spin {
   animation: spin 0.9s linear infinite;
 }
@@ -679,17 +666,9 @@ twisty-player {
     display: none;
   }
 
-  .topbar {
-    align-items: center;
-    flex-direction: row;
-    min-height: auto;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
   .chat-pane {
     min-height: 760px;
-    grid-template-rows: max-content minmax(520px, auto);
+    grid-template-rows: minmax(520px, auto);
   }
 
   .message-list {
