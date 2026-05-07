@@ -1,7 +1,20 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Play, Plus, RotateCw, Search, Send, Sparkles, X } from "lucide-react";
-import "cubing/twisty";
+import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
+import { FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Search, Sparkles } from "lucide-react";
+import { Thread } from "@/components/thread";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { invertAlg } from "../cubing-tools/index.js";
 import { runAgentTurn } from "../agent-runtime/index.js";
 import "./styles.css";
@@ -22,6 +35,7 @@ ${solution.split(" ").slice(2).join(" ")} // F2L 1`
 };
 
 const welcomeMessage = {
+  id: "welcome",
   role: "assistant",
   text: "CubeAgent 已就绪。可以直接聊天、查询公式，或点击输入框旁的 + 导入智能魔方复盘。",
   response: null
@@ -29,74 +43,56 @@ const welcomeMessage = {
 
 function App() {
   const [messages, setMessages] = useState([welcomeMessage]);
-  const [input, setInput] = useState("");
   const [smartInput, setSmartInput] = useState(sampleSmartInput);
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [context, setContext] = useState({});
   const [busy, setBusy] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const textareaRef = useRef(null);
-  const messageListRef = useRef(null);
 
-  useEffect(() => {
-    resizeComposer();
-  }, [input]);
-
-  useEffect(() => {
-    const list = messageListRef.current;
-    if (list) {
-      list.scrollTop = list.scrollHeight;
-    }
-  }, [messages]);
-
-  function resizeComposer() {
-    const textarea = textareaRef.current;
-    if (!textarea) {
-      return;
-    }
-    textarea.style.height = "0px";
-    textarea.style.height = `${textarea.scrollHeight}px`;
-  }
-
-  async function submitMessage(nextInput = input) {
+  async function submitMessage(nextInput, { appendUser = true } = {}) {
     const trimmed = nextInput.trim();
     if (!trimmed || busy) {
       return;
     }
 
     setBusy(true);
-    setMessages((items) => [...items, { role: "user", text: trimmed, response: null }]);
+    if (appendUser) {
+      setMessages((items) => [...items, createMessage("user", trimmed)]);
+    }
 
     try {
       const turn = await runAgentTurn(trimmed, context);
       setContext((previous) => ({ ...previous, ...turn.contextPatch }));
       setMessages((items) => [
         ...items,
-        {
-          role: "assistant",
-          text: turn.response.text,
+        createMessage("assistant", turn.response.text, {
           response: turn.response,
           intent: turn.intent.type,
           toolCalls: turn.toolCalls
-        }
+        })
       ]);
-      setInput("");
     } catch (error) {
       setMessages((items) => [
         ...items,
-        {
-          role: "assistant",
-          text: `处理失败：${error.message}`,
+        createMessage("assistant", `处理失败：${error.message}`, {
           response: { kind: "error", evidence: [], nextActions: [] }
-        }
+        })
       ]);
     } finally {
       setBusy(false);
     }
   }
 
+  const runtime = useExternalStoreRuntime({
+    messages,
+    isRunning: busy,
+    onNew: async (message) => {
+      await submitMessage(extractMessageText(message));
+    },
+    convertMessage
+  });
+
   function quickSend(text) {
-    setInput(text);
     void submitMessage(text);
   }
 
@@ -107,7 +103,6 @@ function App() {
 
   function createConversation() {
     setMessages([welcomeMessage]);
-    setInput("");
     setSmartInput(sampleSmartInput);
     setSmartDialogOpen(false);
     setContext({});
@@ -133,90 +128,61 @@ ${smartInput.segmentedSolution}`.trim();
   }
 
   return (
-    <main className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
-      <aside className="sidebar" aria-label="Conversation Sidebar" aria-expanded={!sidebarCollapsed}>
-        <div className="sidebar-brand">
-          <div className="brand-mark">C</div>
-          <span className="sidebar-label">CubeAgent</span>
-          <button
-            type="button"
-            className="collapse-button"
-            title={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
-            aria-label={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
-            onClick={() => setSidebarCollapsed((value) => !value)}
-          >
-            {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
-          </button>
-        </div>
-        <nav className="sidebar-nav">
-          <button type="button" onClick={createConversation} title="新建对话">
-            <MessageSquarePlus size={19} />
-            <span className="sidebar-label">新建对话</span>
-          </button>
-        </nav>
-      </aside>
-
-      <section className="chat-pane" aria-label="Chat">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">CubeAgent</p>
-            <h1>魔方 AI 教练 PoC</h1>
-          </div>
-          <div className="topbar-actions">
-            <button type="button" className="icon-button" title="导入样例" onClick={importSampleSolve}>
-              <FileInput size={18} />
-            </button>
-            <button type="button" className="icon-button" title="查询 OLL 27" onClick={() => quickSend("给我一个右手 no-rotation 的 OLL 27 公式")}>
-              <Search size={18} />
-            </button>
-            <button type="button" className="icon-button" title="追问 F2L 1" onClick={() => quickSend("F2L 1 这里怎么样？")}>
-              <Sparkles size={18} />
+    <TooltipProvider>
+      <main className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+        <aside className="sidebar" aria-label="Conversation Sidebar" aria-expanded={!sidebarCollapsed}>
+          <div className="sidebar-brand">
+            <div className="brand-mark">C</div>
+            <span className="sidebar-label">CubeAgent</span>
+            <button
+              type="button"
+              className="collapse-button"
+              title={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
+              aria-label={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
+              onClick={() => setSidebarCollapsed((value) => !value)}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
             </button>
           </div>
-        </header>
+          <nav className="sidebar-nav">
+            <button type="button" onClick={createConversation} title="新建对话">
+              <MessageSquarePlus size={19} />
+              <span className="sidebar-label">新建对话</span>
+            </button>
+          </nav>
+        </aside>
 
-        <div className="message-list" ref={messageListRef}>
-          {messages.map((message, index) => (
-            <Message key={`${message.role}-${index}`} message={message} />
-          ))}
-        </div>
-
-        <form
-          className="composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void submitMessage(input);
-          }}
-        >
-          <button type="button" className="attach-button" title="智能魔方导入" onClick={() => setSmartDialogOpen(true)}>
-            <Plus size={18} />
-          </button>
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="输入消息，或点击 + 导入智能魔方复盘"
-            rows={1}
-          />
-          <button type="submit" disabled={busy} title="发送">
-            {busy ? <RotateCw size={18} className="spin" /> : <Send size={18} />}
-            <span>{busy ? "处理中" : "发送"}</span>
-          </button>
-        </form>
-      </section>
-
-      {smartDialogOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setSmartDialogOpen(false)}>
-          <section className="smart-dialog" role="dialog" aria-modal="true" aria-labelledby="smart-dialog-title" onMouseDown={(event) => event.stopPropagation()}>
-            <header className="smart-dialog-header">
-              <div>
-                <p className="eyebrow">Cube Input</p>
-                <h2 id="smart-dialog-title">智能魔方</h2>
-              </div>
-              <button type="button" className="icon-button" title="关闭" onClick={() => setSmartDialogOpen(false)}>
-                <X size={17} />
+        <section className="chat-pane" aria-label="Chat">
+          <header className="topbar">
+            <div>
+              <p className="eyebrow">CubeAgent</p>
+              <h1>魔方 AI 教练 PoC</h1>
+            </div>
+            <div className="topbar-actions">
+              <button type="button" className="icon-button" title="导入样例" onClick={importSampleSolve}>
+                <FileInput size={18} />
               </button>
-            </header>
+              <button type="button" className="icon-button" title="查询 OLL 27" onClick={() => quickSend("给我一个右手 no-rotation 的 OLL 27 公式")}>
+                <Search size={18} />
+              </button>
+              <button type="button" className="icon-button" title="追问 F2L 1" onClick={() => quickSend("F2L 1 这里怎么样？")}>
+                <Sparkles size={18} />
+              </button>
+            </div>
+          </header>
+
+          <AssistantRuntimeProvider runtime={runtime}>
+            <Thread onOpenSmartCube={() => setSmartDialogOpen(true)} />
+          </AssistantRuntimeProvider>
+        </section>
+
+        <Dialog open={smartDialogOpen} onOpenChange={setSmartDialogOpen}>
+          <DialogContent className="smart-dialog-content sm:max-w-xl">
+            <DialogHeader>
+              <p className="eyebrow">Cube Input</p>
+              <DialogTitle>智能魔方</DialogTitle>
+              <DialogDescription>填写复盘初始信息，提交后会作为一条结构化消息进入对话。</DialogDescription>
+            </DialogHeader>
             <form
               className="smart-fields"
               onSubmit={(event) => {
@@ -226,7 +192,7 @@ ${smartInput.segmentedSolution}`.trim();
             >
               <label>
                 <span>打乱</span>
-                <input
+                <Input
                   value={smartInput.scramble}
                   onChange={(event) => updateSmartInput("scramble", event.target.value)}
                   placeholder="R U R' U'"
@@ -234,7 +200,7 @@ ${smartInput.segmentedSolution}`.trim();
               </label>
               <label>
                 <span>带时间戳的回顾</span>
-                <textarea
+                <Textarea
                   value={smartInput.timedMoves}
                   onChange={(event) => updateSmartInput("timedMoves", event.target.value)}
                   placeholder="U@0 R@250 U'@500 R'@750"
@@ -243,151 +209,65 @@ ${smartInput.segmentedSolution}`.trim();
               </label>
               <label>
                 <span>分段解法（可选）</span>
-                <textarea
+                <Textarea
                   value={smartInput.segmentedSolution}
                   onChange={(event) => updateSmartInput("segmentedSolution", event.target.value)}
                   placeholder="U R // Cross"
                   rows={4}
                 />
               </label>
-              <div className="smart-dialog-actions">
-                <button type="button" onClick={() => setSmartDialogOpen(false)}>取消</button>
-                <button type="submit" disabled={busy}>{busy ? "导入中" : "导入"}</button>
-              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setSmartDialogOpen(false)}>
+                  取消
+                </Button>
+                <Button type="submit" disabled={busy}>
+                  {busy ? "导入中" : "导入"}
+                </Button>
+              </DialogFooter>
             </form>
-          </section>
-        </div>
-      )}
-    </main>
+          </DialogContent>
+        </Dialog>
+      </main>
+    </TooltipProvider>
   );
 }
 
-function Message({ message }) {
-  return (
-    <article className={`message ${message.role}`}>
-      <div className="bubble">
-        <p>{message.text}</p>
-        {message.intent && <span className="intent">{message.intent}</span>}
-        {message.response && <ResponseDetails response={message.response} />}
-      </div>
-    </article>
-  );
+function createMessage(role, text, extra = {}) {
+  return {
+    id: crypto.randomUUID(),
+    role,
+    text,
+    ...extra
+  };
 }
 
-function ResponseDetails({ response }) {
-  return (
-    <div className="response-details">
-      {response.evidence?.length > 0 && (
-        <ul>
-          {response.evidence.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      )}
-      {response.highlights?.length > 0 && (
-        <div className="mini-section">
-          {response.highlights.map((item) => (
-            <div className="highlight" key={item.id}>
-              <strong>{item.title}</strong>
-              <span>{item.priority}</span>
-              {item.candidates?.map((candidate) => <code key={candidate.id}>{candidate.alg}</code>)}
-            </div>
-          ))}
-        </div>
-      )}
-      {response.candidates?.length > 0 && (
-        <div className="mini-section">
-          {response.candidates.map((candidate) => (
-            <div className="candidate" key={candidate.id}>
-              <strong>{candidate.name}</strong>
-              <code>{candidate.alg}</code>
-            </div>
-          ))}
-        </div>
-      )}
-      {response.playback && <TwistyPreview playback={response.playback} title="预览" />}
-    </div>
-  );
-}
-
-function TwistyPreview({ playback, alg, setup = "", title = "预览", compact = false }) {
-  const playerRef = useRef(null);
-  const parsed = useMemo(() => {
-    if (alg) {
-      return { alg, setup };
-    }
-    return parsePlayback(playback);
-  }, [alg, playback, setup]);
-
-  useEffect(() => {
-    const player = playerRef.current;
-    if (!player || !parsed.alg) {
-      return;
-    }
-    player.setAttribute("alg", parsed.alg);
-    if (parsed.setup) {
-      player.setAttribute("experimental-setup-alg", parsed.setup);
-    } else {
-      player.removeAttribute("experimental-setup-alg");
-    }
-  }, [parsed.alg, parsed.setup]);
-
-  if (!parsed.alg) {
-    return <code className="playback-code">{playback}</code>;
+function extractMessageText(message) {
+  if (typeof message.content === "string") {
+    return message.content;
   }
-
-  function play() {
-    const player = playerRef.current;
-    if (!player) {
-      return;
-    }
-    if (typeof player.jumpToStart === "function") {
-      player.jumpToStart();
-    }
-    if (typeof player.play === "function") {
-      void player.play();
-    }
-  }
-
-  return (
-    <div className={`twisty-preview ${compact ? "compact" : ""}`}>
-      <div className="twisty-toolbar">
-        <strong>{title}</strong>
-        <button type="button" onClick={play} title="播放转动">
-          <Play size={15} />
-
-        </button>
-      </div>
-      <twisty-player
-        ref={playerRef}
-        puzzle="3x3x3"
-        background="none"
-        hint-facelets="none"
-        control-panel="none"
-      />
-      <code className="formula-line">{parsed.alg}</code>
-    </div>
-  );
+  return (message.content ?? [])
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("\n");
 }
 
-function parsePlayback(playback) {
-  const raw = String(playback ?? "");
-  const urlMatch = raw.match(/\[URL="([^"]+)"\]/);
-  const url = urlMatch?.[1] ?? raw;
-
-  try {
-    const parsedUrl = new URL(url);
-    return {
-      alg: decodeAlgParam(parsedUrl.searchParams.get("alg") ?? ""),
-      setup: decodeAlgParam(parsedUrl.searchParams.get("setup") ?? "")
-    };
-  } catch {
-    return { alg: "", setup: "" };
+function convertMessage(message) {
+  const converted = {
+    id: message.id,
+    role: message.role,
+    content: [{ type: "text", text: message.text }],
+    metadata: {
+      custom: {
+        intent: message.intent,
+        toolCalls: message.toolCalls,
+        cubeResponse: message.response
+      }
+    }
+  };
+  if (message.role === "assistant") {
+    converted.status = { type: "complete", reason: "stop" };
   }
-}
-
-function decodeAlgParam(value) {
-  return value.replace(/_/g, " ").replace(/-/g, "'");
+  return converted;
 }
 
 createRoot(document.getElementById("root")).render(<App />);

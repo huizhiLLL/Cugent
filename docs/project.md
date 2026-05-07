@@ -17,7 +17,7 @@ CubeAgent 要做的是一个魔方智能教练 AI 客户端，而不是单次输
 - 基于 `cubing.js` 的 scramble + solution 状态追踪。
 - 可嵌入播放链接生成。
 - 轻量 agent runtime：solve 导入、公式查询、局部追问。
-- React / Vite 最小 Web 客户端：单一 chat 工作区和本地转动预览。
+- React / Vite Web 客户端：基于 assistant-ui 外部状态 runtime 与 shadcn 组件，保留单一 chat 工作区和本地转动预览。
 - 智能魔方导入弹窗：通过输入框旁的 `+` 打开，填写打乱、带时间戳回顾、可选分段解法。
 - 真实复制输入体验：常见字段别名识别、结构化导入错误展示。
 

@@ -1,6 +1,20 @@
-# CubeAgent
+<h4 align="right">简体中文</h4>
 
-CubeAgent 是一个面向 3x3 CFOP 复盘的魔方 AI 教练客户端 PoC。
+<div align="center">
+  <img src=".github/assets/cubeagent-logo.png" alt="CubeAgent logo" width="128" height="128" />
+
+  <h1>CubeAgent</h1>
+
+  <p>
+    面向 3x3 CFOP 复盘的魔方 AI 教练客户端 PoC。
+  </p>
+
+  <p>
+    <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=20232A" />
+    <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
+    <img alt="cubing.js" src="https://img.shields.io/badge/cubing.js-0.63-2EC4B6?style=for-the-badge" />
+  </p>
+</div>
 
 项目目标不是做一次性报告生成器，而是做一个以 AI Chat 为主容器的客户端：用户可以粘贴 scramble、带时间戳的解法序列和分段复盘文本，Agent 通过确定性魔方工具理解 solve 上下文，再在聊天中持续回答、追问、推荐公式和生成可嵌入的转动动画链接。
 

@@ -30,6 +30,7 @@
 - 实现轻量 agent runtime 原型。已完成 solve 导入、公式查询、局部追问三条路径。
 - 实现本地 response composer。已完成结构化结果到中文 fallback 回复。
 - 建立 React / Vite 最小客户端。已完成单一 chat 工作区，分析结果作为 assistant 回复展示。
+- 接入 assistant-ui 与 shadcn 客户端基座。已完成外部状态 runtime 对接、shadcn 输入/弹窗组件接入。
 - 优化真实复制输入体验。已支持常见字段别名和导入错误结构化展示。
 - 增加“智能魔方”导入弹窗。已通过输入框 `+` 扩展支持打乱、带时间戳回顾、可选分段解法三个结构化字段。
 - 接入 chat streaming。
