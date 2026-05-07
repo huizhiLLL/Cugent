@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
-import { FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Search, Sparkles } from "lucide-react";
+import { Box, FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Search, Sparkles } from "lucide-react";
+import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Thread } from "@/components/thread";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { invertAlg } from "../cubing-tools/index.js";
 import { runAgentTurn } from "../agent-runtime/index.js";
 import "./styles.css";
@@ -129,26 +131,28 @@ ${smartInput.segmentedSolution}`.trim();
 
   return (
     <TooltipProvider>
-      <main className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+      <main className={cn("app-shell", sidebarCollapsed && "sidebar-collapsed")}>
         <aside className="sidebar" aria-label="Conversation Sidebar" aria-expanded={!sidebarCollapsed}>
           <div className="sidebar-brand">
-            <div className="brand-mark">C</div>
+            <div className="brand-mark" aria-hidden="true">
+              <Box />
+            </div>
             <span className="sidebar-label">CubeAgent</span>
-            <button
+            <TooltipIconButton
               type="button"
               className="collapse-button"
-              title={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
+              tooltip={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
               aria-label={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
               onClick={() => setSidebarCollapsed((value) => !value)}
             >
-              {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
-            </button>
+              {sidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+            </TooltipIconButton>
           </div>
           <nav className="sidebar-nav">
-            <button type="button" onClick={createConversation} title="新建对话">
-              <MessageSquarePlus size={19} />
+            <Button type="button" variant="ghost" className="sidebar-action" onClick={createConversation} title="新建对话">
+              <MessageSquarePlus data-icon="inline-start" />
               <span className="sidebar-label">新建对话</span>
-            </button>
+            </Button>
           </nav>
         </aside>
 
@@ -159,15 +163,15 @@ ${smartInput.segmentedSolution}`.trim();
               <h1>魔方 AI 教练 PoC</h1>
             </div>
             <div className="topbar-actions">
-              <button type="button" className="icon-button" title="导入样例" onClick={importSampleSolve}>
-                <FileInput size={18} />
-              </button>
-              <button type="button" className="icon-button" title="查询 OLL 27" onClick={() => quickSend("给我一个右手 no-rotation 的 OLL 27 公式")}>
-                <Search size={18} />
-              </button>
-              <button type="button" className="icon-button" title="追问 F2L 1" onClick={() => quickSend("F2L 1 这里怎么样？")}>
-                <Sparkles size={18} />
-              </button>
+              <TooltipIconButton tooltip="导入样例" className="topbar-action" onClick={importSampleSolve}>
+                <FileInput />
+              </TooltipIconButton>
+              <TooltipIconButton tooltip="查询 OLL 27" className="topbar-action" onClick={() => quickSend("给我一个右手 no-rotation 的 OLL 27 公式")}>
+                <Search />
+              </TooltipIconButton>
+              <TooltipIconButton tooltip="追问 F2L 1" className="topbar-action" onClick={() => quickSend("F2L 1 这里怎么样？")}>
+                <Sparkles />
+              </TooltipIconButton>
             </div>
           </header>
 

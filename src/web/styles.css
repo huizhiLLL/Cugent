@@ -9,14 +9,14 @@
 :root {
   --bg: #fbfcfd;
   --surface: #ffffff;
-  --surface-soft: #f6f8fa;
-  --surface-hover: #eef2f6;
+  --surface-soft: color-mix(in oklch, var(--muted) 72%, var(--background));
+  --surface-hover: color-mix(in oklch, var(--muted) 88%, var(--background));
   --sidebar: oklch(0.985 0 0);
   --ink: #17202a;
   --text-muted: #6b7580;
   --muted: oklch(0.97 0 0);
-  --line: rgba(31, 43, 58, 0.1);
-  --line-strong: rgba(31, 43, 58, 0.18);
+  --line: color-mix(in oklch, var(--border) 88%, transparent);
+  --line-strong: color-mix(in oklch, var(--border) 100%, var(--foreground) 6%);
   --accent: oklch(0.97 0 0);
   --accent-dark: #3f7572;
   --good: #4f7d66;
@@ -85,21 +85,21 @@ button {
   height: 100vh;
   min-height: 100vh;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--background);
   transition: grid-template-columns 180ms ease;
 }
 
 .app-shell.sidebar-collapsed {
-  grid-template-columns: 68px minmax(0, 1fr);
+  grid-template-columns: 72px minmax(0, 1fr);
 }
 
 .sidebar {
   display: grid;
   grid-template-rows: auto auto;
   align-content: start;
-  gap: 10px;
-  padding: 20px 12px;
-  border-right: 1px solid var(--line);
+  gap: 12px;
+  padding: 16px 12px;
+  border-right: 1px solid var(--border);
   background: var(--sidebar);
   overflow: auto;
   transition: padding 180ms ease;
@@ -108,10 +108,12 @@ button {
 .sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 6px 0 8px;
-  color: #2f3a45;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 4px 0 8px;
+  color: var(--sidebar-foreground);
   font-family: var(--font-sans);
+  font-size: 0.93rem;
   font-weight: 650;
 }
 
@@ -121,62 +123,40 @@ button {
   place-items: center;
   width: 28px;
   height: 28px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--sidebar-border);
   border-radius: 8px;
-  color: var(--accent-dark);
-  background: var(--surface);
-  font-family: var(--font-serif);
+  color: var(--sidebar-foreground);
+  background: var(--background);
+}
+
+.brand-mark svg {
+  width: 15px;
+  height: 15px;
 }
 
 .collapse-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 30px;
   height: 30px;
   margin-left: auto;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: #66727d;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
-}
-
-.collapse-button:hover {
-  border-color: var(--line);
-  background: var(--surface);
 }
 
 .sidebar-nav {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   align-content: start;
   grid-auto-rows: max-content;
 }
 
-.sidebar-nav button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.sidebar-action {
+  justify-content: flex-start;
   width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 8px;
-  color: #40505f;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 120ms ease, background-color 120ms ease;
+  height: 36px;
+  color: var(--sidebar-foreground);
 }
 
-.sidebar-nav button:hover {
-  background: #eef3f6;
-}
-
-.sidebar-nav button:active,
+.sidebar-action:active,
 .collapse-button:active,
-.icon-button:active,
+.topbar-action:active,
 .composer button:active {
   transform: scale(0.95);
 }
@@ -200,7 +180,7 @@ button {
 
 .sidebar-collapsed .sidebar-nav button {
   justify-content: center;
-  padding: 8px;
+  padding: 0;
 }
 
 .sidebar-collapsed .sidebar-label {
@@ -209,18 +189,18 @@ button {
 
 .chat-pane {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: max-content minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--background);
 }
 
 .aui-thread-root {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--background);
 }
 
 .aui-thread-viewport {
@@ -235,12 +215,11 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 16px;
   min-height: 68px;
-  padding: 14px 46px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(251, 252, 253, 0.86);
-  backdrop-filter: blur(12px);
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--background) 92%, transparent);
 }
 
 .eyebrow {
@@ -280,29 +259,18 @@ h3 {
 
 .topbar-actions {
   display: flex;
-  gap: 8px;
-  padding: 4px;
-  border-radius: 14px;
-  background: var(--surface-soft);
-}
-
-.icon-button {
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  color: #555a55;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--muted);
 }
 
-.icon-button:hover {
-  border-color: var(--line);
-  background: var(--surface);
+.topbar-action {
+  width: 32px;
+  height: 32px;
+  color: var(--muted-foreground);
 }
 
 .message-list {
@@ -664,7 +632,7 @@ twisty-player {
   }
 
   .app-shell.sidebar-collapsed {
-    grid-template-columns: 68px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr);
   }
 }
 
@@ -721,7 +689,7 @@ twisty-player {
 
   .chat-pane {
     min-height: 760px;
-    grid-template-rows: auto minmax(520px, auto);
+    grid-template-rows: max-content minmax(520px, auto);
   }
 
   .message-list {
