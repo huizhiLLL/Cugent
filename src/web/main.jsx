@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Play, RotateCw, Search, Send, Sparkles } from "lucide-react";
+import { FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Play, Plus, RotateCw, Search, Send, Sparkles, X } from "lucide-react";
 import "cubing/twisty";
 import { invertAlg } from "../cubing-tools/index.js";
 import { runAgentTurn } from "../agent-runtime/index.js";
@@ -23,31 +23,31 @@ ${solution.split(" ").slice(2).join(" ")} // F2L 1`
 
 const welcomeMessage = {
   role: "assistant",
-  text: "CubeAgent 已就绪。可以粘贴 solve、查询公式，或在导入后追问某个阶段。",
+  text: "CubeAgent 已就绪。可以直接聊天、查询公式，或点击输入框旁的 + 导入智能魔方复盘。",
   response: null
 };
 
 function App() {
   const [messages, setMessages] = useState([welcomeMessage]);
-  const [input, setInput] = useState(sampleSolve);
-  const [smartMode, setSmartMode] = useState(true);
+  const [input, setInput] = useState("");
   const [smartInput, setSmartInput] = useState(sampleSmartInput);
+  const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [context, setContext] = useState({});
   const [busy, setBusy] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const textareaRef = useRef(null);
-
-  const currentReview = context.currentSolveReview;
-  const selectedSegment = useMemo(() => {
-    if (!currentReview || !context.selectedSegmentId) {
-      return null;
-    }
-    return currentReview.segments.find((segment) => segment.id === context.selectedSegmentId);
-  }, [context, currentReview]);
+  const messageListRef = useRef(null);
 
   useEffect(() => {
     resizeComposer();
   }, [input]);
+
+  useEffect(() => {
+    const list = messageListRef.current;
+    if (list) {
+      list.scrollTop = list.scrollHeight;
+    }
+  }, [messages]);
 
   function resizeComposer() {
     const textarea = textareaRef.current;
@@ -101,16 +101,15 @@ function App() {
   }
 
   function importSampleSolve() {
-    setSmartMode(true);
     setSmartInput(sampleSmartInput);
     void submitMessage(sampleSolve);
   }
 
   function createConversation() {
     setMessages([welcomeMessage]);
-    setInput(sampleSolve);
-    setSmartMode(true);
+    setInput("");
     setSmartInput(sampleSmartInput);
+    setSmartDialogOpen(false);
     setContext({});
   }
 
@@ -126,6 +125,11 @@ function App() {
 timedMoves: ${smartInput.timedMoves}
 segmentedSolution:
 ${smartInput.segmentedSolution}`.trim();
+  }
+
+  async function submitSmartSolve() {
+    await submitMessage(buildSmartSolveInput());
+    setSmartDialogOpen(false);
   }
 
   return (
@@ -171,31 +175,55 @@ ${smartInput.segmentedSolution}`.trim();
           </div>
         </header>
 
-        <div className="message-list">
+        <div className="message-list" ref={messageListRef}>
           {messages.map((message, index) => (
             <Message key={`${message.role}-${index}`} message={message} />
           ))}
         </div>
 
         <form
-          className={`composer ${smartMode ? "smart" : ""}`}
+          className="composer"
           onSubmit={(event) => {
             event.preventDefault();
-            void submitMessage(smartMode ? buildSmartSolveInput() : input);
+            void submitMessage(input);
           }}
         >
-          <div className="composer-mode">
-            <button
-              type="button"
-              className={smartMode ? "active" : ""}
-              aria-pressed={smartMode}
-              onClick={() => setSmartMode((value) => !value)}
+          <button type="button" className="attach-button" title="智能魔方导入" onClick={() => setSmartDialogOpen(true)}>
+            <Plus size={18} />
+          </button>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="输入消息，或点击 + 导入智能魔方复盘"
+            rows={1}
+          />
+          <button type="submit" disabled={busy} title="发送">
+            {busy ? <RotateCw size={18} className="spin" /> : <Send size={18} />}
+            <span>{busy ? "处理中" : "发送"}</span>
+          </button>
+        </form>
+      </section>
+
+      {smartDialogOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setSmartDialogOpen(false)}>
+          <section className="smart-dialog" role="dialog" aria-modal="true" aria-labelledby="smart-dialog-title" onMouseDown={(event) => event.stopPropagation()}>
+            <header className="smart-dialog-header">
+              <div>
+                <p className="eyebrow">Cube Input</p>
+                <h2 id="smart-dialog-title">智能魔方</h2>
+              </div>
+              <button type="button" className="icon-button" title="关闭" onClick={() => setSmartDialogOpen(false)}>
+                <X size={17} />
+              </button>
+            </header>
+            <form
+              className="smart-fields"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitSmartSolve();
+              }}
             >
-              智能魔方
-            </button>
-          </div>
-          {smartMode ? (
-            <div className="smart-fields">
               <label>
                 <span>打乱</span>
                 <input
@@ -210,7 +238,7 @@ ${smartInput.segmentedSolution}`.trim();
                   value={smartInput.timedMoves}
                   onChange={(event) => updateSmartInput("timedMoves", event.target.value)}
                   placeholder="U@0 R@250 U'@500 R'@750"
-                  rows={3}
+                  rows={4}
                 />
               </label>
               <label>
@@ -219,34 +247,17 @@ ${smartInput.segmentedSolution}`.trim();
                   value={smartInput.segmentedSolution}
                   onChange={(event) => updateSmartInput("segmentedSolution", event.target.value)}
                   placeholder="U R // Cross"
-                  rows={3}
+                  rows={4}
                 />
               </label>
-            </div>
-          ) : (
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="粘贴 solve，或直接追问某个阶段"
-              rows={1}
-            />
-          )}
-          <button type="submit" disabled={busy} title="发送">
-            {busy ? <RotateCw size={18} className="spin" /> : <Send size={18} />}
-            <span>{busy ? "处理中" : "发送"}</span>
-          </button>
-        </form>
-      </section>
-
-      <aside className="context-pane" aria-label="Solve Context">
-        <ContextPanel
-          review={currentReview}
-          selectedSegment={selectedSegment}
-          importError={context.lastImportError}
-          onSelectSegment={(segmentId) => setContext((previous) => ({ ...previous, selectedSegmentId: segmentId }))}
-        />
-      </aside>
+              <div className="smart-dialog-actions">
+                <button type="button" onClick={() => setSmartDialogOpen(false)}>取消</button>
+                <button type="submit" disabled={busy}>{busy ? "导入中" : "导入"}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
@@ -295,97 +306,6 @@ function ResponseDetails({ response }) {
         </div>
       )}
       {response.playback && <TwistyPreview playback={response.playback} title="预览" />}
-    </div>
-  );
-}
-
-function ContextPanel({ review, selectedSegment, importError, onSelectSegment }) {
-  if (!review) {
-    return (
-      <div className="empty-context">
-        <h2>等待 solve</h2>
-        {importError && <ImportError error={importError} />}
-      </div>
-    );
-  }
-
-  return (
-    <div className="context-content">
-      <div className="context-header">
-        <h2>分析</h2>
-      </div>
-
-      <div className="metrics-grid">
-        <Metric label="步数" value={review.summary.totalMoves} />
-        <Metric label="TPS" value={review.summary.totalTps} />
-        <Metric label="停顿" value={review.summary.pauseCount} />
-        <Metric label="完成" value={review.stateTrace.final.isSolved ? "是" : "否"} />
-      </div>
-
-      <section className="panel-section">
-        <h3>阶段</h3>
-        <div className="stage-list">
-          {review.segments.map((segment) => {
-            const stage = review.cfopAnalysis.stages.find((item) => item.segmentId === segment.id);
-            const selected = selectedSegment?.id === segment.id;
-            return (
-              <button
-                type="button"
-                className={`stage-row ${selected ? "active" : ""}`}
-                key={segment.id}
-                onClick={() => onSelectSegment(segment.id)}
-              >
-                <div>
-                  <strong>{segment.label}</strong>
-                  <span>{segment.moveCount} moves · TPS {segment.tps}</span>
-                  <div className="stage-bar" aria-hidden="true">
-                    <i style={{ width: `${Math.min(100, segment.tps * 12)}%` }} />
-                  </div>
-                </div>
-                <b className={stage.goal.completed ? "ok" : "warn"}>{stage.goal.completed ? "OK" : "看"}</b>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {selectedSegment && (
-        <section className="panel-section">
-          <h3>选中</h3>
-          <div className="selected-box">
-            <strong>{selectedSegment.label}</strong>
-            <span>{selectedSegment.moveCount} moves · TPS {selectedSegment.tps}</span>
-            <TwistyPreview
-              alg={selectedSegment.moves.join(" ")}
-              title={`${selectedSegment.label} 预览`}
-              compact
-            />
-          </div>
-        </section>
-      )}
-
-      <section className="panel-section">
-        <h3>建议</h3>
-        <div className="suggestion-list">
-          {review.coachSuggestions.suggestions.slice(0, 3).map((suggestion) => (
-            <div className="suggestion-row" key={suggestion.id}>
-              <strong>{suggestion.title}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ImportError({ error }) {
-  return (
-    <div className="import-error">
-      <strong>导入失败</strong>
-      <span>{error.message}</span>
-      {error.details?.map((detail) => (
-        <code key={`${detail.label}-${detail.value}`}>{detail.label}: {detail.value}</code>
-      ))}
     </div>
   );
 }
@@ -468,15 +388,6 @@ function parsePlayback(playback) {
 
 function decodeAlgParam(value) {
   return value.replace(/_/g, " ").replace(/-/g, "'");
-}
-
-function Metric({ label, value }) {
-  return (
-    <div className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
 }
 
 createRoot(document.getElementById("root")).render(<App />);

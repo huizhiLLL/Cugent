@@ -43,7 +43,7 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr) 410px;
+  grid-template-columns: 248px minmax(0, 1fr);
   height: 100vh;
   min-height: 100vh;
   overflow: hidden;
@@ -52,7 +52,7 @@ button {
 }
 
 .app-shell.sidebar-collapsed {
-  grid-template-columns: 68px minmax(0, 1fr) 410px;
+  grid-template-columns: 68px minmax(0, 1fr);
 }
 
 .sidebar {
@@ -348,7 +348,7 @@ code {
 
 .composer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 10px;
   max-width: 860px;
   width: calc(100% - 96px);
@@ -358,31 +358,6 @@ code {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: var(--shadow-input);
-}
-
-.composer-mode {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.composer-mode button {
-  width: auto;
-  min-width: 0;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: #51606d;
-  background: var(--surface-soft);
-  font-family: var(--font-sans);
-  font-size: 0.78rem;
-}
-
-.composer-mode button.active {
-  border-color: rgba(63, 117, 114, 0.28);
-  color: var(--accent-dark);
-  background: #eaf4f3;
 }
 
 .composer textarea {
@@ -399,11 +374,30 @@ code {
   line-height: 1.55;
 }
 
+.attach-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: end;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: #51606d;
+  background: var(--surface-soft);
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.attach-button:hover {
+  border-color: rgba(63, 117, 114, 0.32);
+  background: #eef7f6;
+}
+
 .smart-fields {
-  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  gap: 12px;
 }
 
 .smart-fields label {
@@ -470,193 +464,66 @@ code {
   transition: transform 120ms ease, background-color 120ms ease, opacity 120ms ease;
 }
 
-.composer .composer-mode button {
-  width: auto;
-  min-width: 0;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: #51606d;
-  background: var(--surface-soft);
-  font-family: var(--font-sans);
-  font-size: 0.78rem;
-}
-
-.composer .composer-mode button.active {
-  border-color: rgba(63, 117, 114, 0.28);
-  color: var(--accent-dark);
-  background: #eaf4f3;
-}
-
-.composer.smart > button[type="submit"] {
-  grid-column: 2;
-}
-
 .composer button:disabled {
   cursor: wait;
   opacity: 0.7;
 }
 
-.spin {
-  animation: spin 0.9s linear infinite;
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(23, 32, 42, 0.18);
+  backdrop-filter: blur(10px);
 }
 
-.context-pane {
-  min-width: 0;
-  border-left: 1px solid var(--line);
-  background: #f7f9fb;
+.smart-dialog {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
   overflow: auto;
-}
-
-.empty-context,
-.context-content {
   padding: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgba(29, 43, 58, 0.16);
 }
 
-.empty-context {
-  display: grid;
-  align-content: center;
-  gap: 14px;
-  min-height: 100vh;
-  color: var(--muted);
-}
-
-.empty-context h2 {
-  margin: 0;
-  color: var(--ink);
-}
-
-.context-header {
-  margin-bottom: 12px;
-}
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.metric,
-.stage-row,
-.selected-box,
-.suggestion-row {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.metric {
-  display: grid;
-  gap: 0;
-  padding: 8px 10px;
-}
-
-.metric span,
-.stage-row span,
-.selected-box span,
-.suggestion-row span,
-.muted {
-  color: var(--muted);
-  font-family: var(--font-sans);
-  font-size: 0.76rem;
-}
-
-.metric strong {
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.panel-section {
+.smart-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 16px;
 }
 
-.panel-section h3 {
-  margin-bottom: 8px;
-  font-family: var(--font-sans);
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.stage-list,
-.suggestion-list {
-  display: grid;
-  gap: 8px;
-}
-
-.stage-row {
+.smart-dialog-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
-  width: 100%;
-  padding: 9px 10px;
-  color: var(--ink);
-  text-align: left;
+  margin-top: 2px;
+}
+
+.smart-dialog-actions button {
+  min-width: 82px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: #51606d;
+  background: var(--surface-soft);
   cursor: pointer;
-  transition: border-color 120ms ease, background-color 120ms ease, transform 120ms ease;
 }
 
-.stage-row:hover,
-.stage-row.active {
-  border-color: rgba(63, 117, 114, 0.34);
-  background: #f3f9f8;
+.smart-dialog-actions button[type="submit"] {
+  border-color: transparent;
+  color: #fffdfa;
+  background: var(--accent-dark);
 }
 
-.stage-row:active {
-  transform: scale(0.99);
-}
-
-.stage-row div,
-.selected-box,
-.suggestion-row {
-  display: grid;
-  gap: 3px;
-}
-
-.stage-bar {
-  width: 100%;
-  height: 4px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #e4edf1;
-}
-
-.stage-bar i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #7aa7a3, #8aa8c8);
-}
-
-.ok {
-  color: var(--good);
-}
-
-.warn {
-  color: var(--warn);
-}
-
-.selected-box,
-.suggestion-row {
-  padding: 9px 10px;
-}
-
-.import-error {
-  display: grid;
-  gap: 6px;
-  padding: 11px;
-  border: 1px solid rgba(168, 116, 58, 0.28);
-  border-radius: 10px;
-  color: var(--ink);
-  background: #fffaf3;
-}
-
-.import-error span {
-  color: var(--muted);
-  font-family: var(--font-sans);
-  font-size: 0.82rem;
+.spin {
+  animation: spin 0.9s linear infinite;
 }
 
 .twisty-preview {
@@ -739,17 +606,6 @@ twisty-player {
   .app-shell.sidebar-collapsed {
     grid-template-columns: 68px minmax(0, 1fr);
   }
-
-  .context-pane {
-    grid-column: 1 / -1;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .context-content {
-    max-width: 860px;
-    margin: 0 auto;
-  }
 }
 
 @media (max-width: 720px) {
@@ -818,19 +674,22 @@ twisty-player {
   }
 
   .composer {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto 1fr;
     width: calc(100% - 32px);
   }
 
-  .composer button {
+  .composer button[type="submit"] {
+    grid-column: 1 / -1;
     width: 100%;
   }
 
-  .composer.smart > button[type="submit"] {
-    grid-column: 1;
+  .modal-backdrop {
+    align-items: end;
+    padding: 12px;
   }
 
-  .context-pane {
-    overflow: visible;
+  .smart-dialog {
+    max-height: calc(100vh - 24px);
+    border-radius: 16px;
   }
 }

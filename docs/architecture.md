@@ -43,9 +43,9 @@ Cubing Domain Tools
 当前客户端布局：
 
 - 左侧可折叠侧边栏：仅保留新建对话入口。
-- 中间 chat 主界面：消息流、输入框、快捷导入/查询/追问按钮。输入区支持普通聊天和“智能魔方”两种模式；智能魔方模式提供打乱、带时间戳的回顾、可选分段解法三个结构化字段。
-- 右侧 solve context：总览指标、阶段目标、选中分段、结构化建议。
-- 移动端改为上下堆叠，保留相同功能。
+- 主 chat 工作区：消息流、输入框、快捷导入/查询/追问按钮。输入框保持普通聊天形态，`+` 扩展打开“智能魔方”弹窗，用于填写打乱、带时间戳的回顾和可选分段解法。
+- solve 的总览指标、阶段目标、结构化建议和播放预览作为 assistant 回复的一部分展示，不再单独维护右侧分析面板。
+- 移动端保留同一套单栏 chat 体验。
 
 后续接入真实模型时，可保留当前 `runAgentTurn` 作为工具路由和 fallback。
 
@@ -66,9 +66,7 @@ Cubing Domain Tools
 - `timedMoves` / `timed moves` / `moves` / `review` / `复盘`
 - `segmentedSolution` / `segmented solution` / `segments` / `solution` / `分段`
 
-导入失败会返回结构化错误码和细节，例如非法 timed move、timestamp 倒退、分段行缺少 label。Web 客户端会在 chat 和右侧 context 中展示最近一次导入错误。
-
-Web 客户端的阶段列表可以点击选中分段；用户随后输入“这里”“这段”“当前阶段”等追问时，runtime 会优先使用 `selectedSegmentId` 读取局部上下文。
+导入失败会返回结构化错误码和细节，例如非法 timed move、timestamp 倒退、分段行缺少 label。Web 客户端会在 chat 回复中展示这些错误细节。
 
 每个 turn 会返回：
 
