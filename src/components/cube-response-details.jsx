@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { Play } from "lucide-react";
+import { ChevronDown, Eye, Play } from "lucide-react";
 import "cubing/twisty";
 
 export function CubeResponseDetails({ response }) {
@@ -80,7 +80,10 @@ function TwistyPreview({ playback, alg, setup = "", title = "预览", compact = 
   return (
     <div className={`twisty-preview ${compact ? "compact" : ""}`}>
       <div className="twisty-toolbar">
-        <strong>{title}</strong>
+        <span className="preview-title" title={title} aria-label={title}>
+          <Eye size={15} />
+          <ChevronDown size={14} />
+        </span>
         <button type="button" onClick={play} title="播放转动">
           <Play size={15} />
         </button>

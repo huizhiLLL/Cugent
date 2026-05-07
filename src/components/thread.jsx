@@ -8,11 +8,6 @@ import {
   ReasoningText,
   ReasoningTrigger,
 } from "@/components/reasoning";
-import {
-  ToolGroupContent,
-  ToolGroupRoot,
-  ToolGroupTrigger,
-} from "@/components/tool-group";
 import { ToolFallback } from "@/components/tool-fallback";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
@@ -233,12 +228,7 @@ const AssistantMessage = () => {
                 );
               }
               case "group-tool":
-                return (
-                  <ToolGroupRoot>
-                    <ToolGroupTrigger count={part.indices.length} active={part.status.type === "running"} />
-                    <ToolGroupContent>{children}</ToolGroupContent>
-                  </ToolGroupRoot>
-                );
+                return children;
               case "text":
                 return <MarkdownText />;
               case "reasoning":

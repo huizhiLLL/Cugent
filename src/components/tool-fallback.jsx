@@ -230,22 +230,17 @@ function ToolFallbackError({
 
 const ToolFallbackImpl = ({
   toolName,
-  argsText,
-  result,
   status,
 }) => {
-  const isCancelled =
-    status?.type === "incomplete" && status.reason === "cancelled";
+  const isRunning = status?.type === "running";
 
   return (
-    <ToolFallbackRoot className={cn(isCancelled && "border-muted-foreground/30 bg-muted/30")}>
-      <ToolFallbackTrigger toolName={toolName} status={status} />
-      <ToolFallbackContent>
-        <ToolFallbackError status={status} />
-        <ToolFallbackArgs argsText={argsText} className={cn(isCancelled && "opacity-60")} />
-        {!isCancelled && <ToolFallbackResult result={result} />}
-      </ToolFallbackContent>
-    </ToolFallbackRoot>
+    <div className="aui-tool-inline flex items-center gap-2 py-1.5 text-sm text-muted-foreground">
+      {isRunning ? <LoaderIcon className="size-4 shrink-0 animate-spin" /> : <CheckIcon className="size-4 shrink-0" />}
+      <span>
+        Use Tool：<b className="font-semibold text-foreground">{toolName}</b>
+      </span>
+    </div>
   );
 };
 

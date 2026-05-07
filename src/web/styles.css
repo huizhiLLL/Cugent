@@ -130,11 +130,27 @@ button {
   grid-auto-rows: max-content;
 }
 
+.conversation-history {
+  display: grid;
+  gap: 3px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
 .sidebar-action {
   justify-content: flex-start;
   width: 100%;
   height: 36px;
   color: var(--sidebar-foreground);
+}
+
+.history-item {
+  justify-content: flex-start;
+  width: 100%;
+  height: 34px;
+  color: var(--sidebar-foreground);
+  font-size: 0.88rem;
 }
 
 .sidebar-action:active,
@@ -166,6 +182,10 @@ button {
 
 .sidebar-collapsed .sidebar-label {
   display: none;
+}
+
+.sidebar-collapsed .conversation-history {
+  padding-top: 10px;
 }
 
 .chat-pane {
@@ -571,6 +591,14 @@ code {
 
 .twisty-toolbar strong {
   font-size: 0.95rem;
+}
+
+.preview-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  transform: translateY(-7px);
 }
 
 .twisty-toolbar button {
