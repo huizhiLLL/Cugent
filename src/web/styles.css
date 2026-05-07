@@ -22,12 +22,12 @@
   --good: #4f7d66;
   --warn: #a8743a;
   --shadow-input: 0 0.35rem 1.4rem rgba(29, 43, 58, 0.045), 0 0 0 0.5px rgba(31, 43, 58, 0.14);
-  --font-serif: Georgia, "Times New Roman", "Noto Serif SC", "Songti SC", serif;
-  --font-sans: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", "SimSun", Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-serif);
   --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   color: var(--ink);
   background: var(--bg);
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: 16px;
   line-height: 1.55;
   --background: oklch(1 0 0);
@@ -110,28 +110,11 @@ button {
   align-items: center;
   gap: 8px;
   min-height: 36px;
-  padding: 0 4px 0 8px;
+  padding: 0 4px 0 10px;
   color: var(--sidebar-foreground);
-  font-family: var(--font-sans);
-  font-size: 0.93rem;
-  font-weight: 650;
-}
-
-.brand-mark {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--sidebar-border);
-  border-radius: 8px;
-  color: var(--sidebar-foreground);
-  background: var(--background);
-}
-
-.brand-mark svg {
-  width: 15px;
-  height: 15px;
+  font-family: var(--font-serif);
+  font-size: 1.08rem;
+  font-weight: 700;
 }
 
 .collapse-button {
@@ -167,9 +150,8 @@ button {
 }
 
 .sidebar-collapsed .sidebar-brand {
-  display: grid;
-  justify-items: center;
-  gap: 12px;
+  display: flex;
+  justify-content: center;
   padding: 0;
 }
 
@@ -207,13 +189,38 @@ button {
 }
 
 .aui-composer-root {
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
+}
+
+.aui-composer-send {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.aui-composer-send:disabled {
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+.aui-composer-send:not(:disabled):hover {
+  background: color-mix(in oklch, var(--foreground) 88%, var(--background));
+}
+
+.aui-thread-welcome-root {
+  width: 100%;
+}
+
+.aui-thread-welcome-title {
+  color: var(--foreground);
+  letter-spacing: 0;
 }
 
 .eyebrow {
   margin: 0 0 2px;
   color: var(--text-muted);
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -288,7 +295,7 @@ h3 {
   border-radius: 7px;
   color: var(--accent-dark);
   background: #eaf4f3;
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -321,7 +328,7 @@ h3 {
 
 .highlight span {
   color: var(--text-muted);
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: 0.8rem;
 }
 
@@ -401,7 +408,7 @@ code {
 
 .smart-fields span {
   color: var(--text-muted);
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: 0.76rem;
   font-weight: 650;
 }
@@ -702,8 +709,8 @@ twisty-player {
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-heading: var(--font-serif);
+  --font-sans: var(--font-serif);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

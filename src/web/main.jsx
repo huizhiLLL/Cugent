@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
-import { Box, FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Search, Sparkles } from "lucide-react";
+import { FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Search, Sparkles } from "lucide-react";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Thread } from "@/components/thread";
 import { Button } from "@/components/ui/button";
@@ -36,15 +36,8 @@ const sampleSmartInput = {
 ${solution.split(" ").slice(2).join(" ")} // F2L 1`
 };
 
-const welcomeMessage = {
-  id: "welcome",
-  role: "assistant",
-  text: "CubeAgent 已就绪。可以直接聊天、查询公式，或点击输入框旁的 + 导入智能魔方复盘。",
-  response: null
-};
-
 function App() {
-  const [messages, setMessages] = useState([welcomeMessage]);
+  const [messages, setMessages] = useState([]);
   const [smartInput, setSmartInput] = useState(sampleSmartInput);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
@@ -102,7 +95,7 @@ function App() {
   }
 
   function createConversation() {
-    setMessages([welcomeMessage]);
+    setMessages([]);
     setSmartInput(sampleSmartInput);
     setActionDialogOpen(false);
     setSmartDialogOpen(false);
@@ -143,9 +136,6 @@ ${smartInput.segmentedSolution}`.trim();
       <main className={cn("app-shell", sidebarCollapsed && "sidebar-collapsed")}>
         <aside className="sidebar" aria-label="Conversation Sidebar" aria-expanded={!sidebarCollapsed}>
           <div className="sidebar-brand">
-            <div className="brand-mark" aria-hidden="true">
-              <Box />
-            </div>
             <span className="sidebar-label">CubeAgent</span>
             <TooltipIconButton
               type="button"

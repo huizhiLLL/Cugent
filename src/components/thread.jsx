@@ -25,7 +25,6 @@ import {
   ComposerPrimitive,
   ErrorPrimitive,
   MessagePrimitive,
-  SuggestionPrimitive,
   ThreadPrimitive,
   useAuiState,
 } from "@assistant-ui/react";
@@ -60,22 +59,24 @@ export const Thread = ({ onOpenSmartCube }) => {
         <div
           className="mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-4">
           <AuiIf condition={(s) => s.thread.isEmpty}>
-            <ThreadWelcome />
+            <ThreadWelcome onOpenSmartCube={onOpenSmartCube} />
           </AuiIf>
 
-          <div
-            data-slot="aui_message-group"
-            className="mb-10 flex flex-col gap-y-8 empty:hidden">
-            <ThreadPrimitive.Messages>
-              {() => <ThreadMessage />}
-            </ThreadPrimitive.Messages>
-          </div>
+          <AuiIf condition={(s) => !s.thread.isEmpty}>
+            <div
+              data-slot="aui_message-group"
+              className="mb-10 flex flex-col gap-y-8 empty:hidden">
+              <ThreadPrimitive.Messages>
+                {() => <ThreadMessage />}
+              </ThreadPrimitive.Messages>
+            </div>
 
-          <ThreadPrimitive.ViewportFooter
-            className="aui-thread-viewport-footer sticky bottom-0 mt-auto flex flex-col gap-4 overflow-visible rounded-t-(--composer-radius) bg-background pb-4 md:pb-6">
-            <ThreadScrollToBottom />
-            <Composer onOpenSmartCube={onOpenSmartCube} />
-          </ThreadPrimitive.ViewportFooter>
+            <ThreadPrimitive.ViewportFooter
+              className="aui-thread-viewport-footer sticky bottom-0 mt-auto flex flex-col gap-4 overflow-visible rounded-t-(--composer-radius) bg-background pb-4 md:pb-6">
+              <ThreadScrollToBottom />
+              <Composer onOpenSmartCube={onOpenSmartCube} />
+            </ThreadPrimitive.ViewportFooter>
+          </AuiIf>
         </div>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
@@ -104,52 +105,13 @@ const ThreadScrollToBottom = () => {
   );
 };
 
-const ThreadWelcome = () => {
+const ThreadWelcome = ({ onOpenSmartCube }) => {
   return (
-    <div className="aui-thread-welcome-root my-auto flex grow flex-col">
-      <div
-        className="aui-thread-welcome-center flex w-full grow flex-col items-center justify-center">
-        <div
-          className="aui-thread-welcome-message flex size-full flex-col justify-center px-4">
-          <h1
-            className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in fill-mode-both font-semibold text-2xl duration-200">
-            CubeAgent
-          </h1>
-          <p
-            className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-muted-foreground text-xl delay-75 duration-200">
-            直接聊天，或点击 + 导入智能魔方复盘。
-          </p>
-        </div>
-      </div>
-      <ThreadSuggestions />
-    </div>
-  );
-};
-
-const ThreadSuggestions = () => {
-  return (
-    <div
-      className="aui-thread-welcome-suggestions grid w-full @md:grid-cols-2 gap-2 pb-4">
-      <ThreadPrimitive.Suggestions>
-        {() => <ThreadSuggestionItem />}
-      </ThreadPrimitive.Suggestions>
-    </div>
-  );
-};
-
-const ThreadSuggestionItem = () => {
-  return (
-    <div
-      className="aui-thread-welcome-suggestion-display fade-in slide-in-from-bottom-2 @md:nth-[n+3]:block nth-[n+3]:hidden animate-in fill-mode-both duration-200">
-      <SuggestionPrimitive.Trigger send asChild>
-        <Button
-          variant="ghost"
-          className="aui-thread-welcome-suggestion h-auto w-full @md:flex-col flex-wrap items-start justify-start gap-1 rounded-3xl border bg-background px-4 py-3 text-start text-sm transition-colors hover:bg-muted">
-          <SuggestionPrimitive.Title className="aui-thread-welcome-suggestion-text-1 font-medium" />
-          <SuggestionPrimitive.Description
-            className="aui-thread-welcome-suggestion-text-2 text-muted-foreground empty:hidden" />
-        </Button>
-      </SuggestionPrimitive.Trigger>
+    <div className="aui-thread-welcome-root flex min-h-full flex-1 flex-col items-center justify-center gap-7 pb-20">
+      <h1 className="aui-thread-welcome-title fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-center font-medium text-2xl duration-200">
+        今天想分析什么，会枝？
+      </h1>
+      <Composer onOpenSmartCube={onOpenSmartCube} />
     </div>
   );
 };
