@@ -158,6 +158,21 @@ U R // Cross
   assert.equal(intent.params.scramble, "R U R' U'");
 });
 
+test("detectIntent accepts common copied solve field aliases", () => {
+  const intent = detectIntent(`
+Scramble: R U R' U'
+review: U@0 R@100 U'@200 R'@300
+solution:
+U R // Cross
+U' R' // F2L 1
+`);
+
+  assert.equal(intent.type, "solve-import");
+  assert.equal(intent.params.scramble, "R U R' U'");
+  assert.match(intent.params.timedMoves, /U@0 R@100/);
+  assert.match(intent.params.segmentedSolution, /F2L 1/);
+});
+
 test("runAgentTurn imports solve and answers local followup", async () => {
   const scramble = "R U R' U'";
   const solution = invertAlg(scramble);
@@ -180,6 +195,53 @@ U' R' // F2L 1
   assert.equal(followupTurn.toolResult.type, "segment-inspection");
   assert.equal(followupTurn.toolResult.segment.label, "F2L 1");
   assert.equal(followupTurn.response.kind, "segment-inspection");
+});
+
+test("runAgentTurn returns structured solve import errors", async () => {
+  const turn = await runAgentTurn(`
+scramble: R U
+timedMoves: R@100 U@50
+`);
+
+  assert.equal(turn.toolResult.type, "error");
+  assert.equal(turn.toolResult.code, "TIMESTAMP_ORDER");
+  assert.equal(turn.contextPatch.lastImportError.code, "TIMESTAMP_ORDER");
+  assert.equal(turn.response.kind, "error");
+  assert.match(turn.response.evidence[0], /问题 token/);
+});
+
+test("runAgentTurn reports missing scramble from structured input", async () => {
+  const turn = await runAgentTurn(`
+scramble:
+timedMoves: R@0 U@100
+segmentedSolution:
+R U // Cross
+`);
+
+  assert.equal(turn.toolResult.type, "error");
+  assert.equal(turn.toolResult.code, "MISSING_SCRAMBLE");
+  assert.equal(turn.response.error.code, "MISSING_SCRAMBLE");
+});
+
+test("runAgentTurn uses selected segment for vague followup", async () => {
+  const scramble = "R U R' U'";
+  const solution = invertAlg(scramble);
+  const solveTurn = await runAgentTurn(`
+scramble: ${scramble}
+timedMoves: ${solution.split(" ").map((move, index) => `${move}@${index * 100}`).join(" ")}
+segmentedSolution:
+U R // Cross
+U' R' // F2L 1
+`);
+  const context = {
+    ...solveTurn.contextPatch,
+    selectedSegmentId: "cross"
+  };
+  const followupTurn = await runAgentTurn("这里为什么要看？", context);
+
+  assert.equal(followupTurn.intent.type, "local-followup");
+  assert.equal(followupTurn.toolResult.segment.label, "Cross");
+  assert.equal(followupTurn.contextPatch.selectedSegmentId, "cross");
 });
 
 test("runAgentTurn handles algorithm queries", async () => {

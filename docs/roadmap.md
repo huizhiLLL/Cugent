@@ -29,7 +29,10 @@
 
 - 实现轻量 agent runtime 原型。已完成 solve 导入、公式查询、局部追问三条路径。
 - 实现本地 response composer。已完成结构化结果到中文 fallback 回复。
-- 建立 React / Next.js 客户端。
+- 建立 React / Vite 最小客户端。已完成 chat + solve context 面板。
+- 优化真实复制输入体验。已支持常见字段别名和导入错误结构化展示。
+- 增加“智能魔方”输入模式。已支持打乱、带时间戳回顾、可选分段解法三个结构化字段。
+- 支持右侧阶段点击选中，并将“这里/这段”类追问绑定到选中阶段。
 - 接入 chat streaming。
 - 实现 solve context panel。
 - 支持在 chat 中粘贴 solve 并自动调用工具。

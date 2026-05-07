@@ -8,7 +8,7 @@ CubeAgent 要做的是一个魔方智能教练 AI 客户端，而不是单次输
 
 ## 当前重点
 
-当前阶段聚焦 PoC 的领域工具层：
+当前阶段已从领域工具 PoC 推进到轻量 AI Chat 客户端闭环：
 
 - `csTimer/DCTimer` 时间戳 move 解析。
 - 分段解法文本解析。
@@ -16,8 +16,12 @@ CubeAgent 要做的是一个魔方智能教练 AI 客户端，而不是单次输
 - 基础指标计算：步数、耗时、TPS、停顿。
 - 基于 `cubing.js` 的 scramble + solution 状态追踪。
 - 可嵌入播放链接生成。
+- 轻量 agent runtime：solve 导入、公式查询、局部追问。
+- React / Vite 最小 Web 客户端：chat、solve context、阶段选中和本地转动预览。
+- 智能魔方输入模式：打乱、带时间戳回顾、可选分段解法。
+- 真实复制输入体验：常见字段别名识别、结构化导入错误展示。
 
-这些能力先独立于前端和 LLM 跑通，确保后续接入 AI Chat 时有稳定工具边界。
+后续接入真实 LLM 或 streaming 前，仍优先保证工具输出、导入错误和上下文联动稳定可控。
 
 ## 已确定的产品方向
 
@@ -43,6 +47,7 @@ CubeAgent 要做的是一个魔方智能教练 AI 客户端，而不是单次输
 
 ```bash
 npm install
+npm run dev
 npm test
 npm run poc
 ```

@@ -19,17 +19,20 @@ CubeAgent 是一个面向 3x3 CFOP 复盘的魔方 AI 教练客户端 PoC。
 - 生成 `coachSuggestions` 结构化建议，作为后续 Agent/LLM 的证据输入。
 - 提供轻量 `agent-runtime` 原型，支持 solve 导入、公式查询和局部追问。
 - 提供 `response-composer`，把结构化工具结果转成稳定中文 fallback 回复。
-- 生成兼容 `alg.cubing.net` 的可嵌入播放链接。
+- 提供最小 Web 客户端：左侧 chat，右侧 solve context 面板。
+- 生成兼容 `alg.cubing.net` 的可嵌入播放链接，并用 `cubing.js` 的 `twisty-player` 在页面内渲染转动动画。
 
 ## 快速验证
 
 ```bash
 npm install
+npm run dev
 npm test
 npm run poc
 npm run agent:poc
 ```
 
+`npm run dev` 会启动本地 Web 客户端，默认地址是 `http://127.0.0.1:5173`。
 `npm run poc` 会运行内置样例，输出结构化复盘摘要和播放链接。
 `npm run agent:poc` 会演示轻量 agent runtime 的三条路径：solve 导入、公式查询、局部追问。
 

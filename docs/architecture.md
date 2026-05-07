@@ -38,7 +38,16 @@ Cubing Domain Tools
 
 ### AI Chat Client
 
-负责用户体验、消息流、上下文面板和播放链接展示。后续推荐使用 React / Next.js 与轻量 chat streaming 方案。
+负责用户体验、消息流、上下文面板和播放链接展示。当前最小 Web 客户端基于 React / Vite 实现，先不接真实模型，只调用本地 `runAgentTurn`。
+
+当前客户端布局：
+
+- 左侧可折叠侧边栏：仅保留新建对话入口。
+- 中间 chat 主界面：消息流、输入框、快捷导入/查询/追问按钮。输入区支持普通聊天和“智能魔方”两种模式；智能魔方模式提供打乱、带时间戳的回顾、可选分段解法三个结构化字段。
+- 右侧 solve context：总览指标、阶段目标、选中分段、结构化建议。
+- 移动端改为上下堆叠，保留相同功能。
+
+后续接入真实模型时，可保留当前 `runAgentTurn` 作为工具路由和 fallback。
 
 ### Lightweight Agent Runtime
 
@@ -50,6 +59,16 @@ Cubing Domain Tools
 - `algorithm-query`：识别 F2L/OLL/PLL 公式查询，调用 `searchAlgorithms`。
 - `local-followup`：基于当前 `currentSolveReview` 返回指定分段的状态、阶段分析和建议。
 - `chat`：未命中特定工具时交给普通聊天模型处理。
+
+当前 solve 导入支持常见复制字段别名：
+
+- `scramble` / `打乱`
+- `timedMoves` / `timed moves` / `moves` / `review` / `复盘`
+- `segmentedSolution` / `segmented solution` / `segments` / `solution` / `分段`
+
+导入失败会返回结构化错误码和细节，例如非法 timed move、timestamp 倒退、分段行缺少 label。Web 客户端会在 chat 和右侧 context 中展示最近一次导入错误。
+
+Web 客户端的阶段列表可以点击选中分段；用户随后输入“这里”“这段”“当前阶段”等追问时，runtime 会优先使用 `selectedSegmentId` 读取局部上下文。
 
 每个 turn 会返回：
 
@@ -98,7 +117,7 @@ PoC 阶段需要的流程是：
 
 ### 播放链接作为一等工具
 
-播放链接不是普通网页跳转，而是可被其他客户端嵌入渲染的动画载体。当前 PoC 先支持 `alg.cubing.net` 兼容格式，后续预留 Twizzle / TwistyPlayer adapter。
+播放链接不是普通网页跳转，而是可被其他客户端嵌入渲染的动画载体。当前 PoC 支持 `alg.cubing.net` 兼容格式，并在 Web 客户端中用 `cubing.js` 的 `twisty-player` 渲染本地转动动画。后续仍预留 Twizzle adapter。
 
 ### 公式库采用本地只读快照
 
@@ -152,5 +171,7 @@ PoC 阶段需要的流程是：
 - `src/agent-runtime/intent-detector.js`：轻量意图识别。
 - `src/agent-runtime/agent-runtime.js`：工具路由与上下文 patch。
 - `src/agent-runtime/response-composer.js`：结构化结果到中文 fallback 回复。
+- `src/web/main.jsx`：最小 Web 客户端入口。
+- `src/web/styles.css`：Web 客户端样式。
 - `scripts/agent-poc.js`：agent runtime 演示脚本。
 - `scripts/poc.js`：内置样例验证脚本。

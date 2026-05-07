@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
     "test": "node --test",
     "poc": "node scripts/poc.js",
     "agent:poc": "node scripts/agent-poc.js"
@@ -12,6 +14,11 @@
     "node": ">=22"
   },
   "dependencies": {
-    "cubing": "^0.63.3"
+    "@vitejs/plugin-react": "^6.0.1",
+    "cubing": "^0.63.3",
+    "lucide-react": "^1.14.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "vite": "^8.0.11"
   }
 }

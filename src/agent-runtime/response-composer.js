@@ -17,7 +17,11 @@ export function composeResponse(agentTurn) {
     return {
       kind: "error",
       text: toolResult.message,
-      evidence: [],
+      evidence: toolResult.details?.map((detail) => `${detail.label}：${detail.value}`) ?? [],
+      error: {
+        code: toolResult.code,
+        details: toolResult.details ?? []
+      },
       nextActions: []
     };
   }
@@ -105,7 +109,13 @@ function formatSuggestion(suggestion) {
     priority: suggestion.priority,
     title: suggestion.title,
     evidence: suggestion.evidence,
-    action: suggestion.action
+    action: suggestion.action,
+    candidates: suggestion.candidates?.map((candidate) => ({
+      id: candidate.id,
+      name: candidate.name,
+      alg: candidate.alg,
+      playback: candidate.playback?.bbcode
+    })) ?? []
   };
 }
 

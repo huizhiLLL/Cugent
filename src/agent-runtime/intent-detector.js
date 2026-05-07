@@ -1,8 +1,8 @@
 const TIMED_MOVE_PATTERN = /[URFDLBMESxyzurfdlb](?:w)?(?:2|')?@\d+/;
 const SEGMENT_PATTERN = /\/\/\s*(Cross|F2L|OLL|PLL)/i;
-const SCRAMBLE_PATTERN = /^\s*scramble\s*:\s*(.+)$/im;
-const TIMED_MOVES_PATTERN = /^\s*timedMoves\s*:\s*([\s\S]*?)(?=^\s*(?:segmentedSolution|scramble)\s*:|\s*$)/im;
-const SEGMENTED_SOLUTION_PATTERN = /^\s*segmentedSolution\s*:\s*([\s\S]*)$/im;
+const SCRAMBLE_PATTERN = /^[ \t]*(?:scramble|打乱)[ \t]*[:：][ \t]*(.*)$/im;
+const TIMED_MOVES_PATTERN = /^[ \t]*(?:timedMoves|timed moves|moves|review|复盘)[ \t]*[:：][ \t]*([\s\S]*?)(?=^[ \t]*(?:(?:segmentedSolution|segmented solution|segments|solution|scramble|打乱)[ \t]*[:：])|\s*$)/im;
+const SEGMENTED_SOLUTION_PATTERN = /^[ \t]*(?:segmentedSolution|segmented solution|segments|solution|分段)[ \t]*[:：][ \t]*([\s\S]*)$/im;
 
 export function detectIntent(message) {
   const text = String(message ?? "");
@@ -41,7 +41,7 @@ export function detectIntent(message) {
 }
 
 function looksLikeSolveImport(text) {
-  return Boolean(SCRAMBLE_PATTERN.test(text) && TIMED_MOVE_PATTERN.test(text)) || (TIMED_MOVE_PATTERN.test(text) && SEGMENT_PATTERN.test(text));
+  return Boolean(SCRAMBLE_PATTERN.test(text) && TIMED_MOVES_PATTERN.test(text)) || (TIMED_MOVE_PATTERN.test(text) && SEGMENT_PATTERN.test(text));
 }
 
 function extractSolveImportParams(text) {
