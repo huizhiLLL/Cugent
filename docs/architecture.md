@@ -47,6 +47,8 @@ Cubing Domain Tools
 - solve 的总览指标、阶段目标、结构化建议和播放预览作为 assistant 回复的一部分展示，不再单独维护右侧分析面板。
 - 移动端保留同一套单栏 chat 体验。
 
+当前客户端的功能图标统一使用 `lucide-react`。品牌与站点图标只使用 `cubeagent-logo.png` 这类独立品牌资产，不混入功能按钮图标体系。通用功能图标的默认尺寸、描边和按钮容器由 `src/web/styles.css` 与 `TooltipIconButton` 统一控制，局部组件只在确有层级差异时覆盖尺寸。
+
 后续接入真实模型时，可保留当前 `runAgentTurn` 作为工具路由和 fallback。
 
 ### Lightweight Agent Runtime

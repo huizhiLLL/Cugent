@@ -215,7 +215,6 @@ ${smartInput.segmentedSolution}`.trim();
                   title={title}
                   onClick={() => setMessages(demoMessages)}
                 >
-                  <MessageSquarePlus data-icon="inline-start" />
                   <span className="sidebar-label">{title}</span>
                 </Button>
               ))}

@@ -1,7 +1,5 @@
 node_modules/
 dist/
 .playwright-mcp/
-*.png
-!.github/assets/*.png
-!public/*.png
 .codex/
+ref/

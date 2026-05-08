@@ -81,11 +81,11 @@ function TwistyPreview({ playback, alg, setup = "", title = "预览", compact = 
     <div className={`twisty-preview ${compact ? "compact" : ""}`}>
       <div className="twisty-toolbar">
         <span className="preview-title" title={title} aria-label={title}>
-          <Eye size={15} />
-          <ChevronDown size={14} />
+          <Eye />
+          <ChevronDown className="size-3.5" />
         </span>
         <button type="button" onClick={play} title="播放转动">
-          <Play size={15} />
+          <Play />
         </button>
       </div>
       <twisty-player

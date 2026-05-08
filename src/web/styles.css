@@ -21,6 +21,10 @@
   --accent-dark: #3f7572;
   --good: #4f7d66;
   --warn: #a8743a;
+  --icon-size: 1rem;
+  --icon-size-sm: 0.875rem;
+  --icon-size-lg: 1.25rem;
+  --icon-stroke: 1.75;
   --shadow-input: 0 0.35rem 1.4rem rgba(29, 43, 58, 0.045), 0 0 0 0.5px rgba(31, 43, 58, 0.14);
   --font-serif: "Noto Serif SC", "Songti SC", "SimSun", Georgia, "Times New Roman", serif;
   --font-sans: var(--font-serif);
@@ -77,6 +81,28 @@ textarea {
 
 button {
   color: inherit;
+}
+
+.lucide:not([class*="size-"]) {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+.lucide {
+  stroke-width: var(--icon-stroke);
+}
+
+[data-icon="inline-start"],
+[data-icon="inline-end"] {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  stroke-width: var(--icon-stroke);
+}
+
+.aui-button-icon .lucide:not([class*="size-"]),
+.twisty-toolbar .lucide:not([class*="size-"]) {
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 .app-shell {
