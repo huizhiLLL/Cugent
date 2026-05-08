@@ -2,6 +2,7 @@ import { parseSegmentedSolution, parseTimedMoves } from "./parsers.js";
 import { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";
 import { analyzeCFOP } from "./cfop-analyzer.js";
 import { generateCoachSuggestions } from "./coach-suggestions.js";
+import { inferCf4opSegments } from "./cfop-inference.js";
 import { traceCubeState } from "./state-tracer.js";
 
 export async function createSolveReview({
@@ -17,11 +18,24 @@ export async function createSolveReview({
   }
 
   const moves = parseTimedMoves(timedMoves);
-  const parsedSegments = parseSegmentedSolution(segmentedSolution);
-  const validation = validateSegmentAlignment(moves, parsedSegments);
-  const segments = assignSegments(moves, parsedSegments, pauseThresholdMs);
+  const providedSegments = parseSegmentedSolution(segmentedSolution);
   const solutionAlg = moves.map((item) => item.move).join(" ");
   const stateTrace = await traceCubeState({ scramble, solution: solutionAlg });
+  const segmentation = providedSegments.length
+    ? {
+      source: "provided",
+      method: "manual",
+      confidence: 1
+    }
+    : inferCf4opSegments({ moves, stateTrace });
+  const parsedSegments = providedSegments.length ? providedSegments : segmentation.segments;
+  const validation = providedSegments.length
+    ? validateSegmentAlignment(moves, providedSegments)
+    : {
+      ok: true,
+      warnings: []
+    };
+  const segments = assignSegments(moves, parsedSegments, pauseThresholdMs);
   const segmentsWithState = attachSegmentStates(segments, stateTrace);
   const baseReview = {
     puzzle,
@@ -32,6 +46,7 @@ export async function createSolveReview({
       segmentedSolution
     },
     summary: buildSummary(moves, pauseThresholdMs),
+    segmentation,
     validation,
     moves,
     segments: segmentsWithState,
@@ -114,10 +129,7 @@ function assignSegments(moves, parsedSegments, pauseThresholdMs) {
       durationMs,
       tps: calculateTps(segmentMoves.length, durationMs),
       pauses: segmentMoves.filter((move) => move.deltaMs >= pauseThresholdMs),
-      playback: {
-        url: buildAlgCubingNetUrl({ alg: segment.moves.join(" ") }),
-        bbcode: buildPlaybackBBCode({ alg: segment.moves.join(" "), label: segment.label })
-      }
+      playback: buildSegmentPlayback(segment)
     };
   });
 }
@@ -195,4 +207,16 @@ function calculateTps(moveCount, durationMs) {
     return 0;
   }
   return Number((moveCount / (durationMs / 1000)).toFixed(2));
+}
+
+function buildSegmentPlayback(segment) {
+  const alg = segment.moves.join(" ");
+  if (!alg) {
+    return null;
+  }
+
+  return {
+    url: buildAlgCubingNetUrl({ alg }),
+    bbcode: buildPlaybackBBCode({ alg, label: segment.label })
+  };
 }

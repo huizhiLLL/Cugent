@@ -95,7 +95,7 @@ function composeSegmentInspectionResponse({ segment, stage, suggestions }) {
     text: `我看了 ${segment.label} 这一段，下面是基于工具结果的局部证据。`,
     evidence,
     highlights: suggestions.map(formatSuggestion),
-    playback: segment.playback.bbcode,
+    playback: segment.playback?.bbcode ?? null,
     nextActions: [
       "可以继续要求对比候选公式。",
       "也可以打开这段的播放链接逐步看状态变化。"

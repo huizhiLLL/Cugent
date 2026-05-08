@@ -1,5 +1,6 @@
 import { Alg } from "cubing/alg";
 import { cube3x3x3 } from "cubing/puzzles";
+import { getCf4opProgressByOrientation } from "./cfop-progress.js";
 
 export async function traceCubeState({ scramble, solution, includeTimeline = true }) {
   assertAlg("scramble", scramble);
@@ -63,8 +64,11 @@ function assertAlg(name, alg) {
 
 function patternSnapshot(pattern) {
   const patternData = pattern.toJSON().patternData;
+  const cf4opProgressByOrientation = getCf4opProgressByOrientation(pattern);
   return {
     patternData,
+    cf4opProgress: Math.min(...cf4opProgressByOrientation),
+    cf4opProgressByOrientation,
     stateHash: JSON.stringify(patternData),
     isSolved: pattern.experimentalIsSolved({})
   };

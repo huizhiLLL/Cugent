@@ -1,5 +1,6 @@
 export { listAlgorithmSets, searchAlgorithms } from "./algorithm-search.js";
 export { analyzeCFOP } from "./cfop-analyzer.js";
+export { inferCf4opSegments } from "./cfop-inference.js";
 export { generateCoachSuggestions } from "./coach-suggestions.js";
 export { parsePlainAlgMoves, parseSegmentedSolution, parseTimedMoves } from "./parsers.js";
 export { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";

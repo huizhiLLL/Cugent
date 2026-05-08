@@ -4,6 +4,7 @@ import {
   buildPlaybackBBCode,
   createSolveReview,
   invertAlg,
+  inferCf4opSegments,
   parseSegmentedSolution,
   parseTimedMoves,
   generateCoachSuggestions,
@@ -113,6 +114,72 @@ R' // PLL
   assert.equal(review.cfopAnalysis.summary.finalSolved, true);
 });
 
+test("inferCf4opSegments splits segments from monotonic cf4op progress", () => {
+  const moves = ["D", "R", "U", "L", "F", "B", "U'"].map((move, index) => ({
+    index,
+    move,
+    timestampMs: index * 120,
+    deltaMs: index === 0 ? 0 : 120,
+    segmentId: null
+  }));
+  const orientationTrace = [7, 6, 5, 4, 3, 2, 1, 0];
+  const stateTrace = {
+    final: { isSolved: true },
+    afterScramble: {
+      cf4opProgressByOrientation: [orientationTrace[0]]
+    },
+    timeline: orientationTrace.slice(1).map((progress) => ({
+      cf4opProgressByOrientation: [progress]
+    }))
+  };
+
+  const inferred = inferCf4opSegments({ moves, stateTrace });
+
+  assert.equal(inferred.orientationIndex, 0);
+  assert.deepEqual(
+    inferred.segments.map((segment) => segment.label),
+    ["Cross", "F2L 1", "F2L 2", "F2L 3", "F2L 4", "OLL", "PLL"]
+  );
+  assert.deepEqual(
+    inferred.segments.map((segment) => segment.moveCount),
+    [1, 1, 1, 1, 1, 1, 1]
+  );
+});
+
+test("inferCf4opSegments prefers stable orientation trace", () => {
+  const moves = ["R", "U", "R'", "U'"].map((move, index) => ({
+    index,
+    move,
+    timestampMs: index * 100,
+    deltaMs: index === 0 ? 0 : 100,
+    segmentId: null
+  }));
+  const stateTrace = {
+    final: { isSolved: false },
+    afterScramble: {
+      cf4opProgressByOrientation: [7, 3]
+    },
+    timeline: [
+      { cf4opProgressByOrientation: [7, 7] },
+      { cf4opProgressByOrientation: [6, 7] },
+      { cf4opProgressByOrientation: [5, 7] },
+      { cf4opProgressByOrientation: [5, 0] }
+    ]
+  };
+
+  const inferred = inferCf4opSegments({ moves, stateTrace });
+
+  assert.equal(inferred.orientationIndex, 0);
+  assert.deepEqual(
+    inferred.progressTrace.map((entry) => entry.progress),
+    [7, 7, 6, 5, 5]
+  );
+  assert.deepEqual(
+    inferred.segments.map((segment) => segment.label),
+    ["Cross", "F2L 1", "F2L 2"]
+  );
+});
+
 test("searchAlgorithms filters by set, caseId and tags", () => {
   const result = searchAlgorithms({ set: "OLL", caseId: "27", tags: ["right-hand"] });
 
@@ -144,6 +211,19 @@ U' R' // F2L 1
   assert.ok(suggestions.some((suggestion) => suggestion.type === "stage-goal"));
   assert.ok(suggestions.some((suggestion) => suggestion.type === "pause"));
   assert.ok(suggestions.some((suggestion) => suggestion.type === "algorithm-candidates"));
+});
+
+test("createSolveReview infers cf4op segmentation when segmentedSolution is missing", async () => {
+  const review = await createSolveReview({
+    scramble: "R U",
+    timedMoves: "U'@0 R'@100"
+  });
+
+  assert.equal(review.segmentation.source, "inferred-cf4op");
+  assert.equal(review.segmentation.method, "cf4op");
+  assert.equal(review.validation.ok, true);
+  assert.equal(review.validation.warnings.length, 0);
+  assert.ok(review.segments.length >= 1);
 });
 
 test("detectIntent detects solve imports", () => {

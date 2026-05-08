@@ -27,6 +27,7 @@
 - 组装 `SolveReview` 结构，计算 move count、耗时、TPS 和停顿。
 - 使用 `cubing.js` 追踪 scramble + solution 的 3x3 状态。
 - 为每个分段记录进入前和结束后的 cube state。
+- 在缺少 `segmentedSolution` 时，基于时间线状态自动推断第一版 `cf4op` 阶段。
 - 校验分段文本与时间戳 moves 是否对齐。
 - 输出第一版 `cfopAnalysis`：Cross/F2L/OLL/PLL 阶段目标验证。
 - 提供小型本地 F2L/OLL/PLL 公式快照和 `searchAlgorithms` 检索工具。
@@ -49,6 +50,8 @@ npm run agent:poc
 `npm run dev` 会启动本地 Web 客户端，默认地址是 `http://127.0.0.1:5173`。
 `npm run poc` 会运行内置样例，输出结构化复盘摘要和播放链接。
 `npm run agent:poc` 会演示轻量 agent runtime 的三条路径：solve 导入、公式查询、局部追问。
+
+`segmentedSolution` 现在是可选字段；当只提供 `scramble + timedMoves` 时，工具会自动尝试推断 `Cross / F2L 1..4 / OLL / PLL` 阶段，并给出置信度。
 
 ## 计划中的客户端形态
 

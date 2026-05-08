@@ -89,6 +89,7 @@ Cubing Domain Tools
 - cube state tracing。
 - 分段前后状态快照。
 - 分段与时间戳序列的对齐校验。
+- 无分段输入时的 `cf4op` 自动阶段推断。
 - CFOP 阶段分析。
 - 公式检索。
 - 结构化教练建议。
@@ -142,6 +143,18 @@ PoC 阶段需要的流程是：
 
 它暂不做 F2L case 识别、OLL/PLL case 命名或公式推荐。
 
+### 无分段输入先做 `cf4op` 推断
+
+当用户只提供 `scramble + timedMoves` 时，当前 `createSolveReview` 会：
+
+- 先用 `cubing.js` 生成逐步 `stateTrace.timeline`。
+- 把每一步状态转换为 3x3 facelet 视图。
+- 参考 csTimer 的 mask 思路计算 `cf4op` progress。
+- 在 24 个固定视角中选择一条整体最稳定的 progress 轨迹。
+- 按 progress 下降点自动切出 `Cross / F2L 1 / F2L 2 / F2L 3 / F2L 4 / OLL / PLL`。
+
+该推断结果会写入 `review.segmentation`，包含 `source`、`method`、`confidence` 与 `progressTrace`，供后续 agent 和前端展示使用。
+
 ### 教练建议是结构化证据，不是最终话术
 
 `coachSuggestions` 会综合输入校验、阶段目标、停顿、TPS 和公式候选，生成建议对象。每条建议包含 type、priority、target、evidence、action，供 Agent/LLM 在 chat 中组织成自然语言回答。
@@ -163,6 +176,8 @@ PoC 阶段需要的流程是：
 - `src/cubing-tools/parsers.js`：时间戳 moves 与分段文本解析。
 - `src/cubing-tools/playback-url.js`：播放链接和 BBCode 生成。
 - `src/cubing-tools/state-tracer.js`：基于 `cubing.js` 的 3x3 状态追踪。
+- `src/cubing-tools/cfop-progress.js`：3x3 facelet 视图下的 `cf4op` progress 计算。
+- `src/cubing-tools/cfop-inference.js`：无分段输入的 `cf4op` 自动阶段推断。
 - `src/cubing-tools/cfop-analyzer.js`：CFOP 阶段目标验证。
 - `src/cubing-tools/algorithm-search.js`：本地公式库检索。
 - `src/cubing-tools/coach-suggestions.js`：结构化教练建议生成。
