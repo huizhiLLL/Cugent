@@ -29,7 +29,7 @@ const ORIENTATION_ALGS = [
 
 const reidEdgeOrder = "UF UR UB UL DF DR DB DL FR FL BR BL".split(" ");
 const reidCornerOrder = "UFR URB UBL ULF DRF DFL DLB DBR".split(" ");
-const centerOrder = "U L F R B D".split(" ");
+const faceNames = "ULFRBD".split("");
 const faceletMap = [
   [1, 2, 0], [0, 2, 0], [1, 1, 0],
   [0, 3, 0], [2, 0, 0], [0, 1, 0],
@@ -98,17 +98,30 @@ export function getCf4opProgressFromPatternData(patternData) {
 }
 
 function patternDataToFacelet(patternData) {
+  const faceMap = buildOriginalToCurrentFaceMap(patternData);
+  const mapSticker = (sticker) => sticker.split("").map((face) => faceMap[face]).join("");
   const reid = [
     patternData.EDGES.pieces.map((piece, index) => (
-      rotateLeft(reidEdgeOrder[piece], patternData.EDGES.orientation[index])
+      mapSticker(rotateLeft(reidEdgeOrder[piece], patternData.EDGES.orientation[index]))
     )),
     patternData.CORNERS.pieces.map((piece, index) => (
-      rotateLeft(reidCornerOrder[piece], patternData.CORNERS.orientation[index])
+      mapSticker(rotateLeft(reidCornerOrder[piece], patternData.CORNERS.orientation[index]))
     )),
-    centerOrder
+    faceNames
   ];
 
   return faceletMap.map(([orbit, perm, orientation]) => reid[orbit][perm][orientation]).join("");
+}
+
+function buildOriginalToCurrentFaceMap(patternData) {
+  const faceMap = {};
+
+  for (let currentFaceIndex = 0; currentFaceIndex < faceNames.length; currentFaceIndex += 1) {
+    const originalFaceIndex = patternData.CENTERS.pieces[currentFaceIndex];
+    faceMap[faceNames[originalFaceIndex]] = faceNames[currentFaceIndex];
+  }
+
+  return faceMap;
 }
 
 function rotateLeft(value, amount) {

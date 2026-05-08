@@ -126,16 +126,18 @@ test("inferCf4opSegments splits segments from monotonic cf4op progress", () => {
   const stateTrace = {
     final: { isSolved: true },
     afterScramble: {
+      cf4opProgress: orientationTrace[0],
       cf4opProgressByOrientation: [orientationTrace[0]]
     },
     timeline: orientationTrace.slice(1).map((progress) => ({
+      cf4opProgress: progress,
       cf4opProgressByOrientation: [progress]
     }))
   };
 
   const inferred = inferCf4opSegments({ moves, stateTrace });
 
-  assert.equal(inferred.orientationIndex, 0);
+  assert.equal(inferred.orientationIndex, null);
   assert.deepEqual(
     inferred.segments.map((segment) => segment.label),
     ["Cross", "F2L 1", "F2L 2", "F2L 3", "F2L 4", "OLL", "PLL"]
@@ -146,7 +148,7 @@ test("inferCf4opSegments splits segments from monotonic cf4op progress", () => {
   );
 });
 
-test("inferCf4opSegments prefers stable orientation trace", () => {
+test("inferCf4opSegments ignores progress rebounds after earlier breakthroughs", () => {
   const moves = ["R", "U", "R'", "U'"].map((move, index) => ({
     index,
     move,
@@ -157,26 +159,27 @@ test("inferCf4opSegments prefers stable orientation trace", () => {
   const stateTrace = {
     final: { isSolved: false },
     afterScramble: {
+      cf4opProgress: 7,
       cf4opProgressByOrientation: [7, 3]
     },
     timeline: [
-      { cf4opProgressByOrientation: [7, 7] },
-      { cf4opProgressByOrientation: [6, 7] },
-      { cf4opProgressByOrientation: [5, 7] },
-      { cf4opProgressByOrientation: [5, 0] }
+      { cf4opProgress: 7, cf4opProgressByOrientation: [7, 7] },
+      { cf4opProgress: 6, cf4opProgressByOrientation: [6, 7] },
+      { cf4opProgress: 7, cf4opProgressByOrientation: [5, 7] },
+      { cf4opProgress: 5, cf4opProgressByOrientation: [5, 0] }
     ]
   };
 
   const inferred = inferCf4opSegments({ moves, stateTrace });
 
-  assert.equal(inferred.orientationIndex, 0);
+  assert.equal(inferred.orientationIndex, null);
   assert.deepEqual(
     inferred.progressTrace.map((entry) => entry.progress),
-    [7, 7, 6, 5, 5]
+    [7, 7, 6, 7, 5]
   );
   assert.deepEqual(
     inferred.segments.map((segment) => segment.label),
-    ["Cross", "F2L 1", "F2L 2"]
+    ["Cross", "F2L 1"]
   );
 });
 
