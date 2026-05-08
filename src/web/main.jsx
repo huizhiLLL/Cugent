@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
-import { FileInput, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Search, Sparkles } from "lucide-react";
+import { FileInput, Menu, MessageSquarePlus, Search, Sparkles } from "lucide-react";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Thread } from "@/components/thread";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import { invertAlg } from "../cubing-tools/index.js";
 import { runAgentTurn } from "../agent-runtime/index.js";
 import "./styles.css";
@@ -96,7 +95,8 @@ function App() {
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [context, setContext] = useState({});
   const [busy, setBusy] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+  const pointerStartRef = useRef(null);
 
   async function submitMessage(nextInput, { appendUser = true } = {}) {
     const trimmed = nextInput.trim();
@@ -152,7 +152,21 @@ function App() {
     setSmartInput(sampleSmartInput);
     setActionDialogOpen(false);
     setSmartDialogOpen(false);
+    closeMobileHistory();
     setContext({});
+  }
+
+  function openDemoConversation() {
+    setMessages(demoMessages);
+    closeMobileHistory();
+  }
+
+  function closeMobileHistory() {
+    const drawer = document.querySelector(".mobile-history-drawer");
+    if (drawer?.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    setMobileHistoryOpen(false);
   }
 
   function updateSmartInput(field, value) {
@@ -184,21 +198,73 @@ ${smartInput.segmentedSolution}`.trim();
     void submitMessage(text);
   }
 
+  function handleEdgePointerDown(event) {
+    if (window.innerWidth > 720 || event.clientX > 24 || mobileHistoryOpen) {
+      pointerStartRef.current = null;
+      return;
+    }
+    pointerStartRef.current = {
+      kind: "edge",
+      x: event.clientX,
+      y: event.clientY
+    };
+  }
+
+  function handleEdgePointerUp(event) {
+    const start = pointerStartRef.current;
+    pointerStartRef.current = null;
+    if (!start || start.kind !== "edge") {
+      return;
+    }
+
+    const deltaX = event.clientX - start.x;
+    const deltaY = Math.abs(event.clientY - start.y);
+    if (deltaX > 64 && deltaY < 48) {
+      setMobileHistoryOpen(true);
+    }
+  }
+
+  function handleDrawerPointerDown(event) {
+    pointerStartRef.current = {
+      kind: "drawer",
+      x: event.clientX,
+      y: event.clientY
+    };
+  }
+
+  function handleDrawerPointerUp(event) {
+    const start = pointerStartRef.current;
+    pointerStartRef.current = null;
+    if (!start || start.kind !== "drawer") {
+      return;
+    }
+
+    const deltaX = event.clientX - start.x;
+    const deltaY = Math.abs(event.clientY - start.y);
+    if (deltaX < -64 && deltaY < 56) {
+      closeMobileHistory();
+    }
+  }
+
   return (
     <TooltipProvider>
-      <main className={cn("app-shell", sidebarCollapsed && "sidebar-collapsed")}>
-        <aside className="sidebar" aria-label="Conversation Sidebar" aria-expanded={!sidebarCollapsed}>
+      <main
+        className="app-shell"
+        onPointerDown={handleEdgePointerDown}
+        onPointerUp={handleEdgePointerUp}>
+        <aside className="sidebar" aria-label="Conversation Sidebar">
           <div className="sidebar-brand">
-            <span className="sidebar-label">CubeAgent</span>
             <TooltipIconButton
               type="button"
-              className="collapse-button"
-              tooltip={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
-              aria-label={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
-              onClick={() => setSidebarCollapsed((value) => !value)}
+              className="mobile-menu-button"
+              tooltip="打开对话历史"
+              aria-label="打开对话历史"
+              aria-expanded={mobileHistoryOpen}
+              onClick={() => setMobileHistoryOpen(true)}
             >
-              {sidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+              <Menu />
             </TooltipIconButton>
+            <span className="sidebar-label brand-title">Cugent</span>
           </div>
           <nav className="sidebar-nav">
             <Button type="button" variant="ghost" className="sidebar-action" onClick={createConversation} title="新建对话">
@@ -213,7 +279,7 @@ ${smartInput.segmentedSolution}`.trim();
                   variant={index === 0 ? "secondary" : "ghost"}
                   className="history-item"
                   title={title}
-                  onClick={() => setMessages(demoMessages)}
+                  onClick={openDemoConversation}
                 >
                   <span className="sidebar-label">{title}</span>
                 </Button>
@@ -221,6 +287,46 @@ ${smartInput.segmentedSolution}`.trim();
             </div>
           </nav>
         </aside>
+
+        <div
+          className="mobile-history-backdrop"
+          data-open={mobileHistoryOpen}
+          aria-hidden={!mobileHistoryOpen}
+          onClick={closeMobileHistory}
+        >
+          <aside
+            className="mobile-history-drawer"
+            aria-label="移动端对话历史"
+            aria-hidden={!mobileHistoryOpen}
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={handleDrawerPointerDown}
+            onPointerUp={handleDrawerPointerUp}
+          >
+            <div className="mobile-drawer-brand">
+              <span className="brand-title">Cugent</span>
+            </div>
+            <nav className="mobile-drawer-nav">
+              <Button type="button" variant="ghost" className="sidebar-action" onClick={createConversation}>
+                <MessageSquarePlus data-icon="inline-start" />
+                <span>新建对话</span>
+              </Button>
+              <div className="conversation-history" aria-label="对话历史">
+                {demoConversationTitles.map((title, index) => (
+                  <Button
+                    key={title}
+                    type="button"
+                    variant={index === 0 ? "secondary" : "ghost"}
+                    className="history-item"
+                    title={title}
+                    onClick={openDemoConversation}
+                  >
+                    <span>{title}</span>
+                  </Button>
+                ))}
+              </div>
+            </nav>
+          </aside>
+        </div>
 
         <section className="chat-pane" aria-label="Chat">
           <AssistantRuntimeProvider runtime={runtime}>
