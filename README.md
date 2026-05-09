@@ -67,6 +67,9 @@ https://api.huizhi.ink/v1/chat/completions
 - `solve-import`、`algorithm-query`、`local-followup` 先走本地确定性工具。
 - `chat` 直接交给真实 LLM。
 - 非错误型工具结果也会把 `toolResult`、`response-composer` 的 fallback 回复和当前 context 一起发给 LLM，让模型只负责自然语言组织，而不负责判断魔方事实。
+- 当前前端已支持基于 OpenAI 兼容 `chat/completions` 的 streaming。
+- prompt 已按 `chat / solve-import / algorithm-query / local-followup` 做第一版分层。
+- 前端会区分配置缺失、鉴权失败、限流、超时、网络或 CORS 等常见 LLM 错误，并在失败时回退到本地 fallback 回复。
 - 若兼容接口不可用、未配置 API Key、CORS 不允许或模型调用失败，则继续展示本地 fallback 回复。
 
 `npm run dev` 会启动本地 Web 客户端，默认地址是 `http://127.0.0.1:5173`。

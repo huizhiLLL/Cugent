@@ -1,5 +1,5 @@
 import { ComposerAttachments, UserMessageAttachments } from "@/components/attachment";
-import { CubeResponseDetails } from "@/components/cube-response-details";
+import { CubeResponseToolCall } from "@/components/cube-response-details";
 import { MarkdownText } from "@/components/markdown-text";
 import {
   Reasoning,
@@ -8,7 +8,6 @@ import {
   ReasoningText,
   ReasoningTrigger,
 } from "@/components/reasoning";
-import { ToolFallback } from "@/components/tool-fallback";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,10 +34,11 @@ import {
   PencilIcon,
   RefreshCwIcon,
   SquareIcon,
+  Trash2Icon,
   PlusIcon,
 } from "lucide-react";
 
-export const Thread = ({ onOpenSmartCube }) => {
+export const Thread = ({ onOpenSmartCube, onDeleteMessage }) => {
   return (
     <ThreadPrimitive.Root
       className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
@@ -62,7 +62,7 @@ export const Thread = ({ onOpenSmartCube }) => {
               data-slot="aui_message-group"
               className="mb-10 flex flex-col gap-y-8 empty:hidden">
               <ThreadPrimitive.Messages>
-                {() => <ThreadMessage />}
+                {() => <ThreadMessage onDeleteMessage={onDeleteMessage} />}
               </ThreadPrimitive.Messages>
             </div>
 
@@ -78,13 +78,13 @@ export const Thread = ({ onOpenSmartCube }) => {
   );
 };
 
-const ThreadMessage = () => {
+const ThreadMessage = ({ onDeleteMessage }) => {
   const role = useAuiState((s) => s.message.role);
   const isEditing = useAuiState((s) => s.message.composer.isEditing);
 
   if (isEditing) return <EditComposer />;
-  if (role === "user") return <UserMessage />;
-  return <AssistantMessage />;
+  if (role === "user") return <UserMessage onDeleteMessage={onDeleteMessage} />;
+  return <AssistantMessage onDeleteMessage={onDeleteMessage} />;
 };
 
 const ThreadScrollToBottom = () => {
@@ -188,28 +188,22 @@ const MessageError = () => {
   );
 };
 
-const AssistantMessage = () => {
-  // reserves space for action bar and compensates with `-mb` for consistent msg spacing
-  // keeps hovered action bar from shifting layout (autohide doesn't support absolute positioning well)
-  // for pt-[n] use -mb-[n + 6] & min-h-[n + 6] to preserve compensation
-  const ACTION_BAR_PT = "pt-1.5";
-  const ACTION_BAR_HEIGHT = `-mb-7.5 min-h-7.5 ${ACTION_BAR_PT}`;
+const AssistantMessage = ({ onDeleteMessage }) => {
   const cubeResponse = useAuiState((s) => s.message.metadata.custom?.cubeResponse);
 
   return (
     <MessagePrimitive.Root
       data-slot="aui_assistant-message-root"
       data-role="assistant"
-      className="fade-in slide-in-from-bottom-1 relative animate-in duration-150 [contain-intrinsic-size:auto_300px] [content-visibility:auto]">
+      className="aui-assistant-message-shell fade-in slide-in-from-bottom-1 relative animate-in duration-150 [contain-intrinsic-size:auto_300px] [content-visibility:auto]">
       <div
         data-slot="aui_assistant-message-content"
         className="wrap-break-word px-2 text-foreground leading-relaxed">
+        {shouldRenderCubeToolCall(cubeResponse) ? <CubeResponseToolCall response={cubeResponse} /> : null}
         <MessagePrimitive.GroupedParts
           groupBy={(part) => {
             if (part.type === "reasoning")
               return ["group-chainOfThought", "group-reasoning"];
-            if (part.type === "tool-call")
-              return ["group-chainOfThought", "group-tool"];
             return null;
           }}>
           {({ part, children }) => {
@@ -227,40 +221,44 @@ const AssistantMessage = () => {
                   </ReasoningRoot>
                 );
               }
-              case "group-tool":
-                return children;
               case "text":
                 return <MarkdownText />;
               case "reasoning":
                 return <Reasoning {...part} />;
-              case "tool-call":
-                return part.toolUI ?? <ToolFallback {...part} />;
               default:
                 return null;
             }
           }}
         </MessagePrimitive.GroupedParts>
-        {cubeResponse ? <CubeResponseDetails response={cubeResponse} /> : null}
         <MessageError />
       </div>
       <div
         data-slot="aui_assistant-message-footer"
-        className={cn("ms-2 flex items-center", ACTION_BAR_HEIGHT)}>
+        className="aui-assistant-message-footer ms-2 flex items-center">
         <BranchPicker />
-        <AssistantActionBar />
+        <AssistantActionBar onDeleteMessage={onDeleteMessage} />
       </div>
     </MessagePrimitive.Root>
   );
 };
 
-const AssistantActionBar = () => {
+function shouldRenderCubeToolCall(response) {
+  return Boolean(
+    response
+    && response.kind !== "chat-fallback"
+    && response.kind !== "error"
+  );
+}
+
+const AssistantActionBar = ({ onDeleteMessage }) => {
+  const messageId = useAuiState((s) => s.message.id);
+
   return (
     <ActionBarPrimitive.Root
       hideWhenRunning
-      autohide="not-last"
       className="aui-assistant-action-bar-root col-start-3 row-start-2 -ms-1 flex gap-1 text-muted-foreground">
       <ActionBarPrimitive.Copy asChild>
-        <TooltipIconButton tooltip="Copy">
+        <TooltipIconButton>
           <AuiIf condition={(s) => s.message.isCopied}>
             <CheckIcon />
           </AuiIf>
@@ -270,13 +268,16 @@ const AssistantActionBar = () => {
         </TooltipIconButton>
       </ActionBarPrimitive.Copy>
       <ActionBarPrimitive.Reload asChild>
-        <TooltipIconButton tooltip="Refresh">
+        <TooltipIconButton>
           <RefreshCwIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.Reload>
+      <TooltipIconButton onClick={() => onDeleteMessage?.(messageId)}>
+        <Trash2Icon />
+      </TooltipIconButton>
       <ActionBarMorePrimitive.Root>
         <ActionBarMorePrimitive.Trigger asChild>
-          <TooltipIconButton tooltip="More" className="data-[state=open]:bg-accent">
+          <TooltipIconButton className="data-[state=open]:bg-accent">
             <MoreHorizontalIcon />
           </TooltipIconButton>
         </ActionBarMorePrimitive.Trigger>
@@ -297,11 +298,11 @@ const AssistantActionBar = () => {
   );
 };
 
-const UserMessage = () => {
+const UserMessage = ({ onDeleteMessage }) => {
   return (
     <MessagePrimitive.Root
       data-slot="aui_user-message-root"
-      className="fade-in slide-in-from-bottom-1 grid animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [contain-intrinsic-size:auto_60px] [content-visibility:auto] [&:where(>*)]:col-start-2"
+      className="aui-user-message-shell fade-in slide-in-from-bottom-1 grid animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [contain-intrinsic-size:auto_60px] [content-visibility:auto] [&:where(>*)]:col-start-2"
       data-role="user">
       <UserMessageAttachments />
       <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
@@ -309,10 +310,14 @@ const UserMessage = () => {
           className="aui-user-message-content wrap-break-word peer rounded-2xl bg-muted px-4 py-2.5 text-foreground empty:hidden">
           <MessagePrimitive.Parts />
         </div>
-        <div
-          className="aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">
-          <UserActionBar />
+        <div className="aui-user-message-footer">
+          <div className="aui-user-action-bar-wrapper peer-empty:hidden">
+            <UserActionBar onDeleteMessage={onDeleteMessage} />
+          </div>
         </div>
+      </div>
+      <div className="aui-user-message-footer-spacer col-start-2" aria-hidden="true">
+        <div className="aui-user-action-bar-wrapper-placeholder" />
       </div>
       <BranchPicker
         data-slot="aui_user-branch-picker"
@@ -321,17 +326,32 @@ const UserMessage = () => {
   );
 };
 
-const UserActionBar = () => {
+const UserActionBar = ({ onDeleteMessage }) => {
+  const messageId = useAuiState((s) => s.message.id);
+
   return (
     <ActionBarPrimitive.Root
       hideWhenRunning
       autohide="not-last"
       className="aui-user-action-bar-root flex flex-col items-end">
+      <ActionBarPrimitive.Copy asChild>
+        <TooltipIconButton className="aui-user-action-copy p-4">
+          <AuiIf condition={(s) => s.message.isCopied}>
+            <CheckIcon />
+          </AuiIf>
+          <AuiIf condition={(s) => !s.message.isCopied}>
+            <CopyIcon />
+          </AuiIf>
+        </TooltipIconButton>
+      </ActionBarPrimitive.Copy>
       <ActionBarPrimitive.Edit asChild>
-        <TooltipIconButton tooltip="Edit" className="aui-user-action-edit p-4">
+        <TooltipIconButton className="aui-user-action-edit p-4">
           <PencilIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.Edit>
+      <TooltipIconButton className="aui-user-action-delete p-4" onClick={() => onDeleteMessage?.(messageId)}>
+        <Trash2Icon />
+      </TooltipIconButton>
     </ActionBarPrimitive.Root>
   );
 };

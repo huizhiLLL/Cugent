@@ -1,19 +1,20 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { ChevronDown, Eye, Play } from "lucide-react";
+import { ToolFallback } from "@/components/tool-fallback";
 import "cubing/twisty";
 
 export function CubeResponseDetails({ response }) {
   return (
     <div className="response-details">
       {response.evidence?.length > 0 && (
-        <ul>
+        <ul className="response-details-block response-details-evidence">
           {response.evidence.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
       )}
       {response.highlights?.length > 0 && (
-        <div className="mini-section">
+        <div className="mini-section response-details-block response-details-highlights">
           {response.highlights.map((item) => (
             <div className="highlight" key={item.id}>
               <strong>{item.title}</strong>
@@ -24,7 +25,7 @@ export function CubeResponseDetails({ response }) {
         </div>
       )}
       {response.candidates?.length > 0 && (
-        <div className="mini-section">
+        <div className="mini-section response-details-block response-details-candidates">
           {response.candidates.map((candidate) => (
             <div className="candidate" key={candidate.id}>
               <strong>{candidate.name}</strong>
@@ -33,7 +34,42 @@ export function CubeResponseDetails({ response }) {
           ))}
         </div>
       )}
-      {response.playback && <TwistyPreview playback={response.playback} title="预览" />}
+      {response.playback ? (
+        <div className="response-details-block response-details-playback">
+          <TwistyPreview playback={response.playback} title="预览" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function CubeResponseToolCall({ response, toolName = "分析结果详情" }) {
+  return (
+    <ToolFallback.Root defaultOpen className="cube-tool-call fade-in slide-in-from-bottom-1 animate-in duration-200">
+      <ToolFallback.Trigger
+        toolName={toolName}
+        status={{ type: "complete", reason: "stop" }}
+      />
+      <ToolFallback.Content>
+        <div className="px-4 pb-1">
+          <CubeResponseDetails response={response} />
+        </div>
+      </ToolFallback.Content>
+    </ToolFallback.Root>
+  );
+}
+
+function LlmStatus({ response }) {
+  const llm = response.llm;
+  const label = formatLlmStatus(llm);
+
+  if (!label) {
+    return null;
+  }
+
+  return (
+    <div className={`llm-status llm-status-${llm.status ?? "unknown"}`}>
+      {label}
     </div>
   );
 }
@@ -118,4 +154,28 @@ function parsePlayback(playback) {
 
 function decodeAlgParam(value) {
   return value.replace(/_/g, " ").replace(/-/g, "'");
+}
+
+function formatLlmStatus(llm) {
+  if (!llm) {
+    return "";
+  }
+
+  if (llm.status === "running") {
+    return `LLM 正在生成${llm.model ? ` · ${llm.model}` : ""}`;
+  }
+
+  if (llm.status === "complete") {
+    return `LLM 已生成${llm.model ? ` · ${llm.model}` : ""}${llm.streaming ? " · streaming" : ""}`;
+  }
+
+  if (llm.status === "cancelled") {
+    return "已停止生成，保留当前内容。";
+  }
+
+  if (llm.status === "fallback") {
+    return `LLM 调用失败，已退回本地摘要：${llm.error?.message ?? "未知原因"}`;
+  }
+
+  return "";
 }

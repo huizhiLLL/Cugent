@@ -18,9 +18,10 @@ import {
   searchAlgorithms,
   traceCubeState
 } from "../src/cubing-tools/index.js";
-import { buildPromptMessages, composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
+import { buildChatCompletionMessages, buildPromptMessages, composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
+import { createEmptyConversation, deriveConversationTitle, sanitizeChatState } from "../src/web/chat-storage.js";
 import { defaultLlmSettings, sanitizeLlmSettings } from "../src/web/llm-settings.js";
-import { extractChatCompletionText, joinChatCompletionsUrl } from "../src/agent-runtime/index.js";
+import { extractChatCompletionText, joinChatCompletionsUrl, LlmClientError } from "../src/agent-runtime/index.js";
 
 test("parseTimedMoves parses cstimer style review field", () => {
   const moves = parseTimedMoves(`["U'@0 R@125 L2@389","333"]`);
@@ -563,14 +564,16 @@ test("runAgentTurn keeps fallback response when llm enhancer fails", async () =>
     {},
     {
       responseEnhancer: async () => {
-        throw new Error("network");
+        throw new LlmClientError("LLM_NETWORK_OR_CORS", "跨域失败");
       }
     }
   );
 
   assert.equal(turn.intent.type, "chat");
   assert.equal(turn.response.kind, "chat-fallback");
-  assert.equal(turn.response.text, turn.fallbackResponse.text);
+  assert.match(turn.response.text, /聊天模型接口当前无法从浏览器直接访问/);
+  assert.equal(turn.response.llm.status, "fallback");
+  assert.equal(turn.response.llm.error.code, "LLM_NETWORK_OR_CORS");
 });
 
 test("runAgentTurn uses llm response enhancer for solve import narration", async () => {
@@ -597,6 +600,43 @@ U' R' // F2L 1
   assert.equal(turn.toolResult.type, "solve-review");
   assert.equal(turn.response.text, "LLM:solve-review");
   assert.equal(turn.fallbackResponse.kind, "solve-review");
+});
+
+test("runAgentTurn exposes fallback turn before llm enhancement", async () => {
+  const snapshots = [];
+  const turn = await runAgentTurn(
+    "给我一个右手 no-rotation 的 OLL 27 公式",
+    {},
+    {
+      onTurnReady: (readyTurn) => {
+        snapshots.push(readyTurn);
+      },
+      responseEnhancer: async ({ fallbackResponse }) => ({
+        ...fallbackResponse,
+        text: "LLM:algorithm-search"
+      })
+    }
+  );
+
+  assert.equal(snapshots.length, 1);
+  assert.equal(snapshots[0].toolResult.type, "algorithm-search");
+  assert.equal(snapshots[0].response.kind, "algorithm-search");
+  assert.equal(turn.response.text, "LLM:algorithm-search");
+});
+
+test("assistant-ui style reload parentId points to the user message itself", () => {
+  const messages = [
+    { id: "u1", role: "user", text: "first" },
+    { id: "a1", role: "assistant", text: "reply" }
+  ];
+
+  const parentId = messages[0].id;
+  const userIndex = parentId
+    ? messages.findIndex((item) => item.id === parentId)
+    : 0;
+
+  assert.equal(userIndex, 0);
+  assert.equal(messages[userIndex].role, "user");
 });
 
 test("composeResponse handles chat fallback", () => {
@@ -652,6 +692,50 @@ test("buildPromptMessages includes tool result and fallback response", () => {
   assert.match(messages[1].content[0].text, /fallback/);
 });
 
+test("buildPromptMessages uses intent-specific prompt profile", () => {
+  const messages = buildPromptMessages({
+    message: "给我一个 OLL 27 公式",
+    context: {},
+    turn: {
+      intent: { type: "algorithm-query" },
+      toolCalls: [],
+      toolResult: {
+        type: "algorithm-search",
+        result: {
+          total: 1,
+          query: { set: "OLL", caseId: "27", tags: [] },
+          results: []
+        }
+      }
+    },
+    fallbackResponse: {
+      kind: "algorithm-search",
+      text: "本地公式库命中 1 条候选。"
+    }
+  });
+
+  assert.match(messages[0].content[0].text, /解释公式候选/);
+  assert.match(messages[1].content[0].text, /像教练推荐公式/);
+});
+
+test("buildChatCompletionMessages flattens prompt parts to plain string content", () => {
+  const messages = buildChatCompletionMessages([
+    {
+      role: "system",
+      content: [{ type: "input_text", text: "system text" }]
+    },
+    {
+      role: "user",
+      content: [{ type: "input_text", text: "user text" }]
+    }
+  ]);
+
+  assert.deepEqual(messages, [
+    { role: "system", content: "system text" },
+    { role: "user", content: "user text" }
+  ]);
+});
+
 test("sanitizeLlmSettings trims baseUrl and keeps explicit values", () => {
   const settings = sanitizeLlmSettings({
     enabled: true,
@@ -672,6 +756,29 @@ test("sanitizeLlmSettings falls back to defaults", () => {
   assert.equal(settings.enabled, true);
   assert.equal(settings.baseUrl, defaultLlmSettings.baseUrl);
   assert.equal(settings.model, defaultLlmSettings.model);
+});
+
+test("deriveConversationTitle uses first user message excerpt", () => {
+  assert.equal(
+    deriveConversationTitle("  帮我分析这次 F2L 1 为什么会卡住  "),
+    "帮我分析这次 F2L 1 为什么会卡住"
+  );
+});
+
+test("sanitizeChatState creates fallback conversation when storage is empty", () => {
+  const state = sanitizeChatState({});
+
+  assert.equal(state.conversations.length, 1);
+  assert.equal(state.currentConversationId, state.conversations[0].id);
+  assert.equal(state.conversations[0].title, "新对话");
+});
+
+test("createEmptyConversation initializes empty message list", () => {
+  const conversation = createEmptyConversation();
+
+  assert.equal(Array.isArray(conversation.messages), true);
+  assert.equal(conversation.messages.length, 0);
+  assert.equal(conversation.title, "新对话");
 });
 
 test("joinChatCompletionsUrl appends chat completions path", () => {

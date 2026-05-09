@@ -55,6 +55,7 @@ Cubing Domain Tools
 - 前端负责消息流、LLM 设置录入与本地保存。
 - `runAgentTurn` 仍负责本地 intent 判断、工具路由和 fallback。
 - 前端只填写接口基地址，例如 `https://api.huizhi.ink/v1`；运行时请求会自动补成 `/chat/completions`。
+- 前端直接读取 OpenAI 兼容接口的 SSE 流，生成中的 assistant 回复会持续更新。
 
 后续接入 streaming 或正式部署时，可继续保留当前 `runAgentTurn` 作为工具路由和 fallback。
 
@@ -69,6 +70,7 @@ Cubing Domain Tools
 - `local-followup`：基于当前 `currentSolveReview` 返回指定分段的状态、阶段分析和建议。
 - `chat`：未命中特定工具时交给普通聊天模型处理。
 - 非错误型工具结果：把 `toolResult`、`response-composer` 输出和当前上下文一起交给模型润色。
+- LLM prompt 按 `chat / solve-import / algorithm-query / local-followup` 做第一版分层。
 
 当前 solve 导入支持常见复制字段别名：
 
@@ -86,6 +88,15 @@ Cubing Domain Tools
 - `contextPatch`：需要合并到会话上下文的状态。
 - `response`：最终对用户展示的回答，优先使用 LLM 组织后的文本，失败时退回本地 fallback。
 - `fallbackResponse`：由 `response-composer` 生成的中文 fallback 摘要。
+
+当前 LLM 错误分类：
+
+- 配置缺失：未填写 base URL / API Key / model。
+- 鉴权失败：401 / 403。
+- 限流：429。
+- 上游异常：5xx。
+- 超时：前端超时终止。
+- 网络或 CORS：浏览器无法直连兼容接口。
 
 ### Cubing Domain Tools
 

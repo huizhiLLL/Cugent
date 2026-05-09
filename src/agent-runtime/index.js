@@ -1,4 +1,11 @@
 export { runAgentTurn } from "./agent-runtime.js";
 export { detectIntent } from "./intent-detector.js";
 export { composeResponse } from "./response-composer.js";
-export { enhanceAgentTurnResponse, buildPromptMessages, extractChatCompletionText, joinChatCompletionsUrl } from "./llm-client.js";
+export {
+  buildChatCompletionMessages,
+  enhanceAgentTurnResponse,
+  buildPromptMessages,
+  extractChatCompletionText,
+  joinChatCompletionsUrl,
+  LlmClientError
+} from "./llm-client.js";

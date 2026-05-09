@@ -1,12 +1,13 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
-import { FileInput, Menu, MessageSquarePlus, Search, Settings2, Sparkles } from "lucide-react";
+import { FileInput, Menu, MessageSquarePlus, Pencil, Search, Settings2, Sparkles, Trash2 } from "lucide-react";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Thread } from "@/components/thread";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -18,65 +19,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { invertAlg } from "../cubing-tools/index.js";
 import { runAgentTurn } from "../agent-runtime/index.js";
+import { createEmptyConversation, deriveConversationTitle, loadChatState, saveChatState } from "./chat-storage.js";
 import { defaultLlmSettings, loadLlmSettings, saveLlmSettings, sanitizeLlmSettings } from "./llm-settings.js";
+import { XIcon } from "lucide-react";
 import "./styles.css";
 
 const scramble = "B' R' U2 L2 F U2 L2 B2 F' D2 F R2 B D R U2 L F2 R' U";
 const solution = invertAlg(scramble);
 const reviewMoves = "U'@0 F'@136 U'@265 F'@448 F'@504 U'@729 F@1475 D@1582 F'@1792 D@2166 R'@2233 D'@2294 R@2367 R@2423 D'@2483 R'@2572 D@2621 R@2674 D'@2720 R'@3083 R@3360 D'@3409 R'@3475 L@3628 D@3739 D@3788 L'@3850 D@4356 L'@4444 D@4505 L@4563 D'@5008 R@5112 D'@5170 R'@5237 D@5294 R@5343 D'@5383 R'@5474 D@5537 D@5590 R@5641 D'@5694 R'@5759 D@6236 R@6327 D@6434 R'@6506 D'@6614 L@6669 R'@6803 B@6852 R@6913 B'@6958 L'@7049 R@7544 D'@7605 R'@7685 D'@7778 R@7896 D@8146 R@8232 U@8283 R'@8380 D'@8430 R@8495 U'@8544 R'@8664 D@8737 D@8775 R'@8818 D'@8888 D'@8916";
-const displayReviewMoves = `${reviewMoves.slice(0, 154)}...`;
-const ollCompressionAlg = "R' F R U R' U' F' U R";
-const demoConversationTitles = [
-  "OLL 压缩建议",
-  "F2L 暂停复盘",
-  "PLL 公式替换",
-  "Cross 规划检查"
-];
-const demoMessages = [
-  createMessage("user", "能帮我看看上次 F2L 1 为什么卡住吗？"),
-  createMessage("assistant", "可以。上次主要卡在入槽前的观察切换，我会优先看停顿和转体位置。"),
-  createMessage("user", "今天先看这把完整复盘。"),
-  createMessage("assistant", "好，把打乱和带时间戳的回顾发我，我会按阶段拆开看。"),
-  createMessage(
-    "user",
-    `帮我分析：\n打乱：${scramble}\n复盘：["${displayReviewMoves}","333"]`
-  ),
-  createMessage("assistant", "已收到打乱和具体解法回顾\n\n根据分析，建议 OLL 压缩为一步公式：`R' F R U R' U' F' U R`", {
-    contentParts: [
-      { type: "text", text: "已收到打乱和具体解法回顾" },
-      {
-        type: "tool-call",
-        toolCallId: "demo-solve-review",
-        toolName: "AnalyzeSolveReview",
-        args: {
-          scramble,
-          review: `${displayReviewMoves}","333`
-        },
-        argsText: JSON.stringify(
-          {
-            scramble,
-            review: `${displayReviewMoves}","333`
-          },
-          null,
-          2
-        ),
-        result: {
-          status: "ok",
-          suggestion: ollCompressionAlg
-        }
-      },
-      { type: "text", text: `根据分析，建议 OLL 压缩为一步公式：\`${ollCompressionAlg}\`` }
-    ],
-    response: {
-      kind: "algorithm-preview",
-      evidence: [],
-      nextActions: [],
-      playback: "https://alg.cubing.net/?alg=R-_F_R_U_R-_U-_F-_U_R_&setup=R-_U-_F_U_R_U-_R-_F-_R"
-    },
-    intent: "solve-import",
-    toolCalls: [{ name: "AnalyzeSolveReview", status: "complete" }]
-  })
-];
 const sampleSolve = `scramble: ${scramble}
 timedMoves: ${solution.split(" ").map((move, index) => `${move}@${index * 250}`).join(" ")}
 segmentedSolution:
@@ -90,51 +40,248 @@ const sampleSmartInput = {
 };
 
 function App() {
-  const [messages, setMessages] = useState(() => demoMessages);
+  const [chatState, setChatState] = useState(() => loadChatState());
   const [smartInput, setSmartInput] = useState(sampleSmartInput);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [context, setContext] = useState({});
+  const [activeSettingsSection, setActiveSettingsSection] = useState("custom-llm");
   const [busy, setBusy] = useState(false);
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const pointerStartRef = useRef(null);
   const [llmSettingsDraft, setLlmSettingsDraft] = useState(() => loadLlmSettings());
+  const abortControllerRef = useRef(null);
+  const cancelRequestedRef = useRef(false);
+  const currentConversation = chatState.conversations.find((item) => item.id === chatState.currentConversationId) ?? chatState.conversations[0];
+  const sortedConversations = useMemo(
+    () => [...chatState.conversations].sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()),
+    [chatState.conversations]
+  );
+  const messages = currentConversation?.messages ?? [];
+  const context = currentConversation?.context ?? {};
 
-  async function submitMessage(nextInput, { appendUser = true } = {}) {
+  useEffect(() => {
+    saveChatState(chatState);
+  }, [chatState]);
+
+  async function submitMessage(nextInput, { appendUser = true, conversationIdOverride, contextOverride } = {}) {
     const trimmed = nextInput.trim();
     if (!trimmed || busy) {
       return;
     }
 
+    const conversationId = conversationIdOverride ?? chatState.currentConversationId;
+    const conversation = chatState.conversations.find((item) => item.id === conversationId) ?? currentConversation;
+    const baseContext = contextOverride ?? conversation?.context ?? {};
+
     setBusy(true);
+    cancelRequestedRef.current = false;
     if (appendUser) {
-      setMessages((items) => [...items, createMessage("user", trimmed)]);
+      updateConversationById(conversationId, (conversationItem) => {
+        const nextMessages = [...conversationItem.messages, createMessage("user", trimmed)];
+        return {
+          ...conversationItem,
+          title: conversationItem.messages.length ? conversationItem.title : deriveConversationTitle(trimmed),
+          messages: nextMessages,
+          updatedAt: new Date().toISOString()
+        };
+      });
     }
+
+    const assistantMessageId = crypto.randomUUID();
+    updateConversationById(conversationId, (conversationItem) => ({
+      ...conversationItem,
+      messages: [
+        ...conversationItem.messages,
+        createMessage("assistant", "", {
+          id: assistantMessageId,
+          response: {
+            kind: "streaming",
+            evidence: [],
+            nextActions: [],
+            llm: {
+              enabled: true,
+              status: "running",
+              source: "openai-compatible"
+            }
+          },
+          status: {
+            type: "running"
+          }
+        })
+      ],
+      updatedAt: new Date().toISOString()
+    }));
 
     try {
       const llmSettings = sanitizeLlmSettings(llmSettingsDraft);
-      const turn = await runAgentTurn(trimmed, {
-        ...context,
-        llmSettings
-      });
-      setContext((previous) => ({ ...previous, ...turn.contextPatch }));
-      setMessages((items) => [
-        ...items,
-        createMessage("assistant", turn.response.text, {
-          response: turn.response,
-          intent: turn.intent.type,
-          toolCalls: turn.toolCalls
-        })
-      ]);
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
+      const turn = await runAgentTurn(
+        trimmed,
+        {
+          ...baseContext,
+          llmSettings
+        },
+        {
+          onTurnReady: (readyTurn) => {
+            updateConversationById(conversationId, (conversationItem) => ({
+              ...conversationItem,
+              messages: conversationItem.messages.map((item) => {
+                if (item.id !== assistantMessageId) {
+                  return item;
+                }
+
+                return {
+                  ...item,
+                  text: item.text || getPendingAssistantText(readyTurn),
+                  response: {
+                    ...readyTurn.response,
+                    llm: readyTurn.response?.llm ?? {
+                      enabled: llmSettings.enabled,
+                      status: "running",
+                      source: "openai-compatible",
+                      model: llmSettings.model,
+                      streaming: true
+                    }
+                  },
+                  intent: readyTurn.intent.type,
+                  toolCalls: readyTurn.toolCalls,
+                  status: {
+                    type: "running"
+                  }
+                };
+              }),
+              updatedAt: new Date().toISOString()
+            }));
+          },
+          signal: abortController.signal,
+          onTextDelta: (nextText, llmMeta) => {
+            updateConversationById(conversationId, (conversationItem) => ({
+              ...conversationItem,
+              messages: conversationItem.messages.map((item) => {
+                if (item.id !== assistantMessageId) {
+                  return item;
+                }
+
+                return {
+                  ...item,
+                  text: nextText,
+                  response: {
+                    ...(item.response ?? { kind: "streaming", evidence: [], nextActions: [] }),
+                    llm: {
+                      enabled: true,
+                      status: "running",
+                      source: "openai-compatible",
+                      model: llmMeta?.model ?? null,
+                      responseId: llmMeta?.id ?? null,
+                      usage: llmMeta?.usage ?? null,
+                      streaming: true
+                    }
+                  },
+                  status: {
+                    type: "running"
+                  }
+                };
+              }),
+              updatedAt: new Date().toISOString()
+            }));
+          }
+        }
+      );
+
+      if (cancelRequestedRef.current) {
+        updateConversationById(conversationId, (conversationItem) => ({
+          ...conversationItem,
+          messages: conversationItem.messages.map((item) => {
+            if (item.id !== assistantMessageId) {
+              return item;
+            }
+
+            return {
+              ...item,
+              text: item.text || "已停止生成。",
+              response: {
+                ...(item.response ?? turn.response),
+                llm: {
+                  ...(turn.response?.llm ?? item.response?.llm ?? {}),
+                  enabled: false,
+                  status: "cancelled",
+                  error: {
+                    code: "LLM_ABORTED",
+                    message: "已停止生成。"
+                  }
+                }
+              },
+              status: {
+                type: "incomplete",
+                reason: "cancelled"
+              }
+            };
+          }),
+          updatedAt: new Date().toISOString()
+        }));
+        return;
+      }
+
+      const nextContext = { ...baseContext, ...turn.contextPatch };
+      updateConversationById(conversationId, (conversationItem) => ({
+        ...conversationItem,
+        context: nextContext,
+        messages: conversationItem.messages.map((item) => {
+          if (item.id !== assistantMessageId) {
+            return item;
+          }
+
+          return {
+            ...item,
+            text: turn.response.text,
+            response: turn.response,
+            intent: turn.intent.type,
+            toolCalls: turn.toolCalls,
+            contextSnapshot: nextContext,
+            status: turn.response?.llm?.status === "cancelled"
+              ? { type: "incomplete", reason: "cancelled" }
+              : { type: "complete", reason: "stop" }
+          };
+        }),
+        updatedAt: new Date().toISOString()
+      }));
     } catch (error) {
-      setMessages((items) => [
-        ...items,
-        createMessage("assistant", `处理失败：${error.message}`, {
-          response: { kind: "error", evidence: [], nextActions: [] }
-        })
-      ]);
+      updateConversationById(conversationId, (conversationItem) => ({
+        ...conversationItem,
+        messages: conversationItem.messages.map((item) => {
+          if (item.id !== assistantMessageId) {
+            return item;
+          }
+
+          return {
+            ...item,
+            text: `处理失败：${error.message}`,
+            response: {
+              kind: "error",
+              evidence: [],
+              nextActions: [],
+              llm: {
+                enabled: false,
+                status: "fallback",
+                error: {
+                  code: "TURN_FAILED",
+                  message: String(error?.message ?? "未知错误")
+                }
+              }
+            },
+            status: {
+              type: "incomplete",
+              reason: "error"
+            }
+          };
+        }),
+        updatedAt: new Date().toISOString()
+      }));
     } finally {
+      abortControllerRef.current = null;
       setBusy(false);
     }
   }
@@ -142,8 +289,25 @@ function App() {
   const runtime = useExternalStoreRuntime({
     messages,
     isRunning: busy,
+    setMessages: (nextMessages) => {
+      updateConversationById(chatState.currentConversationId, (conversation) => ({
+        ...conversation,
+        messages: typeof nextMessages === "function" ? nextMessages(conversation.messages) : nextMessages,
+        updatedAt: new Date().toISOString()
+      }));
+    },
     onNew: async (message) => {
       await submitMessage(extractMessageText(message));
+    },
+    onEdit: async (message) => {
+      await editMessage(message);
+    },
+    onReload: async (parentId) => {
+      await reloadFromParent(parentId);
+    },
+    onCancel: async () => {
+      cancelRequestedRef.current = true;
+      abortControllerRef.current?.abort();
     },
     convertMessage
   });
@@ -155,17 +319,23 @@ function App() {
   }
 
   function createConversation() {
-    setMessages([]);
+    const conversation = createEmptyConversation();
+    setChatState((previous) => ({
+      currentConversationId: conversation.id,
+      conversations: [conversation, ...previous.conversations]
+    }));
     setSmartInput(sampleSmartInput);
     setActionDialogOpen(false);
     setSmartDialogOpen(false);
     setSettingsDialogOpen(false);
     closeMobileHistory();
-    setContext({});
   }
 
-  function openDemoConversation() {
-    setMessages(demoMessages);
+  function openConversation(conversationId) {
+    setChatState((previous) => ({
+      ...previous,
+      currentConversationId: conversationId
+    }));
     closeMobileHistory();
   }
 
@@ -222,6 +392,130 @@ ${smartInput.segmentedSolution}`.trim();
 
   function resetLlmSettings() {
     setLlmSettingsDraft(defaultLlmSettings);
+  }
+
+  function updateConversationById(conversationId, updater) {
+    setChatState((previous) => ({
+      ...previous,
+      conversations: previous.conversations.map((conversation) => (
+        conversation.id === conversationId
+          ? updater(conversation)
+          : conversation
+      ))
+    }));
+  }
+
+  async function editMessage(message) {
+    const conversationId = chatState.currentConversationId;
+    const conversation = chatState.conversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+
+    const targetIndex = conversation.messages.findIndex((item) => item.id === message.parentId);
+    if (targetIndex === -1) return;
+
+    const text = extractMessageText(message);
+    const baseContext = getContextBeforeIndex(conversation.messages, targetIndex);
+    const targetId = conversation.messages[targetIndex].id;
+
+    updateConversationById(conversationId, (conversationItem) => ({
+      ...conversationItem,
+      title: targetIndex === 0 ? deriveConversationTitle(text) : conversationItem.title,
+      context: baseContext,
+      messages: [
+        ...conversationItem.messages.slice(0, targetIndex),
+        createMessage("user", text, { id: targetId })
+      ],
+      updatedAt: new Date().toISOString()
+    }));
+
+    await submitMessage(text, {
+      appendUser: false,
+      conversationIdOverride: conversationId,
+      contextOverride: baseContext
+    });
+  }
+
+  async function reloadFromParent(parentId) {
+    const conversationId = chatState.currentConversationId;
+    const conversation = chatState.conversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+
+    const userIndex = parentId
+      ? conversation.messages.findIndex((item) => item.id === parentId)
+      : 0;
+    const userMessage = conversation.messages[userIndex];
+    if (!userMessage || userMessage.role !== "user") return;
+
+    const baseContext = getContextBeforeIndex(conversation.messages, userIndex);
+    updateConversationById(conversationId, (conversationItem) => ({
+      ...conversationItem,
+      context: baseContext,
+      messages: conversationItem.messages.slice(0, userIndex + 1),
+      updatedAt: new Date().toISOString()
+    }));
+
+    await submitMessage(userMessage.text, {
+      appendUser: false,
+      conversationIdOverride: conversationId,
+      contextOverride: baseContext
+    });
+  }
+
+  function renameConversation(conversationId) {
+    const conversation = chatState.conversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+
+    const nextTitle = window.prompt("输入新的会话名称", conversation.title)?.trim();
+    if (!nextTitle) return;
+
+    updateConversationById(conversationId, (conversationItem) => ({
+      ...conversationItem,
+      title: nextTitle,
+      updatedAt: conversationItem.updatedAt
+    }));
+  }
+
+  function deleteConversation(conversationId) {
+    const conversation = chatState.conversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+    if (!window.confirm(`确定删除会话「${conversation.title}」吗？`)) return;
+
+    setChatState((previous) => {
+      const remaining = previous.conversations.filter((item) => item.id !== conversationId);
+      if (!remaining.length) {
+        const empty = createEmptyConversation();
+        return {
+          currentConversationId: empty.id,
+          conversations: [empty]
+        };
+      }
+
+      return {
+        currentConversationId: previous.currentConversationId === conversationId ? remaining[0].id : previous.currentConversationId,
+        conversations: remaining
+      };
+    });
+  }
+
+  function deleteMessage(messageId) {
+    const conversationId = chatState.currentConversationId;
+    const conversation = chatState.conversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+
+    const index = conversation.messages.findIndex((item) => item.id === messageId);
+    if (index === -1) return;
+    const target = conversation.messages[index];
+    const next = conversation.messages[index + 1];
+    const nextMessages = target.role === "user" && next?.role === "assistant"
+      ? [...conversation.messages.slice(0, index), ...conversation.messages.slice(index + 2)]
+      : [...conversation.messages.slice(0, index), ...conversation.messages.slice(index + 1)];
+
+    updateConversationById(conversationId, (conversationItem) => ({
+      ...conversationItem,
+      messages: nextMessages,
+      context: getLastAssistantContext(nextMessages),
+      updatedAt: new Date().toISOString()
+    }));
   }
 
   function handleEdgePointerDown(event) {
@@ -297,25 +591,40 @@ ${smartInput.segmentedSolution}`.trim();
               <MessageSquarePlus data-icon="inline-start" />
               <span className="sidebar-label">新建对话</span>
             </Button>
-            <Button type="button" variant="ghost" className="sidebar-action" onClick={() => setSettingsDialogOpen(true)} title="LLM 设置">
-              <Settings2 data-icon="inline-start" />
-              <span className="sidebar-label">LLM 设置</span>
-            </Button>
             <div className="conversation-history" aria-label="对话历史">
-              {demoConversationTitles.map((title, index) => (
-                <Button
-                  key={title}
-                  type="button"
-                  variant={index === 0 ? "secondary" : "ghost"}
-                  className="history-item"
-                  title={title}
-                  onClick={openDemoConversation}
-                >
-                  <span className="sidebar-label">{title}</span>
-                </Button>
+              {sortedConversations.map((conversation) => (
+                <div className="history-row" key={conversation.id}>
+                  <Button
+                    type="button"
+                    variant={conversation.id === chatState.currentConversationId ? "secondary" : "ghost"}
+                    className="history-item"
+                    title={conversation.title}
+                    onClick={() => openConversation(conversation.id)}
+                  >
+                    <span className="sidebar-label history-item-label">{conversation.title}</span>
+                  </Button>
+                  <div className="history-item-tools">
+                    <TooltipIconButton variant="ghost" size="icon" className="history-tool-button" onClick={() => renameConversation(conversation.id)}>
+                      <Pencil />
+                    </TooltipIconButton>
+                    <TooltipIconButton variant="ghost" size="icon" className="history-tool-button" onClick={() => deleteConversation(conversation.id)}>
+                      <Trash2 />
+                    </TooltipIconButton>
+                  </div>
+                </div>
               ))}
             </div>
           </nav>
+          <div className="sidebar-footer">
+            <TooltipIconButton
+              type="button"
+              className="sidebar-settings-button"
+              aria-label="打开设置"
+              onClick={() => setSettingsDialogOpen(true)}
+            >
+              <Settings2 />
+            </TooltipIconButton>
+          </div>
         </aside>
 
         <div
@@ -345,17 +654,26 @@ ${smartInput.segmentedSolution}`.trim();
                 <span>LLM 设置</span>
               </Button>
               <div className="conversation-history" aria-label="对话历史">
-                {demoConversationTitles.map((title, index) => (
-                  <Button
-                    key={title}
-                    type="button"
-                    variant={index === 0 ? "secondary" : "ghost"}
-                    className="history-item"
-                    title={title}
-                    onClick={openDemoConversation}
-                  >
-                    <span>{title}</span>
-                  </Button>
+                {sortedConversations.map((conversation) => (
+                  <div className="history-row" key={conversation.id}>
+                    <Button
+                      type="button"
+                      variant={conversation.id === chatState.currentConversationId ? "secondary" : "ghost"}
+                      className="history-item"
+                      title={conversation.title}
+                      onClick={() => openConversation(conversation.id)}
+                    >
+                      <span className="history-item-label">{conversation.title}</span>
+                    </Button>
+                    <div className="history-item-tools">
+                      <TooltipIconButton variant="ghost" size="icon" className="history-tool-button" onClick={() => renameConversation(conversation.id)}>
+                        <Pencil />
+                      </TooltipIconButton>
+                      <TooltipIconButton variant="ghost" size="icon" className="history-tool-button" onClick={() => deleteConversation(conversation.id)}>
+                        <Trash2 />
+                      </TooltipIconButton>
+                    </div>
+                  </div>
                 ))}
               </div>
             </nav>
@@ -364,7 +682,7 @@ ${smartInput.segmentedSolution}`.trim();
 
         <section className="chat-pane" aria-label="Chat">
           <AssistantRuntimeProvider runtime={runtime}>
-            <Thread onOpenSmartCube={() => setActionDialogOpen(true)} />
+            <Thread onOpenSmartCube={() => setActionDialogOpen(true)} onDeleteMessage={deleteMessage} />
           </AssistantRuntimeProvider>
         </section>
 
@@ -439,7 +757,7 @@ ${smartInput.segmentedSolution}`.trim();
                 <Button type="button" variant="outline" onClick={() => setSmartDialogOpen(false)}>
                   取消
                 </Button>
-                <Button type="submit" disabled={busy}>
+                <Button type="submit" disabled={busy} className="dialog-primary-button">
                   {busy ? "导入中" : "导入"}
                 </Button>
               </DialogFooter>
@@ -448,64 +766,93 @@ ${smartInput.segmentedSolution}`.trim();
         </Dialog>
 
         <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
-          <DialogContent className="smart-dialog-content sm:max-w-xl">
-            <DialogHeader>
-              <p className="eyebrow">LLM Config</p>
-              <DialogTitle>LLM 设置</DialogTitle>
-              <DialogDescription>填写 OpenAI 兼容接口配置。前端示例基地址为 `https://api.huizhi.ink/v1`，服务端调用时会自动补上 `/chat/completions`。</DialogDescription>
-            </DialogHeader>
-            <form
-              className="smart-fields"
-              onSubmit={(event) => {
-                event.preventDefault();
-                saveCurrentLlmSettings();
-              }}
-            >
-              <label className="toggle-field">
-                <span>启用 LLM</span>
-                <input
-                  type="checkbox"
-                  checked={llmSettingsDraft.enabled !== false}
-                  onChange={(event) => updateLlmSettings("enabled", event.target.checked)}
-                />
-              </label>
-              <label>
-                <span>接口基地址</span>
-                <Input
-                  value={llmSettingsDraft.baseUrl}
-                  onChange={(event) => updateLlmSettings("baseUrl", event.target.value)}
-                  placeholder="https://api.huizhi.ink/v1"
-                />
-              </label>
-              <label>
-                <span>API Key</span>
-                <Input
-                  type="password"
-                  value={llmSettingsDraft.apiKey}
-                  onChange={(event) => updateLlmSettings("apiKey", event.target.value)}
-                  placeholder="sk-..."
-                />
-              </label>
-              <label>
-                <span>模型名</span>
-                <Input
-                  value={llmSettingsDraft.model}
-                  onChange={(event) => updateLlmSettings("model", event.target.value)}
-                  placeholder="gpt-5.4-mini"
-                />
-              </label>
-              <DialogFooter>
-                <Button type="button" variant="ghost" onClick={resetLlmSettings}>
-                  恢复默认
+          <DialogContent className="settings-dialog-content sm:max-w-5xl" showCloseButton={false}>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon-sm" className="settings-close-button" aria-label="关闭设置">
+                <XIcon />
+              </Button>
+            </DialogClose>
+            <div className="settings-layout">
+              <aside className="settings-sidebar">
+                <Button
+                  type="button"
+                  variant={activeSettingsSection === "custom-llm" ? "secondary" : "ghost"}
+                  className="settings-nav-item"
+                  onClick={() => setActiveSettingsSection("custom-llm")}
+                >
+                  <span>自定义 LLM</span>
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setSettingsDialogOpen(false)}>
-                  取消
-                </Button>
-                <Button type="submit">
-                  保存
-                </Button>
-              </DialogFooter>
-            </form>
+              </aside>
+              <section className="settings-panel">
+                {activeSettingsSection === "custom-llm" ? (
+                  <form
+                    className="settings-form"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      saveCurrentLlmSettings();
+                    }}
+                  >
+                    <div className="settings-page-title">自定义 LLM</div>
+                    <label className="settings-row settings-row-toggle">
+                      <div className="settings-row-copy">
+                        <span className="settings-row-label">启用 LLM</span>
+                        <span className="settings-row-help">启用后，对话会尝试调用你配置的 OpenAI 兼容接口。</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={llmSettingsDraft.enabled !== false}
+                        onChange={(event) => updateLlmSettings("enabled", event.target.checked)}
+                      />
+                    </label>
+                    <label className="settings-row settings-row-field">
+                      <div className="settings-row-copy">
+                        <span className="settings-row-label">接口基地址</span>
+                        <span className="settings-row-help">例如 `https://api.huizhi.ink/v1`，调用时会自动补上 `/chat/completions`。</span>
+                      </div>
+                      <Input
+                        value={llmSettingsDraft.baseUrl}
+                        onChange={(event) => updateLlmSettings("baseUrl", event.target.value)}
+                        placeholder="https://api.huizhi.ink/v1"
+                      />
+                    </label>
+                    <label className="settings-row settings-row-field">
+                      <div className="settings-row-copy">
+                        <span className="settings-row-label">API Key</span>
+                        <span className="settings-row-help">仅保存在当前浏览器本地，不会同步到其他设备。</span>
+                      </div>
+                      <Input
+                        type="password"
+                        value={llmSettingsDraft.apiKey}
+                        onChange={(event) => updateLlmSettings("apiKey", event.target.value)}
+                        placeholder="sk-..."
+                      />
+                    </label>
+                    <label className="settings-row settings-row-field">
+                      <div className="settings-row-copy">
+                        <span className="settings-row-label">模型名</span>
+                        <span className="settings-row-help">例如 `gpt-5.4-mini` 或兼容服务提供的模型名。</span>
+                      </div>
+                      <Input
+                        value={llmSettingsDraft.model}
+                        onChange={(event) => updateLlmSettings("model", event.target.value)}
+                        placeholder="gpt-5.4-mini"
+                      />
+                    </label>
+                    <DialogFooter>
+                      <Button type="button" variant="ghost" onClick={resetLlmSettings}>
+                        恢复默认
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setSettingsDialogOpen(false)}>
+                        取消
+                      </Button>
+                      <Button type="submit" className="dialog-primary-button">
+                        保存
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                ) : null}
+              </section>
+            </div>
           </DialogContent>
         </Dialog>
       </main>
@@ -515,7 +862,7 @@ ${smartInput.segmentedSolution}`.trim();
 
 function createMessage(role, text, extra = {}) {
   return {
-    id: crypto.randomUUID(),
+    id: extra.id ?? crypto.randomUUID(),
     role,
     text,
     ...extra
@@ -546,9 +893,39 @@ function convertMessage(message) {
     }
   };
   if (message.role === "assistant") {
-    converted.status = { type: "complete", reason: "stop" };
+    converted.status = message.status ?? { type: "complete", reason: "stop" };
   }
   return converted;
 }
 
 createRoot(document.getElementById("root")).render(<App />);
+
+function getPendingAssistantText(turn) {
+  if (turn.intent?.type === "chat") {
+    return "正在整理回复…";
+  }
+
+  return "正在基于分析结果整理更易理解的说明…";
+}
+
+function getContextBeforeIndex(messages, index) {
+  for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+    const message = messages[cursor];
+    if (message.role === "assistant" && message.contextSnapshot) {
+      return message.contextSnapshot;
+    }
+  }
+
+  return {};
+}
+
+function getLastAssistantContext(messages) {
+  for (let cursor = messages.length - 1; cursor >= 0; cursor -= 1) {
+    const message = messages[cursor];
+    if (message.role === "assistant" && message.contextSnapshot) {
+      return message.contextSnapshot;
+    }
+  }
+
+  return {};
+}

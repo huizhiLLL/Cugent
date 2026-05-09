@@ -47,6 +47,11 @@ export async function runAgentTurn(message, context = {}, options = {}) {
 
 async function withResponse(turn, { message, context, options }) {
   const fallbackResponse = composeResponse(turn);
+  options.onTurnReady?.({
+    ...turn,
+    response: fallbackResponse,
+    fallbackResponse
+  });
   const response = await maybeEnhanceResponse({
     message,
     context,
@@ -77,15 +82,66 @@ async function maybeEnhanceResponse({ message, context, turn, fallbackResponse, 
       message,
       context,
       turn,
-      fallbackResponse
+      fallbackResponse,
+      onTextDelta: options.onTextDelta,
+      signal: options.signal
     });
-  } catch {
-    return fallbackResponse;
+  } catch (error) {
+    return attachLlmFallbackInfo(fallbackResponse, error, turn);
   }
 }
 
 function shouldUseLlmResponse(turn) {
   return turn.toolResult?.type !== "error";
+}
+
+function attachLlmFallbackInfo(fallbackResponse, error, turn) {
+  const code = error?.code ?? "LLM_UNKNOWN_ERROR";
+  const message = error?.message ?? "LLM 调用失败，已退回本地摘要。";
+  const llmMeta = {
+    enabled: false,
+    status: code === "LLM_ABORTED" ? "cancelled" : "fallback",
+    source: "openai-compatible",
+    error: {
+      code,
+      message
+    }
+  };
+
+  if (code === "LLM_ABORTED") {
+    return {
+      ...fallbackResponse,
+      llm: llmMeta
+    };
+  }
+
+  if (turn.toolResult?.type === "chat") {
+    return {
+      ...fallbackResponse,
+      text: buildChatFallbackText(code, message),
+      llm: llmMeta
+    };
+  }
+
+  return {
+    ...fallbackResponse,
+    llm: llmMeta
+  };
+}
+
+function buildChatFallbackText(code, message) {
+  const prefixMap = {
+    LLM_BASE_URL_MISSING: "还没有可用的聊天模型接口。",
+    LLM_API_KEY_MISSING: "还没有可用的聊天模型密钥。",
+    LLM_MODEL_MISSING: "还没有可用的聊天模型配置。",
+    LLM_AUTH_FAILED: "聊天模型鉴权失败。",
+    LLM_RATE_LIMIT: "聊天模型当前触发了限流。",
+    LLM_NETWORK_OR_CORS: "聊天模型接口当前无法从浏览器直接访问。",
+    LLM_TIMEOUT: "聊天模型响应超时了。"
+  };
+
+  const prefix = prefixMap[code] ?? "聊天模型暂时不可用。";
+  return `${prefix}${message ? ` ${message}` : ""}`;
 }
 
 async function runSolveImport(intent, context) {
