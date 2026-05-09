@@ -155,6 +155,10 @@ PoC 阶段需要的流程是：
 
 该推断结果会写入 `review.segmentation`，包含 `source`、`method`、`confidence` 与 `progressTrace`，供后续 agent 和前端展示使用。
 
+### OLL / PLL 识别先读阶段开始前状态
+
+当前 `OLL` / `PLL` case 识别都不读取阶段结束后的状态，而是读取对应阶段开始前的 cube state。这样识别结果才能代表“用户进入该阶段时面对的 case”，并直接服务于公式检索与替换建议。
+
 ### 教练建议是结构化证据，不是最终话术
 
 `coachSuggestions` 会综合输入校验、阶段目标、停顿、TPS 和公式候选，生成建议对象。每条建议包含 type、priority、target、evidence、action，供 Agent/LLM 在 chat 中组织成自然语言回答。
@@ -178,6 +182,8 @@ PoC 阶段需要的流程是：
 - `src/cubing-tools/state-tracer.js`：基于 `cubing.js` 的 3x3 状态追踪。
 - `src/cubing-tools/cfop-progress.js`：3x3 facelet 视图下的 `cf4op` progress 计算。
 - `src/cubing-tools/cfop-inference.js`：无分段输入的 `cf4op` 自动阶段推断。
+- `src/cubing-tools/oll-recognition.js`：参考 csTimer pattern 表的 OLL case 识别。
+- `src/cubing-tools/pll-recognition.js`：参考 csTimer pattern 表的 PLL case 识别。
 - `src/cubing-tools/cfop-analyzer.js`：CFOP 阶段目标验证。
 - `src/cubing-tools/algorithm-search.js`：本地公式库检索。
 - `src/cubing-tools/coach-suggestions.js`：结构化教练建议生成。

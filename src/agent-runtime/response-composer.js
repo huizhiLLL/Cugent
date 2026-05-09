@@ -36,11 +36,20 @@ export function composeResponse(agentTurn) {
 
 function composeSolveReviewResponse(review) {
   const topSuggestions = review.coachSuggestions.suggestions.slice(0, 3);
+  const ollRecognition = review.segments.find((segment) => segment.label.trim().toLowerCase() === "oll")?.recognition?.oll;
+  const pllRecognition = review.segments.find((segment) => segment.label.trim().toLowerCase() === "pll")?.recognition?.pll;
   const evidence = [
     `总步数 ${review.summary.totalMoves}，总耗时 ${review.summary.totalDurationMs}ms，TPS ${review.summary.totalTps}`,
     `最终状态：${review.stateTrace.final.isSolved ? "已复原" : "未复原"}`,
     `输入校验：${review.validation.ok ? "通过" : "存在 warning"}`
   ];
+
+  if (ollRecognition?.matched) {
+    evidence.push(`OLL 识别：${ollRecognition.caseId} (${ollRecognition.name})`);
+  }
+  if (pllRecognition?.matched) {
+    evidence.push(`PLL 识别：${pllRecognition.caseId} (${pllRecognition.name})`);
+  }
 
   return {
     kind: "solve-review",
@@ -89,6 +98,15 @@ function composeSegmentInspectionResponse({ segment, stage, suggestions }) {
     `阶段目标：${stage.goal.completed ? "完成" : "未完成"}，${stage.goal.evidence}`,
     `停顿数：${segment.pauses.length}`
   ];
+
+  const pllRecognition = segment.recognition?.pll;
+  const ollRecognition = segment.recognition?.oll;
+  if (ollRecognition?.matched) {
+    evidence.push(`OLL 识别：${ollRecognition.caseId} (${ollRecognition.name})`);
+  }
+  if (pllRecognition?.matched) {
+    evidence.push(`PLL 识别：${pllRecognition.caseId} (${pllRecognition.name})`);
+  }
 
   return {
     kind: "segment-inspection",

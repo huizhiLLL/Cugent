@@ -13,6 +13,19 @@
     }
   },
   {
+    "id": "oll-22-01",
+    "set": "OLL",
+    "caseId": "22",
+    "name": "OLL 22 Anti-Sune",
+    "alg": "R U2 R2 U' R2 U' R2 U2 R",
+    "tags": ["right-hand", "common"],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
     "id": "oll-27-01",
     "set": "OLL",
     "caseId": "27",
@@ -21,6 +34,45 @@
     "tags": ["right-hand", "no-rotation", "common"],
     "metrics": {
       "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-26-01",
+    "set": "OLL",
+    "caseId": "26",
+    "name": "OLL 26 Anti-Sune Variant",
+    "alg": "R U2 R' U' R U' R'",
+    "tags": ["right-hand", "no-rotation", "common"],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-37-01",
+    "set": "OLL",
+    "caseId": "37",
+    "name": "OLL 37 Fish-37",
+    "alg": "F R U' R' U' R U R' F'",
+    "tags": ["right-hand", "no-rotation", "common"],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-38-01",
+    "set": "OLL",
+    "caseId": "38",
+    "name": "OLL 38 Fish-38",
+    "alg": "R U R' U R U' R' U' R' F R F'",
+    "tags": ["right-hand", "common"],
+    "metrics": {
+      "moveCount": 12,
       "hasRotation": false,
       "sliceMoves": 0
     }

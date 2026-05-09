@@ -29,6 +29,7 @@ function analyzeSegment(segment) {
     segmentId: segment.id,
     label: segment.label,
     stageType,
+    recognition: segment.recognition ?? null,
     moveCount: segment.moveCount,
     durationMs: segment.durationMs,
     tps: segment.tps,

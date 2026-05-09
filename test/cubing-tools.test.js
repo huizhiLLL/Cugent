@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { Alg } from "cubing/alg";
+import { KPattern } from "cubing/kpuzzle";
+import { cube3x3x3 } from "cubing/puzzles";
 import {
   buildPlaybackBBCode,
   createSolveReview,
+  identifyOllCaseFromPatternData,
+  identifyPllCaseFromPatternData,
   invertAlg,
   inferCf4opSegments,
+  listRecognizableOllCases,
+  listRecognizablePllCases,
   parseSegmentedSolution,
   parseTimedMoves,
   generateCoachSuggestions,
@@ -111,6 +118,8 @@ R' // PLL
   assert.equal(review.cfopAnalysis.stages[0].goal.type, "U_LAYER_ORIENTED");
   assert.equal(review.cfopAnalysis.stages[1].stageType, "pll");
   assert.equal(review.cfopAnalysis.stages[1].goal.completed, true);
+  assert.equal(review.segments[1].recognition?.pll?.matched, true);
+  assert.equal(review.segments[1].recognition?.pll?.caseId, "Solved");
   assert.equal(review.cfopAnalysis.summary.finalSolved, true);
 });
 
@@ -199,6 +208,94 @@ test("searchAlgorithms ranks no-rotation low-slice candidates first", () => {
   assert.equal(result.results[0].metrics.sliceMoves, 0);
 });
 
+test("listRecognizableOllCases exposes cstimer-compatible OLL registry", () => {
+  const ollCases = listRecognizableOllCases();
+
+  assert.equal(ollCases.length, 57);
+  assert.equal(ollCases[20].caseId, "21");
+  assert.equal(ollCases[26].caseId, "27");
+});
+
+test("identifyOllCaseFromPatternData identifies OLL 27", async () => {
+  const kpuzzle = await cube3x3x3.kpuzzle();
+  const solved = kpuzzle.defaultPattern();
+  const pattern = solved.applyAlg(new Alg("R U R' U R U2 R'").invert());
+
+  const recognized = await identifyOllCaseFromPatternData(pattern.toJSON().patternData);
+
+  assert.equal(recognized.matched, true);
+  assert.equal(recognized.stageVerified, true);
+  assert.equal(recognized.caseId, "27");
+});
+
+test("identifyOllCaseFromPatternData identifies OLL 21", async () => {
+  const kpuzzle = await cube3x3x3.kpuzzle();
+  const solved = kpuzzle.defaultPattern();
+  const pattern = solved.applyAlg(new Alg("R U R' U R U' R' U R U2 R'").invert());
+
+  const recognized = await identifyOllCaseFromPatternData(pattern.toJSON().patternData);
+
+  assert.equal(recognized.matched, true);
+  assert.equal(recognized.stageVerified, true);
+  assert.equal(recognized.caseId, "21");
+});
+
+test("identifyOllCaseFromPatternData rejects non-OLL states", async () => {
+  const kpuzzle = await cube3x3x3.kpuzzle();
+  const nonOllPattern = new KPattern(kpuzzle, (kpuzzle.defaultPattern().applyAlg(new Alg("R U"))).toJSON().patternData);
+
+  const recognized = await identifyOllCaseFromPatternData(nonOllPattern.toJSON().patternData);
+
+  assert.equal(recognized.matched, false);
+  assert.equal(recognized.stageVerified, false);
+  assert.equal(recognized.caseId, null);
+});
+
+test("listRecognizablePllCases exposes cstimer-compatible PLL registry", () => {
+  const pllCases = listRecognizablePllCases();
+
+  assert.equal(pllCases.length, 22);
+  assert.equal(pllCases[18].caseId, "T");
+  assert.equal(pllCases[1].caseId, "Ua");
+});
+
+test("identifyPllCaseFromPatternData identifies T perm", async () => {
+  const kpuzzle = await cube3x3x3.kpuzzle();
+  const solved = kpuzzle.defaultPattern();
+  const pattern = solved.applyAlg(new Alg("R U R' U' R' F R2 U' R' U' R U R' F'").invert());
+
+  const recognized = await identifyPllCaseFromPatternData(pattern.toJSON().patternData);
+
+  assert.equal(recognized.matched, true);
+  assert.equal(recognized.stageVerified, true);
+  assert.equal(recognized.caseId, "T");
+  assert.equal(recognized.name, "T Perm");
+});
+
+test("identifyPllCaseFromPatternData identifies Ua perm", async () => {
+  const kpuzzle = await cube3x3x3.kpuzzle();
+  const solved = kpuzzle.defaultPattern();
+  const pattern = solved.applyAlg(new Alg("R U' R U R U R U' R' U' R2").invert());
+
+  const recognized = await identifyPllCaseFromPatternData(pattern.toJSON().patternData);
+
+  assert.equal(recognized.matched, true);
+  assert.equal(recognized.stageVerified, true);
+  assert.equal(recognized.caseId, "Ua");
+  assert.equal(recognized.name, "Ua Perm");
+});
+
+test("identifyPllCaseFromPatternData rejects non-PLL states", async () => {
+  const kpuzzle = await cube3x3x3.kpuzzle();
+  const nonPllPattern = new KPattern(kpuzzle, (kpuzzle.defaultPattern().applyAlg(new Alg("R U"))).toJSON().patternData);
+
+  const recognized = await identifyPllCaseFromPatternData(nonPllPattern.toJSON().patternData);
+
+  assert.equal(recognized.matched, false);
+  assert.equal(recognized.stageVerified, false);
+  assert.equal(recognized.caseId, null);
+});
+
 test("generateCoachSuggestions creates evidence-based suggestions", async () => {
   const review = await createSolveReview({
     scramble: "R U R' U'",
@@ -214,6 +311,62 @@ U' R' // F2L 1
   assert.ok(suggestions.some((suggestion) => suggestion.type === "stage-goal"));
   assert.ok(suggestions.some((suggestion) => suggestion.type === "pause"));
   assert.ok(suggestions.some((suggestion) => suggestion.type === "algorithm-candidates"));
+});
+
+test("generateCoachSuggestions uses recognized PLL caseId in algorithm candidates", async () => {
+  const pllAlg = "R U R' U' R' F R2 U' R' U' R U R' F'";
+  const review = await createSolveReview({
+    scramble: invertAlg(pllAlg),
+    timedMoves: pllAlg.split(" ").map((move, index) => `${move}@${index * 120}`).join(" "),
+    segmentedSolution: `
+${pllAlg} // PLL
+`
+  });
+
+  const pllSuggestion = review.coachSuggestions.suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "pll");
+
+  assert.ok(pllSuggestion);
+  assert.ok(pllSuggestion.candidates);
+  assert.equal(review.segments[0].recognition?.pll?.caseId, "T");
+  assert.equal(pllSuggestion.candidates.length, 1);
+  assert.equal(pllSuggestion.candidates[0].caseId, "T");
+});
+
+test("generateCoachSuggestions relaxes no-rotation filter for recognized PLL case fallback", async () => {
+  const pllAlg = "x R' U R' D2 R U' R' D2 R2 x'";
+  const review = await createSolveReview({
+    scramble: invertAlg(pllAlg),
+    timedMoves: pllAlg.split(" ").map((move, index) => `${move}@${index * 120}`).join(" "),
+    segmentedSolution: `
+${pllAlg} // PLL
+`
+  });
+
+  const pllSuggestion = review.coachSuggestions.suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "pll");
+
+  assert.ok(pllSuggestion);
+  assert.equal(review.segments[0].recognition?.pll?.caseId, "Aa");
+  assert.equal(pllSuggestion.candidates.length, 1);
+  assert.equal(pllSuggestion.candidates[0].caseId, "Aa");
+});
+
+test("generateCoachSuggestions uses recognized OLL caseId in algorithm candidates", async () => {
+  const ollAlg = "R U R' U R U2 R'";
+  const review = await createSolveReview({
+    scramble: invertAlg(ollAlg),
+    timedMoves: ollAlg.split(" ").map((move, index) => `${move}@${index * 120}`).join(" "),
+    segmentedSolution: `
+${ollAlg} // OLL
+`
+  });
+
+  const ollSuggestion = review.coachSuggestions.suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "oll");
+
+  assert.ok(ollSuggestion);
+  assert.ok(ollSuggestion.candidates);
+  assert.equal(review.segments[0].recognition?.oll?.caseId, "27");
+  assert.equal(ollSuggestion.candidates.length, 1);
+  assert.equal(ollSuggestion.candidates[0].caseId, "27");
 });
 
 test("createSolveReview infers cf4op segmentation when segmentedSolution is missing", async () => {
@@ -346,4 +499,46 @@ test("composeResponse handles chat fallback", () => {
   });
 
   assert.equal(response.kind, "chat-fallback");
+});
+
+test("composeResponse includes recognized PLL case in solve-review evidence", async () => {
+  const pllAlg = "R U R' U' R' F R2 U' R' U' R U R' F'";
+  const review = await createSolveReview({
+    scramble: invertAlg(pllAlg),
+    timedMoves: pllAlg.split(" ").map((move, index) => `${move}@${index * 120}`).join(" "),
+    segmentedSolution: `
+${pllAlg} // PLL
+`
+  });
+
+  const response = composeResponse({
+    toolResult: {
+      type: "solve-review",
+      review
+    }
+  });
+
+  assert.equal(response.kind, "solve-review");
+  assert.ok(response.evidence.some((line) => /PLL 识别：T \(T Perm\)/.test(line)));
+});
+
+test("composeResponse includes recognized OLL case in solve-review evidence", async () => {
+  const ollAlg = "R U R' U R U2 R'";
+  const review = await createSolveReview({
+    scramble: invertAlg(ollAlg),
+    timedMoves: ollAlg.split(" ").map((move, index) => `${move}@${index * 120}`).join(" "),
+    segmentedSolution: `
+${ollAlg} // OLL
+`
+  });
+
+  const response = composeResponse({
+    toolResult: {
+      type: "solve-review",
+      review
+    }
+  });
+
+  assert.equal(response.kind, "solve-review");
+  assert.ok(response.evidence.some((line) => /OLL 识别：27 \(OLL 27 OCLL-27\)/.test(line)));
 });

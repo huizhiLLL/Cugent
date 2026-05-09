@@ -1,6 +1,8 @@
 export { listAlgorithmSets, searchAlgorithms } from "./algorithm-search.js";
 export { analyzeCFOP } from "./cfop-analyzer.js";
 export { inferCf4opSegments } from "./cfop-inference.js";
+export { identifyOllCaseFromPattern, identifyOllCaseFromPatternData, listRecognizableOllCases } from "./oll-recognition.js";
+export { identifyPllCaseFromPattern, identifyPllCaseFromPatternData, listRecognizablePllCases } from "./pll-recognition.js";
 export { generateCoachSuggestions } from "./coach-suggestions.js";
 export { parsePlainAlgMoves, parseSegmentedSolution, parseTimedMoves } from "./parsers.js";
 export { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";

@@ -102,7 +102,7 @@ function buildAlgorithmSuggestions(review, algorithmTags) {
       return [];
     }
 
-    const candidates = searchAlgorithms({ ...query, limit: 3 });
+    const candidates = searchStageAlgorithms(query);
     if (!candidates.total) {
       return [];
     }
@@ -135,18 +135,35 @@ function buildAlgorithmQuery(stage, algorithmTags) {
   }
 
   if (stage.stageType === "oll") {
+    const recognizedOllCaseId = stage.recognition?.oll?.matched ? stage.recognition.oll.caseId : null;
     return {
       set: "OLL",
+      caseId: recognizedOllCaseId,
       tags: algorithmTags
     };
   }
 
   if (stage.stageType === "pll") {
+    const recognizedPllCaseId = stage.recognition?.pll?.matched ? stage.recognition.pll.caseId : null;
     return {
       set: "PLL",
+      caseId: recognizedPllCaseId,
       tags: algorithmTags
     };
   }
 
   return null;
+}
+
+function searchStageAlgorithms(query) {
+  const primary = searchAlgorithms({ ...query, limit: 3 });
+  if (primary.total || !query.caseId || !query.tags.length) {
+    return primary;
+  }
+
+  return searchAlgorithms({
+    ...query,
+    tags: query.tags.filter((tag) => tag !== "no-rotation"),
+    limit: 3
+  });
 }

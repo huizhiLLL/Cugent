@@ -13,11 +13,89 @@
     }
   },
   {
+    "id": "pll-aa-01",
+    "set": "PLL",
+    "caseId": "Aa",
+    "name": "Aa Perm",
+    "alg": "x R' U R' D2 R U' R' D2 R2 x'",
+    "tags": ["right-hand", "common"],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": true,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ab-01",
+    "set": "PLL",
+    "caseId": "Ab",
+    "name": "Ab Perm",
+    "alg": "x R' U R' D2 R U' R' D2 R2 x'",
+    "tags": ["right-hand", "common"],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": true,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-h-01",
+    "set": "PLL",
+    "caseId": "H",
+    "name": "H Perm",
+    "alg": "M2 U M2 U2 M2 U M2",
+    "tags": ["slice", "common"],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 4
+    }
+  },
+  {
+    "id": "pll-jb-01",
+    "set": "PLL",
+    "caseId": "Jb",
+    "name": "Jb Perm",
+    "alg": "R U R' F' R U R' U' R' F R2 U' R' U'",
+    "tags": ["right-hand", "common"],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ra-01",
+    "set": "PLL",
+    "caseId": "Ra",
+    "name": "Ra Perm",
+    "alg": "R U' R' U' R U R D R' U' R D' R' U2 R'",
+    "tags": ["right-hand", "common"],
+    "metrics": {
+      "moveCount": 17,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
     "id": "pll-u-a-01",
     "set": "PLL",
     "caseId": "Ua",
     "name": "Ua Perm",
     "alg": "R U' R U R U R U' R' U' R2",
+    "tags": ["right-hand", "no-rotation", "common"],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ub-01",
+    "set": "PLL",
+    "caseId": "Ub",
+    "name": "Ub Perm",
+    "alg": "R2 U R U R' U' R' U' R' U R'",
     "tags": ["right-hand", "no-rotation", "common"],
     "metrics": {
       "moveCount": 11,

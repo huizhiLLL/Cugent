@@ -3,6 +3,8 @@ import { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";
 import { analyzeCFOP } from "./cfop-analyzer.js";
 import { generateCoachSuggestions } from "./coach-suggestions.js";
 import { inferCf4opSegments } from "./cfop-inference.js";
+import { identifyOllCaseFromPatternData } from "./oll-recognition.js";
+import { identifyPllCaseFromPatternData } from "./pll-recognition.js";
 import { traceCubeState } from "./state-tracer.js";
 
 export async function createSolveReview({
@@ -36,7 +38,7 @@ export async function createSolveReview({
       warnings: []
     };
   const segments = assignSegments(moves, parsedSegments, pauseThresholdMs);
-  const segmentsWithState = attachSegmentStates(segments, stateTrace);
+  const segmentsWithState = await attachSegmentStates(segments, stateTrace);
   const baseReview = {
     puzzle,
     source,
@@ -134,12 +136,11 @@ function assignSegments(moves, parsedSegments, pauseThresholdMs) {
   });
 }
 
-function attachSegmentStates(segments, stateTrace) {
-  return segments.map((segment) => {
+async function attachSegmentStates(segments, stateTrace) {
+  return Promise.all(segments.map(async (segment) => {
     const beforeState = getStateBeforeMove(stateTrace, segment.startMove);
     const afterState = getStateAfterMove(stateTrace, segment.endMove);
-
-    return {
+    const segmentWithState = {
       ...segment,
       state: {
         before: beforeState,
@@ -147,7 +148,13 @@ function attachSegmentStates(segments, stateTrace) {
         changed: beforeState.stateHash !== afterState.stateHash
       }
     };
-  });
+    const recognition = await recognizeSegmentCase(segmentWithState);
+
+    return {
+      ...segmentWithState,
+      recognition
+    };
+  }));
 }
 
 function getStateBeforeMove(stateTrace, moveIndex) {
@@ -219,4 +226,22 @@ function buildSegmentPlayback(segment) {
     url: buildAlgCubingNetUrl({ alg }),
     bbcode: buildPlaybackBBCode({ alg, label: segment.label })
   };
+}
+
+async function recognizeSegmentCase(segment) {
+  const normalizedLabel = segment.label.trim().toLowerCase();
+
+  if (normalizedLabel === "oll") {
+    return {
+      oll: await identifyOllCaseFromPatternData(segment.state.before.patternData)
+    };
+  }
+
+  if (normalizedLabel === "pll") {
+    return {
+      pll: await identifyPllCaseFromPatternData(segment.state.before.patternData)
+    };
+  }
+
+  return null;
 }

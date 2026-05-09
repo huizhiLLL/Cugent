@@ -97,7 +97,7 @@ export function getCf4opProgressFromPatternData(patternData) {
   return 0;
 }
 
-function patternDataToFacelet(patternData) {
+export function patternDataToFacelet(patternData) {
   const faceMap = buildOriginalToCurrentFaceMap(patternData);
   const mapSticker = (sticker) => sticker.split("").map((face) => faceMap[face]).join("");
   const reid = [
@@ -128,7 +128,7 @@ function rotateLeft(value, amount) {
   return value.slice(amount) + value.slice(0, amount);
 }
 
-function toEqus(facelet) {
+export function toEqus(facelet) {
   const colorToIndices = {};
   for (let index = 0; index < facelet.length; index += 1) {
     const color = facelet[index];
@@ -143,6 +143,6 @@ function toEqus(facelet) {
   return Object.values(colorToIndices).filter((indices) => indices.length > 1);
 }
 
-function isMaskSolved(facelet, mask) {
+export function isMaskSolved(facelet, mask) {
   return mask.every((equivalenceGroup) => equivalenceGroup.every((index) => facelet[index] === facelet[equivalenceGroup[0]]));
 }
