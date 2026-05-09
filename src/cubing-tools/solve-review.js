@@ -15,16 +15,34 @@ export async function createSolveReview({
   scramble,
   timedMoves,
   segmentedSolution,
-  pauseThresholdMs = 500
+  pauseThresholdMs = 500,
+  onProgress
 }) {
   if (!scramble || !scramble.trim()) {
     throw new Error("scramble 为必填项");
   }
 
+  onProgress?.({
+    stage: "parse-review",
+    phase: "parse-review",
+    text: "正在解析回顾。"
+  });
   const moves = parseTimedMoves(timedMoves);
   const providedSegments = parseSegmentedSolution(segmentedSolution);
   const solutionAlg = moves.map((item) => item.move).join(" ");
+
+  onProgress?.({
+    stage: "trace-state",
+    phase: "trace-state",
+    text: "正在追踪魔方状态。"
+  });
   const stateTrace = await traceCubeState({ scramble, solution: solutionAlg });
+
+  onProgress?.({
+    stage: "infer-segmentation",
+    phase: "infer-segmentation",
+    text: "正在推断分段。"
+  });
   const segmentation = providedSegments.length
     ? {
       source: "provided",
@@ -39,6 +57,12 @@ export async function createSolveReview({
       ok: true,
       warnings: []
     };
+
+  onProgress?.({
+    stage: "build-stages",
+    phase: "build-stages",
+    text: "正在整理阶段结果。"
+  });
   const segments = assignSegments(moves, parsedSegments, pauseThresholdMs, scramble);
   const segmentsWithState = await attachSegmentStates(segments, stateTrace);
   const baseReview = {

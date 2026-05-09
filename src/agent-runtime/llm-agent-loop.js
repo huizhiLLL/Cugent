@@ -32,7 +32,8 @@ export async function runLlmAgentLoop({ message, context, options = {} }) {
       tools,
       signal: options.signal,
       onTextDelta: options.onTextDelta,
-      onAgentEvent: options.onAgentEvent
+      onAgentEvent: options.onAgentEvent,
+      existingToolCalls: executedToolCalls
     });
 
     responseId = result?.id ?? responseId;
@@ -78,7 +79,9 @@ export async function runLlmAgentLoop({ message, context, options = {} }) {
       const execution = await executeAgentToolSafely({
         toolCall,
         args,
-        latestContext
+        latestContext,
+        onAgentEvent: options.onAgentEvent,
+        executedToolCalls
       });
 
       executedToolCalls.push({
@@ -185,7 +188,7 @@ function compactLoopContext(context) {
   };
 }
 
-async function parseAgentStreamResponse(response, { onTextDelta, onAgentEvent, llmSettings }) {
+async function parseAgentStreamResponse(response, { onTextDelta, onAgentEvent, llmSettings, existingToolCalls = [] }) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
@@ -256,7 +259,15 @@ async function parseAgentStreamResponse(response, { onTextDelta, onAgentEvent, l
           });
           onAgentEvent?.({
             phase: "answering",
-            toolCalls: [...toolCallsByIndex.values()],
+            toolCalls: [
+              ...existingToolCalls,
+              ...[...toolCallsByIndex.values()].map((toolCall) => ({
+                name: toolCall.function?.name ?? "unknown",
+                args: parseToolCallArguments(toolCall.function?.arguments),
+                status: "running",
+                result: null
+              }))
+            ],
             text: finalContent
           });
         }
@@ -326,7 +337,7 @@ async function parseAgentStreamResponse(response, { onTextDelta, onAgentEvent, l
   };
 }
 
-async function requestAgentLoopCompletion({ llmSettings, messages, tools, signal, onTextDelta, onAgentEvent }) {
+async function requestAgentLoopCompletion({ llmSettings, messages, tools, signal, onTextDelta, onAgentEvent, existingToolCalls = [] }) {
   const response = await fetchWithTimeout(joinChatCompletionsUrl(llmSettings.baseUrl), {
     method: "POST",
     headers: {
@@ -367,15 +378,30 @@ async function requestAgentLoopCompletion({ llmSettings, messages, tools, signal
     throw new LlmClientError("LLM_STREAM_MISSING", "接口未返回可读取的流。");
   }
 
-  return await parseAgentStreamResponse(response, { onTextDelta, onAgentEvent, llmSettings });
+  return await parseAgentStreamResponse(response, { onTextDelta, onAgentEvent, llmSettings, existingToolCalls });
 }
 
-async function executeAgentToolSafely({ toolCall, args, latestContext }) {
+async function executeAgentToolSafely({ toolCall, args, latestContext, onAgentEvent, executedToolCalls }) {
   try {
     return await executeAgentToolCall({
       name: toolCall.function?.name,
       args,
-      context: latestContext
+      context: latestContext,
+      onProgress: (progress) => {
+        onAgentEvent?.({
+          phase: progress.stage ?? "tool_progress",
+          toolCalls: [
+            ...executedToolCalls,
+            {
+              name: toolCall.function?.name ?? "unknown",
+              args,
+              status: "running",
+              result: progress
+            }
+          ],
+          text: progress.text ?? "正在处理…"
+        });
+      }
     });
   } catch (error) {
     return {

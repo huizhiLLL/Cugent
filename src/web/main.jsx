@@ -172,7 +172,7 @@ function App() {
                   text: agentEvent.text || item.text || "正在判断是否需要调用工具…",
                   response: {
                     ...(item.response ?? { kind: "streaming", evidence: [], nextActions: [] }),
-                    toolCalls: agentEvent.toolCalls ?? item.response?.toolCalls ?? [],
+                    toolCalls: agentEvent.toolCalls?.length ? agentEvent.toolCalls : item.response?.toolCalls ?? [],
                     llm: {
                       enabled: true,
                       status: "running",
@@ -181,7 +181,7 @@ function App() {
                       streaming: true
                     }
                   },
-                  toolCalls: agentEvent.toolCalls ?? item.toolCalls ?? [],
+                  toolCalls: agentEvent.toolCalls?.length ? agentEvent.toolCalls : item.toolCalls ?? [],
                   status: {
                     type: "running"
                   }

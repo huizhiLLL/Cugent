@@ -401,6 +401,38 @@ h3 {
   animation-delay: 20ms;
 }
 
+.tool-timeline {
+  display: grid;
+  gap: 10px;
+  padding-left: 2px;
+}
+
+.tool-timeline-item {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.tool-timeline-marker {
+  width: 10px;
+  height: 10px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--accent-dark) 70%, white);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent-dark) 12%, transparent);
+}
+
+.tool-timeline-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in oklch, var(--line) 88%, var(--accent-dark));
+  border-radius: 14px;
+  background: color-mix(in oklch, white 92%, var(--accent-dark));
+  box-shadow: 0 8px 20px -16px rgba(45, 70, 68, 0.25);
+}
+
 .response-details-candidates {
   animation-delay: 90ms;
 }
@@ -601,23 +633,28 @@ code {
 }
 
 .aui-md-playback-inline {
-  display: inline-block;
+  display: block;
+  width: 100%;
+  margin: 10px 0;
   max-width: 100%;
-  vertical-align: middle;
 }
 
 .twisty-preview-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  gap: 10px;
+  width: 100%;
   max-width: 100%;
-  vertical-align: middle;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f8fbfc;
 }
 
 .twisty-preview-inline-toolbar {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 10px;
   color: var(--text-muted);
 }
 
@@ -625,6 +662,28 @@ code {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--accent-dark);
+  background: var(--surface);
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.twisty-preview-inline-toolbar button:hover {
+  background: var(--surface-hover);
+}
+
+.twisty-preview-inline-toolbar button:active {
+  transform: scale(0.95);
+}
+
+.twisty-preview-inline twisty-player {
+  width: 100%;
+  height: 280px;
+  min-height: 280px;
 }
 
 .composer {
@@ -1071,6 +1130,8 @@ code {
 .twisty-preview {
   display: grid;
   gap: 10px;
+  width: 100%;
+  max-width: 100%;
   margin-top: 8px;
   padding: 12px;
   border: 1px solid var(--line);
@@ -1079,7 +1140,7 @@ code {
 }
 
 .twisty-preview.compact {
-  padding: 10px;
+  padding: 12px;
 }
 
 .twisty-toolbar {
@@ -1125,13 +1186,8 @@ code {
 
 twisty-player {
   width: 100%;
-  height: 220px;
-  min-height: 220px;
-}
-
-.twisty-preview.compact twisty-player {
-  height: 180px;
-  min-height: 180px;
+  height: 280px;
+  min-height: 280px;
 }
 
 .formula-line {

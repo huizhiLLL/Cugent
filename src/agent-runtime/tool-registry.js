@@ -79,10 +79,10 @@ export function getAgentToolSchemas() {
   return TOOL_SCHEMAS;
 }
 
-export async function executeAgentToolCall({ name, args, context }) {
+export async function executeAgentToolCall({ name, args, context, onProgress }) {
   switch (name) {
     case "create_solve_review":
-      return executeCreateSolveReview(args, context);
+      return executeCreateSolveReview(args, context, onProgress);
     case "inspect_solve_segment":
       return executeInspectSolveSegment(args, context);
     case "search_algorithms":
@@ -94,7 +94,7 @@ export async function executeAgentToolCall({ name, args, context }) {
   }
 }
 
-async function executeCreateSolveReview(args = {}, context = {}) {
+async function executeCreateSolveReview(args = {}, context = {}, onProgress) {
   const params = {
     puzzle: args.puzzle || "333",
     source: args.source || "chat",
@@ -107,7 +107,10 @@ async function executeCreateSolveReview(args = {}, context = {}) {
     throw new Error("导入 solve 需要提供 scramble。");
   }
 
-  const review = await createSolveReview(params);
+  const review = await createSolveReview({
+    ...params,
+    onProgress
+  });
   return {
     toolResult: {
       type: "solve-review",

@@ -7,9 +7,12 @@ export function CubeResponseDetails({ response, toolCalls = [] }) {
   return (
     <div className="response-details">
       {toolCalls.length > 0 ? (
-        <div className="mini-section response-details-block response-details-tool-calls">
+        <div className="response-details-block response-details-tool-calls">
+          <div className="tool-timeline">
           {toolCalls.map((toolCall, index) => (
-            <div className="highlight" key={`${toolCall.name}-${index}`}>
+            <div className="tool-timeline-item" key={`${toolCall.name}-${index}`}>
+              <div className="tool-timeline-marker" aria-hidden="true" />
+              <div className="tool-timeline-card">
               <div className="tool-call-head">
                 <strong>{formatToolCallName(toolCall.name)}</strong>
                 <span>{formatToolCallStatus(toolCall.status)}</span>
@@ -19,15 +22,10 @@ export function CubeResponseDetails({ response, toolCalls = [] }) {
                   <p key={line}>{line}</p>
                 ))}
               </div>
-              <details className="tool-call-raw">
-                <summary>查看参数与原始结果</summary>
-                <pre className="tool-call-json">{JSON.stringify(toolCall.args ?? {}, null, 2)}</pre>
-                {toolCall.result ? (
-                  <pre className="tool-call-json">{JSON.stringify(toolCall.result, null, 2)}</pre>
-                ) : null}
-              </details>
+            </div>
             </div>
           ))}
+          </div>
         </div>
       ) : null}
       {response.evidence?.length > 0 && (
@@ -115,6 +113,17 @@ function formatToolCallSummary(toolCall) {
   const result = toolCall.result ?? {};
 
   if (toolCall.name === "create_solve_review") {
+    if (toolCall.result?.phase && toolCall.status === "running") {
+      return [toolCall.result.text ?? "正在处理复盘。"];
+    }
+    if (result.stage) {
+      return [
+        result.stage === "parse-review" ? "正在解析回顾。" : "",
+        result.stage === "trace-state" ? "正在追踪魔方状态。" : "",
+        result.stage === "infer-segmentation" ? "正在推断分段。" : "",
+        result.stage === "build-stages" ? "正在整理阶段结果。" : ""
+      ].filter(Boolean);
+    }
     return [
       `打乱：${truncateValue(args.scramble ?? "")}`,
       `回顾长度：${args.timedMovesLength ?? String(args.timedMoves ?? "").length ?? 0}`,
