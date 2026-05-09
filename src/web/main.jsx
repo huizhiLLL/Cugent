@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
-import { FileInput, Menu, MessageSquarePlus, Pencil, Search, Settings2, Sparkles, Trash2 } from "lucide-react";
+import { Menu, Pencil, Settings2, Sparkles, Trash2 } from "lucide-react";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Thread } from "@/components/thread";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { invertAlg } from "../cubing-tools/index.js";
 import { runAgentTurn } from "../agent-runtime/index.js";
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "./chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, loadChatState, saveChatState } from "./chat-storage.js";
@@ -26,14 +25,7 @@ import { XIcon } from "lucide-react";
 import "./styles.css";
 
 const scramble = "B' R' U2 L2 F U2 L2 B2 F' D2 F R2 B D R U2 L F2 R' U";
-const solution = invertAlg(scramble);
 const reviewMoves = "U'@0 F'@136 U'@265 F'@448 F'@504 U'@729 F@1475 D@1582 F'@1792 D@2166 R'@2233 D'@2294 R@2367 R@2423 D'@2483 R'@2572 D@2621 R@2674 D'@2720 R'@3083 R@3360 D'@3409 R'@3475 L@3628 D@3739 D@3788 L'@3850 D@4356 L'@4444 D@4505 L@4563 D'@5008 R@5112 D'@5170 R'@5237 D@5294 R@5343 D'@5383 R'@5474 D@5537 D@5590 R@5641 D'@5694 R'@5759 D@6236 R@6327 D@6434 R'@6506 D'@6614 L@6669 R'@6803 B@6852 R@6913 B'@6958 L'@7049 R@7544 D'@7605 R'@7685 D'@7778 R@7896 D@8146 R@8232 U@8283 R'@8380 D'@8430 R@8495 U'@8544 R'@8664 D@8737 D@8775 R'@8818 D'@8888 D'@8916";
-const sampleSolve = `scramble: ${scramble}
-timedMoves: ${solution.split(" ").map((move, index) => `${move}@${index * 250}`).join(" ")}
-segmentedSolution:
-${solution.split(" ").slice(0, 2).join(" ")} // Cross
-${solution.split(" ").slice(2).join(" ")} // F2L 1`;
-
 const sampleSmartInput = {
   scramble,
   timedMoves: reviewMoves,
@@ -323,12 +315,6 @@ function App() {
     convertMessage
   });
 
-  function importSampleSolve() {
-    setSmartInput(sampleSmartInput);
-    setActionDialogOpen(false);
-    void submitMessage(sampleSolve);
-  }
-
   function createConversation() {
     const conversation = createEmptyConversation();
     setChatState((previous) => ({
@@ -380,11 +366,6 @@ ${smartInput.segmentedSolution}`.trim();
   function openSmartCubeDialog() {
     setActionDialogOpen(false);
     setSmartDialogOpen(true);
-  }
-
-  function runQuickAction(text) {
-    setActionDialogOpen(false);
-    void submitMessage(text);
   }
 
   function updateLlmSettings(field, value) {
@@ -735,24 +716,12 @@ ${smartInput.segmentedSolution}`.trim();
           <DialogContent className="action-dialog-content sm:max-w-sm">
             <DialogHeader>
               <DialogTitle>添加内容</DialogTitle>
-              <DialogDescription>从这里导入结构化复盘，或运行开发调试用的快捷消息。</DialogDescription>
+              <DialogDescription>从这里导入结构化复盘内容。</DialogDescription>
             </DialogHeader>
             <div className="action-list">
               <Button type="button" variant="outline" className="action-list-item" onClick={openSmartCubeDialog}>
                 <Sparkles data-icon="inline-start" />
                 <span>智能魔方</span>
-              </Button>
-              <Button type="button" variant="ghost" className="action-list-item" onClick={importSampleSolve}>
-                <FileInput data-icon="inline-start" />
-                <span>导入样例</span>
-              </Button>
-              <Button type="button" variant="ghost" className="action-list-item" onClick={() => runQuickAction("给我一个右手 no-rotation 的 OLL 27 公式")}>
-                <Search data-icon="inline-start" />
-                <span>查询 OLL 27</span>
-              </Button>
-              <Button type="button" variant="ghost" className="action-list-item" onClick={() => runQuickAction("F2L 1 这里怎么样？")}>
-                <MessageSquarePlus data-icon="inline-start" />
-                <span>追问 F2L 1</span>
               </Button>
             </div>
           </DialogContent>

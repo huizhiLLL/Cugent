@@ -45,7 +45,7 @@ Cubing Domain Tools
 - 桌面端左侧固定展开侧边栏：保留新建对话入口和对话历史列表，不再提供折叠态。
 - 桌面端左下角设置入口：使用单独的 `settings` icon 打开设置面板，不再与会话操作混排。
 - 移动端顶部栏：品牌名左侧提供菜单按钮，点按或从屏幕左侧边缘右滑可打开对话历史抽屉；抽屉支持左滑隐藏。
-- 主 chat 工作区：assistant-ui `Thread` 承载消息流和输入框。空会话时显示居中的简单问候与输入框；首条消息发出后切换为常规消息流和底部输入框。输入框保持普通聊天形态，`+` 扩展打开添加内容面板，其中包含“智能魔方”结构化导入入口；开发调试快捷消息也收纳在该扩展面板中。
+- 主 chat 工作区：assistant-ui `Thread` 承载消息流和输入框。空会话时显示居中的简单问候与输入框；首条消息发出后切换为常规消息流和底部输入框。输入框保持普通聊天形态，`+` 扩展打开添加内容面板，其中只保留“智能魔方”结构化导入入口。
 - 会话历史已切到真实状态：对话标题、消息和 solve 上下文保存在浏览器本地存储中，支持切换与恢复。
 - solve 的结构化分析详情不再直接混在 assistant 正文里，而是以单独的工具态展开块呈现；LLM 正文只负责自然语言整理结果。
 - 移动端保留同一套单栏 chat 体验。
@@ -66,12 +66,16 @@ Cubing Domain Tools
 
 负责判断用户意图、选择工具、保存当前 solve 上下文、组织回答。第一版轻量自研，不直接引入 LangGraph/Mastra 这类重型 agent 框架。
 
-当前 runtime 仍是规则原型，LLM 只负责语言组织，不接管工具决策：
+当前 runtime 已进入“规则 fallback + 第一版 agent loop”并行阶段：
 
-- `solve-import`：识别 scramble、timedMoves、segmentedSolution，调用 `createSolveReview`。
-- `algorithm-query`：识别 F2L/OLL/PLL 公式查询，调用 `searchAlgorithms`。
-- `local-followup`：基于当前 `currentSolveReview` 返回指定分段的状态、阶段分析和建议。
-- `chat`：未命中特定工具时交给普通聊天模型处理。
+- 本地规则 fallback 仍保留：`solve-import`、`algorithm-query`、`local-followup` 和普通 `chat`。
+- 当用户消息明显与魔方工具相关且已启用 LLM 时，runtime 会优先尝试基于 OpenAI 兼容 tools 的第一版 agent loop。
+- agent loop 当前可调用的核心工具包括：
+  - `create_solve_review`
+  - `inspect_solve_segment`
+  - `search_algorithms`
+  - `build_playback_link`
+- 对于带 reasoning / thinking 内容的 OpenAI 兼容接口，runtime 会把上一轮 assistant 返回的 `reasoning_content` 原样带回后续 tool call 轮次，避免 provider 拒绝继续推理。
 - 非错误型工具结果：把 `toolResult`、`response-composer` 输出和当前上下文一起交给模型润色。
 - LLM prompt 按 `chat / solve-import / algorithm-query / local-followup` 做第一版分层。
 - assistant 回复最终拆成两层呈现：

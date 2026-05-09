@@ -192,6 +192,8 @@ const MessageError = () => {
 
 const AssistantMessage = ({ onDeleteMessage }) => {
   const cubeResponse = useAuiState((s) => s.message.metadata.custom?.cubeResponse);
+  const toolCalls = useAuiState((s) => s.message.metadata.custom?.toolCalls ?? []);
+  const messageStatus = useAuiState((s) => s.message.status);
 
   return (
     <MessagePrimitive.Root
@@ -201,7 +203,9 @@ const AssistantMessage = ({ onDeleteMessage }) => {
       <div
         data-slot="aui_assistant-message-content"
         className="wrap-break-word px-2 text-foreground leading-relaxed">
-        {shouldRenderCubeToolCall(cubeResponse) ? <CubeResponseToolCall response={cubeResponse} /> : null}
+        {shouldRenderCubeToolCall(cubeResponse, toolCalls) ? (
+          <CubeResponseToolCall response={cubeResponse} toolCalls={toolCalls} status={messageStatus} />
+        ) : null}
         <MessagePrimitive.GroupedParts
           groupBy={(part) => {
             if (part.type === "reasoning")
@@ -244,11 +248,12 @@ const AssistantMessage = ({ onDeleteMessage }) => {
   );
 };
 
-function shouldRenderCubeToolCall(response) {
+function shouldRenderCubeToolCall(response, toolCalls) {
   return Boolean(
-    response
-    && response.kind !== "chat-fallback"
-    && response.kind !== "error"
+    (response
+      && response.kind !== "chat-fallback"
+      && response.kind !== "error")
+    || (Array.isArray(toolCalls) && toolCalls.length > 0)
   );
 }
 

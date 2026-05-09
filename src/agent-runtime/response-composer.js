@@ -1,16 +1,16 @@
 export function composeResponse(agentTurn) {
-  const { toolResult } = agentTurn;
+  const { toolResult, toolCalls = [] } = agentTurn;
 
   if (toolResult.type === "solve-review") {
-    return composeSolveReviewResponse(toolResult.review);
+    return composeSolveReviewResponse(toolResult.review, toolCalls);
   }
 
   if (toolResult.type === "algorithm-search") {
-    return composeAlgorithmSearchResponse(toolResult.result);
+    return composeAlgorithmSearchResponse(toolResult.result, toolCalls);
   }
 
   if (toolResult.type === "segment-inspection") {
-    return composeSegmentInspectionResponse(toolResult);
+    return composeSegmentInspectionResponse(toolResult, toolCalls);
   }
 
   if (toolResult.type === "error") {
@@ -34,7 +34,7 @@ export function composeResponse(agentTurn) {
   };
 }
 
-function composeSolveReviewResponse(review) {
+function composeSolveReviewResponse(review, toolCalls) {
   const topSuggestions = review.coachSuggestions.suggestions
     .filter((suggestion) => shouldShowSolveReviewHighlight(suggestion))
     .slice(0, 3);
@@ -58,6 +58,7 @@ function composeSolveReviewResponse(review) {
     text: `我已经导入这次 ${review.puzzle} solve，并生成了阶段分析和 ${review.coachSuggestions.suggestions.length} 条结构化建议。`,
     evidence,
     highlights: topSuggestions.map(formatSuggestion),
+    toolCalls: normalizeToolCalls(toolCalls),
     playback: review.playback.bbcode,
     nextActions: [
       "可以继续问某个阶段，例如“F2L 1 这里怎么看”。",
@@ -66,7 +67,7 @@ function composeSolveReviewResponse(review) {
   };
 }
 
-function composeAlgorithmSearchResponse(result) {
+function composeAlgorithmSearchResponse(result, toolCalls) {
   if (!result.total) {
     return {
       kind: "algorithm-search",
@@ -91,11 +92,12 @@ function composeAlgorithmSearchResponse(result) {
     text: `本地公式库命中 ${result.total} 条候选。`,
     evidence: [formatQuery(result.query)],
     candidates,
+    toolCalls: normalizeToolCalls(toolCalls),
     nextActions: ["后续可以结合真实 case 识别和你的手法偏好再排序。"]
   };
 }
 
-function composeSegmentInspectionResponse({ segment, stage, suggestions }) {
+function composeSegmentInspectionResponse({ segment, stage, suggestions }, toolCalls) {
   const evidence = [
     `${segment.label}：${segment.moveCount} moves，${segment.durationMs}ms，TPS ${segment.tps}`,
     `阶段目标：${stage.goal.completed ? "完成" : "未完成"}，${stage.goal.evidence}`,
@@ -116,6 +118,7 @@ function composeSegmentInspectionResponse({ segment, stage, suggestions }) {
     text: `我看了 ${segment.label} 这一段，下面是基于工具结果的局部证据。`,
     evidence,
     highlights: suggestions.map(formatSuggestion),
+    toolCalls: normalizeToolCalls(toolCalls),
     playback: segment.playback?.bbcode ?? null,
     nextActions: [
       "可以继续要求对比候选公式。",
@@ -155,4 +158,13 @@ function shouldShowSolveReviewHighlight(suggestion) {
 
 function formatQuery(query) {
   return `查询条件：set=${query.set ?? "any"}，caseId=${query.caseId ?? "any"}，tags=${query.tags.length ? query.tags.join(", ") : "none"}`;
+}
+
+function normalizeToolCalls(toolCalls) {
+  return (Array.isArray(toolCalls) ? toolCalls : []).map((toolCall) => ({
+    name: toolCall.name ?? "unknown",
+    args: toolCall.args ?? {},
+    status: toolCall.status ?? "completed",
+    result: toolCall.result ?? null
+  }));
 }

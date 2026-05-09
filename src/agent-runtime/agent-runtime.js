@@ -1,9 +1,19 @@
 import { createSolveReview, searchAlgorithms } from "../cubing-tools/index.js";
 import { detectIntent } from "./intent-detector.js";
+import { runLlmAgentLoop } from "./llm-agent-loop.js";
 import { enhanceAgentTurnResponse } from "./llm-client.js";
 import { composeResponse } from "./response-composer.js";
 
 export async function runAgentTurn(message, context = {}, options = {}) {
+  if (shouldUseLlmAgentLoop(message, context, options)) {
+    try {
+      const loopTurn = await runLlmAgentLoop({ message, context, options });
+      return withPreparedResponse(loopTurn);
+    } catch (error) {
+      // 如果 agent loop 失败，继续退回当前本地规则链路。
+    }
+  }
+
   let intent = detectIntent(message);
   let turn;
 
@@ -43,6 +53,19 @@ export async function runAgentTurn(message, context = {}, options = {}) {
     contextPatch: {}
   };
   return withResponse(turn, { message, context, options });
+}
+
+function withPreparedResponse(turn) {
+  const fallbackResponse = composeResponse(turn);
+  return {
+    ...turn,
+    fallbackResponse,
+    response: {
+      ...fallbackResponse,
+      text: turn.llmText ?? fallbackResponse.text,
+      llm: turn.llmMeta ?? fallbackResponse.llm
+    }
+  };
 }
 
 async function withResponse(turn, { message, context, options }) {
@@ -93,6 +116,31 @@ async function maybeEnhanceResponse({ message, context, turn, fallbackResponse, 
 
 function shouldUseLlmResponse(turn) {
   return turn.toolResult?.type !== "error";
+}
+
+function shouldUseLlmAgentLoop(message, context, options) {
+  if (typeof options.responseEnhancer === "function") {
+    return false;
+  }
+
+  if (context?.llmSettings?.enabled === false || !context?.llmSettings) {
+    return false;
+  }
+
+  return isLikelyToolDrivenTurn(message, context);
+}
+
+function isLikelyToolDrivenTurn(message, context) {
+  const detected = detectIntent(message);
+  if (detected.type !== "chat") {
+    return true;
+  }
+
+  return Boolean(
+    context.currentSolveReview
+    || shouldInspectSelectedSegment(message, context)
+    || /scramble|timedMoves|segmentedSolution|OLL|PLL|Cross|F2L|公式|候选|复盘|分析/i.test(String(message ?? ""))
+  );
 }
 
 function attachLlmFallbackInfo(fallbackResponse, error, turn) {
@@ -179,7 +227,13 @@ async function runSolveImport(intent, context) {
       toolCalls: [
         {
           name: "createSolveReview",
-          args: sanitizeSolveArgs(intent.params)
+          args: sanitizeSolveArgs(intent.params),
+          status: "error",
+          result: {
+            type: "error",
+            code: importError.code,
+            message: importError.message
+          }
         }
       ],
       toolResult: {
@@ -197,7 +251,14 @@ async function runSolveImport(intent, context) {
     toolCalls: [
       {
         name: "createSolveReview",
-        args: sanitizeSolveArgs(intent.params)
+        args: sanitizeSolveArgs(intent.params),
+        status: "completed",
+        result: {
+          type: "solve-review",
+          summary: review.summary,
+          validation: review.validation,
+          segmentation: review.segmentation
+        }
       }
     ],
     toolResult: {
@@ -222,7 +283,13 @@ function runAlgorithmQuery(intent) {
     toolCalls: [
       {
         name: "searchAlgorithms",
-        args: intent.params
+        args: intent.params,
+        status: "completed",
+        result: {
+          type: "algorithm-search",
+          total: result.total,
+          query: result.query
+        }
       }
     ],
     toolResult: {
@@ -276,6 +343,13 @@ function runLocalFollowup(intent, context) {
         name: "readSolveContext",
         args: {
           segmentLabel: segment.label
+        },
+        status: "completed",
+        result: {
+          type: "segment-inspection",
+          segmentId: segment.id,
+          label: segment.label,
+          goal: stage?.goal ?? null
         }
       }
     ],

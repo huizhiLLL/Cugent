@@ -397,6 +397,10 @@ h3 {
   animation-delay: 50ms;
 }
 
+.response-details-tool-calls {
+  animation-delay: 20ms;
+}
+
 .response-details-candidates {
   animation-delay: 90ms;
 }
@@ -537,6 +541,44 @@ code {
   color: #315f5c;
   font-family: var(--font-mono);
   font-size: 0.82rem;
+}
+
+.tool-call-json {
+  margin: 0;
+  padding: 9px 10px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbfc;
+  color: #315f5c;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.tool-call-summary {
+  display: grid;
+  gap: 4px;
+}
+
+.tool-call-summary p {
+  margin: 0;
+  color: #494741;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.tool-call-raw {
+  display: grid;
+  gap: 8px;
+}
+
+.tool-call-raw summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  user-select: none;
 }
 
 .playback-code {
