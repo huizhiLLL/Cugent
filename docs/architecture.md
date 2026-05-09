@@ -43,9 +43,11 @@ Cubing Domain Tools
 当前客户端布局：
 
 - 桌面端左侧固定展开侧边栏：保留新建对话入口和对话历史列表，不再提供折叠态。
+- 桌面端左下角设置入口：使用单独的 `settings` icon 打开设置面板，不再与会话操作混排。
 - 移动端顶部栏：品牌名左侧提供菜单按钮，点按或从屏幕左侧边缘右滑可打开对话历史抽屉；抽屉支持左滑隐藏。
 - 主 chat 工作区：assistant-ui `Thread` 承载消息流和输入框。空会话时显示居中的简单问候与输入框；首条消息发出后切换为常规消息流和底部输入框。输入框保持普通聊天形态，`+` 扩展打开添加内容面板，其中包含“智能魔方”结构化导入入口；开发调试快捷消息也收纳在该扩展面板中。
-- solve 的总览指标、阶段目标、结构化建议和播放预览作为 assistant 回复的一部分展示，不再单独维护右侧分析面板。
+- 会话历史已切到真实状态：对话标题、消息和 solve 上下文保存在浏览器本地存储中，支持切换与恢复。
+- solve 的结构化分析详情不再直接混在 assistant 正文里，而是以单独的工具态展开块呈现；LLM 正文只负责自然语言整理结果。
 - 移动端保留同一套单栏 chat 体验。
 
 当前客户端的功能图标统一使用 `lucide-react`。品牌与站点图标只使用 `cubeagent-logo.png` 这类独立品牌资产，不混入功能按钮图标体系。通用功能图标的默认尺寸、描边和按钮容器由 `src/web/styles.css` 与 `TooltipIconButton` 统一控制，局部组件只在确有层级差异时覆盖尺寸。
@@ -53,6 +55,7 @@ Cubing Domain Tools
 当前前端边界：
 
 - 前端负责消息流、LLM 设置录入与本地保存。
+- 前端负责会话状态持久化、会话管理和消息级交互（复制、编辑、删除、重试）。
 - `runAgentTurn` 仍负责本地 intent 判断、工具路由和 fallback。
 - 前端只填写接口基地址，例如 `https://api.huizhi.ink/v1`；运行时请求会自动补成 `/chat/completions`。
 - 前端直接读取 OpenAI 兼容接口的 SSE 流，生成中的 assistant 回复会持续更新。
@@ -71,6 +74,9 @@ Cubing Domain Tools
 - `chat`：未命中特定工具时交给普通聊天模型处理。
 - 非错误型工具结果：把 `toolResult`、`response-composer` 输出和当前上下文一起交给模型润色。
 - LLM prompt 按 `chat / solve-import / algorithm-query / local-followup` 做第一版分层。
+- assistant 回复最终拆成两层呈现：
+  - LLM 整理后的正文。
+  - 基于工具结果的结构化详情块，前端以工具态独立展示。
 
 当前 solve 导入支持常见复制字段别名：
 
@@ -97,6 +103,13 @@ Cubing Domain Tools
 - 上游异常：5xx。
 - 超时：前端超时终止。
 - 网络或 CORS：浏览器无法直连兼容接口。
+
+当前 AI 相关主要缺口：
+
+- 语义路由仍偏粗，尚未形成 `intent + subIntent` 的稳定结构。
+- 长会话下的上下文压缩、裁剪和摘要策略尚未建立。
+- 工具调用态已有第一版，但参数摘要、事件流和多工具顺序展示仍不完整。
+- 多模型、多 provider fallback 和能力分级尚未实现。
 
 ### Cubing Domain Tools
 

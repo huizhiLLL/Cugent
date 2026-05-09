@@ -35,7 +35,7 @@
 - 提供轻量 `agent-runtime` 原型，支持 solve 导入、公式查询和局部追问。
 - 提供 `response-composer`，把结构化工具结果转成稳定中文 fallback 回复。
 - 提供最小 LLM 接入闭环：本地 runtime 先完成意图判断与确定性工具调用，再把工具结果交给真实 LLM 组织成更自然的中文回复；若未配置 API Key 或模型失败，会自动退回本地 fallback 回复。
-- 提供最小 Web 客户端：左侧 chat，右侧 solve context 面板。
+- 提供最小 Web 客户端：真实会话历史、本地持久化、消息编辑/删除/重试、设置面板与结构化分析工具态展示。
 - 生成兼容 `alg.cubing.net` 的可嵌入播放链接，并用 `cubing.js` 的 `twisty-player` 在页面内渲染转动动画。
 
 ## 快速验证
@@ -69,6 +69,7 @@ https://api.huizhi.ink/v1/chat/completions
 - 非错误型工具结果也会把 `toolResult`、`response-composer` 的 fallback 回复和当前 context 一起发给 LLM，让模型只负责自然语言组织，而不负责判断魔方事实。
 - 当前前端已支持基于 OpenAI 兼容 `chat/completions` 的 streaming。
 - prompt 已按 `chat / solve-import / algorithm-query / local-followup` 做第一版分层。
+- assistant 回复已拆成两层：正文展示 LLM 整理结果，分析详情单独以“分析结果详情”工具态展示。
 - 前端会区分配置缺失、鉴权失败、限流、超时、网络或 CORS 等常见 LLM 错误，并在失败时回退到本地 fallback 回复。
 - 若兼容接口不可用、未配置 API Key、CORS 不允许或模型调用失败，则继续展示本地 fallback 回复。
 
