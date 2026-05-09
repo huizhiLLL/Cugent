@@ -194,20 +194,15 @@ function formatMoveWindow(previousMoves, currentMove, nextMoves) {
 }
 
 function formatPauseStateSummary(stateSummary) {
-  const parts = [];
-
-  if (stateSummary.caseLabel) {
-    parts.push(`识别 case：${stateSummary.caseLabel}`);
+  if (stateSummary.readableSummary) {
+    return `状态摘要：${stateSummary.readableSummary}`;
   }
 
-  if (stateSummary.goalProgress) {
-    const metrics = Object.entries(stateSummary.goalProgress)
+  const metrics = stateSummary.goalProgress
+    ? Object.entries(stateSummary.goalProgress)
       .map(([key, value]) => `${key}=${value}`)
-      .join("，");
-    if (metrics) {
-      parts.push(`状态摘要：${metrics}`);
-    }
-  }
+      .join("，")
+    : "";
 
-  return parts.join("；");
+  return metrics ? `状态摘要：${metrics}` : "";
 }

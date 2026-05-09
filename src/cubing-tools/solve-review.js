@@ -260,32 +260,41 @@ function summarizePauseWindowState(segment, recognition) {
   const summary = {
     stageLabel,
     beforeSolved: segment.state.before.isSolved,
-    afterSolved: segment.state.after.isSolved
+    afterSolved: segment.state.after.isSolved,
+    readableSummary: ""
   };
 
   if (normalizedLabel === "oll") {
-    summary.goalProgress = summarizeOrientationProgress(beforePattern);
+    const goalProgress = summarizeOrientationProgress(beforePattern);
+    summary.goalProgress = goalProgress;
     if (recognition?.oll?.matched) {
       summary.caseLabel = `${recognition.oll.caseId} (${recognition.oll.name})`;
     }
+    summary.readableSummary = buildOllReadableSummary(goalProgress, summary.caseLabel);
     return summary;
   }
 
   if (normalizedLabel === "pll") {
-    summary.goalProgress = summarizePermutationProgress(beforePattern);
+    const goalProgress = summarizePermutationProgress(beforePattern);
+    summary.goalProgress = goalProgress;
     if (recognition?.pll?.matched) {
       summary.caseLabel = `${recognition.pll.caseId} (${recognition.pll.name})`;
     }
+    summary.readableSummary = buildPllReadableSummary(goalProgress, summary.caseLabel);
     return summary;
   }
 
   if (normalizedLabel.includes("f2l")) {
-    summary.goalProgress = summarizeF2lProgress(beforePattern);
+    const goalProgress = summarizeF2lProgress(beforePattern);
+    summary.goalProgress = goalProgress;
+    summary.readableSummary = buildF2lReadableSummary(goalProgress);
     return summary;
   }
 
   if (normalizedLabel === "cross") {
-    summary.goalProgress = summarizeCrossProgress(beforePattern);
+    const goalProgress = summarizeCrossProgress(beforePattern);
+    summary.goalProgress = goalProgress;
+    summary.readableSummary = buildCrossReadableSummary(goalProgress);
     return summary;
   }
 
@@ -293,6 +302,7 @@ function summarizePauseWindowState(segment, recognition) {
     beforeStateHash: segment.state.before.stateHash,
     afterStateHash: segment.state.after.stateHash
   };
+  summary.readableSummary = "停顿前后的状态已有记录，可继续结合回放细看。";
   return summary;
 }
 
@@ -300,7 +310,7 @@ function summarizeCrossProgress(patternData) {
   const edges = patternData.EDGES;
   const solvedCrossEdges = [4, 5, 6, 7].filter((index) => edges.pieces[index] === index && edges.orientation[index] === 0).length;
   return {
-    solvedCrossEdges: `${solvedCrossEdges}/4`
+    solvedCrossEdges
   };
 }
 
@@ -310,8 +320,8 @@ function summarizeF2lProgress(patternData) {
   const solvedCorners = [4, 5, 6, 7].filter((index) => corners.pieces[index] === index && corners.orientation[index] === 0).length;
   const solvedMiddleEdges = [8, 9, 10, 11].filter((index) => edges.pieces[index] === index && edges.orientation[index] === 0).length;
   return {
-    solvedDLayerCorners: `${solvedCorners}/4`,
-    solvedMiddleEdges: `${solvedMiddleEdges}/4`
+    solvedDLayerCorners: solvedCorners,
+    solvedMiddleEdges
   };
 }
 
@@ -321,8 +331,8 @@ function summarizeOrientationProgress(patternData) {
   const orientedEdges = [0, 1, 2, 3].filter((index) => edges.orientation[index] === 0).length;
   const orientedCorners = [0, 1, 2, 3].filter((index) => corners.orientation[index] === 0).length;
   return {
-    orientedULayerEdges: `${orientedEdges}/4`,
-    orientedULayerCorners: `${orientedCorners}/4`
+    orientedULayerEdges: orientedEdges,
+    orientedULayerCorners: orientedCorners
   };
 }
 
@@ -332,9 +342,27 @@ function summarizePermutationProgress(patternData) {
   const solvedTopEdges = [0, 1, 2, 3].filter((index) => edges.pieces[index] === index && edges.orientation[index] === 0).length;
   const solvedTopCorners = [0, 1, 2, 3].filter((index) => corners.pieces[index] === index && corners.orientation[index] === 0).length;
   return {
-    solvedULayerEdges: `${solvedTopEdges}/4`,
-    solvedULayerCorners: `${solvedTopCorners}/4`
+    solvedULayerEdges: solvedTopEdges,
+    solvedULayerCorners: solvedTopCorners
   };
+}
+
+function buildCrossReadableSummary(goalProgress) {
+  return `Cross 开始前底层十字已归位 ${goalProgress.solvedCrossEdges}/4。`;
+}
+
+function buildF2lReadableSummary(goalProgress) {
+  return `F2L 开始前底层角已归位 ${goalProgress.solvedDLayerCorners}/4，中层棱已归位 ${goalProgress.solvedMiddleEdges}/4。`;
+}
+
+function buildOllReadableSummary(goalProgress, caseLabel) {
+  const summary = `OLL 开始前顶层棱已定向 ${goalProgress.orientedULayerEdges}/4，顶层角已定向 ${goalProgress.orientedULayerCorners}/4。`;
+  return caseLabel ? `${summary} 当前识别为 ${caseLabel}。` : summary;
+}
+
+function buildPllReadableSummary(goalProgress, caseLabel) {
+  const summary = `PLL 开始前顶层棱已归位 ${goalProgress.solvedULayerEdges}/4，顶层角已归位 ${goalProgress.solvedULayerCorners}/4。`;
+  return caseLabel ? `${summary} 当前识别为 ${caseLabel}。` : summary;
 }
 
 

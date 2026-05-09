@@ -18,7 +18,7 @@ import {
   searchAlgorithms,
   traceCubeState
 } from "../src/cubing-tools/index.js";
-import { composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
+import { buildPromptMessages, composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
 
 test("parseTimedMoves parses cstimer style review field", () => {
   const moves = parseTimedMoves(`["U'@0 R@125 L2@389","333"]`);
@@ -357,7 +357,7 @@ U' R' // F2L 1
 
   assert.ok(pauseSuggestion);
   assert.ok(pauseSuggestion.evidence.some((line) => /停顿窗口：/.test(line)));
-  assert.ok(pauseSuggestion.evidence.some((line) => /状态摘要：/.test(line)));
+  assert.ok(pauseSuggestion.evidence.some((line) => /状态摘要：.*底层角已归位/.test(line)));
 });
 
 test("generateCoachSuggestions uses recognized PLL caseId in algorithm candidates", async () => {
@@ -537,6 +537,66 @@ test("runAgentTurn handles algorithm queries", async () => {
   assert.equal(turn.response.candidates.length, 1);
 });
 
+test("runAgentTurn can enhance chat response with llm response enhancer", async () => {
+  const turn = await runAgentTurn(
+    "你好，帮我简单介绍一下你能做什么",
+    {},
+    {
+      responseEnhancer: async ({ turn: currentTurn, fallbackResponse }) => ({
+        ...fallbackResponse,
+        text: `LLM:${currentTurn.intent.type}`
+      })
+    }
+  );
+
+  assert.equal(turn.intent.type, "chat");
+  assert.equal(turn.toolResult.type, "chat");
+  assert.equal(turn.response.text, "LLM:chat");
+  assert.equal(turn.fallbackResponse.kind, "chat-fallback");
+});
+
+test("runAgentTurn keeps fallback response when llm enhancer fails", async () => {
+  const turn = await runAgentTurn(
+    "你好，帮我简单介绍一下你能做什么",
+    {},
+    {
+      responseEnhancer: async () => {
+        throw new Error("network");
+      }
+    }
+  );
+
+  assert.equal(turn.intent.type, "chat");
+  assert.equal(turn.response.kind, "chat-fallback");
+  assert.equal(turn.response.text, turn.fallbackResponse.text);
+});
+
+test("runAgentTurn uses llm response enhancer for solve import narration", async () => {
+  const scramble = "R U R' U'";
+  const solution = invertAlg(scramble);
+  const turn = await runAgentTurn(
+    `
+scramble: ${scramble}
+timedMoves: ${solution.split(" ").map((move, index) => `${move}@${index * 100}`).join(" ")}
+segmentedSolution:
+U R // Cross
+U' R' // F2L 1
+`,
+    {},
+    {
+      responseEnhancer: async ({ turn: currentTurn, fallbackResponse }) => ({
+        ...fallbackResponse,
+        text: `LLM:${currentTurn.toolResult.type}`
+      })
+    }
+  );
+
+  assert.equal(turn.intent.type, "solve-import");
+  assert.equal(turn.toolResult.type, "solve-review");
+  assert.equal(turn.response.text, "LLM:solve-review");
+  assert.equal(turn.fallbackResponse.kind, "solve-review");
+});
+
 test("composeResponse handles chat fallback", () => {
   const response = composeResponse({
     toolResult: {
@@ -546,6 +606,48 @@ test("composeResponse handles chat fallback", () => {
   });
 
   assert.equal(response.kind, "chat-fallback");
+});
+
+test("buildPromptMessages includes tool result and fallback response", () => {
+  const messages = buildPromptMessages({
+    message: "F2L 1 这里怎么看？",
+    context: {
+      selectedSegmentId: "f2l-1"
+    },
+    turn: {
+      intent: { type: "local-followup" },
+      toolCalls: [{ name: "readSolveContext", args: { segmentLabel: "F2L 1" } }],
+      toolResult: {
+        type: "segment-inspection",
+        segment: {
+          id: "f2l-1",
+          label: "F2L 1",
+          moveCount: 8,
+          durationMs: 1200,
+          tps: 6.67,
+          pauses: []
+        },
+        stage: {
+          goal: {
+            completed: true,
+            evidence: "阶段目标完成"
+          }
+        },
+        suggestions: []
+      }
+    },
+    fallbackResponse: {
+      kind: "segment-inspection",
+      text: "我看了 F2L 1 这一段。"
+    }
+  });
+
+  assert.equal(messages.length, 2);
+  assert.equal(messages[0].role, "system");
+  assert.equal(messages[1].role, "user");
+  assert.match(messages[1].content[0].text, /local-followup/);
+  assert.match(messages[1].content[0].text, /segment-inspection/);
+  assert.match(messages[1].content[0].text, /fallback/);
 });
 
 test("composeResponse includes recognized PLL case in solve-review evidence", async () => {
