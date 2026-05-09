@@ -16,7 +16,7 @@ ${solution.split(" ").slice(2).join(" ")} // F2L 1
 
 const review = await createSolveReview(sample);
 
-console.log("CubeAgent PoC Review");
+console.log("Cugent PoC Review");
 console.log("====================");
 console.log(`Puzzle: ${review.puzzle}`);
 console.log(`Moves: ${review.summary.totalMoves}`);

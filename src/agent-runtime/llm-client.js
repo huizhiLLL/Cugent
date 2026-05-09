@@ -142,7 +142,7 @@ export function buildPromptMessages({ message, context, turn, fallbackResponse }
         {
           type: "input_text",
           text: [
-            "你是 CubeAgent 的中文魔方教练助手。",
+            "你是 Cugent 的中文魔方教练助手。",
             "你的职责是把本地工具已经得到的确定性结果，整理成更自然、更易理解的中文回复。",
             "不要编造魔方状态、阶段完成情况、公式候选、耗时、TPS、停顿等事实。",
             "如果工具结果里没有明确证据，就直接说当前工具没有给出该信息。",

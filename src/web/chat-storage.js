@@ -1,4 +1,5 @@
-const STORAGE_KEY = "cubeagent.chat.state";
+const STORAGE_KEY = "cugent.chat.state";
+const LEGACY_STORAGE_KEY = "cubeagent.chat.state";
 
 export function loadChatState() {
   if (typeof window === "undefined") {
@@ -6,7 +7,7 @@ export function loadChatState() {
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) {
       return createEmptyChatState();
     }

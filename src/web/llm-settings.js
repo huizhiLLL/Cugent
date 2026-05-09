@@ -1,4 +1,5 @@
-const STORAGE_KEY = "cubeagent.llm.settings";
+const STORAGE_KEY = "cugent.llm.settings";
+const LEGACY_STORAGE_KEY = "cubeagent.llm.settings";
 
 export const defaultLlmSettings = {
   enabled: true,
@@ -13,7 +14,7 @@ export function loadLlmSettings() {
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) {
       return defaultLlmSettings;
     }
