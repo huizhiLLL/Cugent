@@ -3,6 +3,7 @@ import ollAlgorithms from "../../data/algorithms/oll.json" with { type: "json" }
 import pllAlgorithms from "../../data/algorithms/pll.json" with { type: "json" };
 import { calculateEffectiveMoveCount } from "./alg-metrics.js";
 import { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";
+import { invertAlg } from "./state-tracer.js";
 
 const ALGORITHMS = [...f2lAlgorithms, ...ollAlgorithms, ...pllAlgorithms];
 
@@ -64,8 +65,8 @@ function enrichAlgorithm(algorithm, includePlayback) {
     ...algorithm,
     metrics,
     playback: {
-      url: buildAlgCubingNetUrl({ alg: algorithm.alg }),
-      bbcode: buildPlaybackBBCode({ alg: algorithm.alg, label: algorithm.name })
+      url: buildAlgCubingNetUrl({ setup: invertAlg(algorithm.alg), alg: algorithm.alg }),
+      bbcode: buildPlaybackBBCode({ setup: invertAlg(algorithm.alg), alg: algorithm.alg, label: algorithm.name })
     }
   };
 }
