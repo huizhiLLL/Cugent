@@ -9,7 +9,9 @@
     "build": "vite build",
     "test": "node --test test/*.test.js",
     "poc": "node scripts/poc.js",
-    "agent:poc": "node scripts/agent-poc.js"
+    "agent:poc": "node scripts/agent-poc.js",
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev"
   },
   "engines": {
     "node": ">=22"
@@ -35,5 +37,9 @@
     "tw-shimmer": "^0.4.11",
     "vite": "^8.0.11",
     "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.36.3",
+    "wrangler": "^4.90.0"
   }
 }
