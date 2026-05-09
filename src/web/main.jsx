@@ -388,8 +388,8 @@ ${smartInput.segmentedSolution}`.trim();
   }
 
   async function submitSmartSolve() {
-    await submitMessage(buildSmartSolveInput());
     setSmartDialogOpen(false);
+    await submitMessage(buildSmartSolveInput());
   }
 
   function openSmartCubeDialog() {
