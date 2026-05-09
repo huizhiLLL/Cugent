@@ -1009,6 +1009,9 @@ test("buildPromptMessages forbids unsupported praise and filler phrasing", () =>
   assert.match(messages[0].content[0].text, /不要写空话、套话、安慰性表述/);
   assert.match(messages[0].content[0].text, /这次复原没有问题/);
   assert.match(messages[0].content[0].text, /这个 PLL 做得很快/);
+  assert.match(messages[0].content[0].text, /优先先给结果或推荐/);
+  assert.match(messages[0].content[0].text, /优先拆成短段落/);
+  assert.match(messages[0].content[0].text, /不要暴露内部流程/);
 });
 
 test("buildPromptMessages skips playback link instruction when no candidate links exist", () => {

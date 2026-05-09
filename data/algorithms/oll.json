@@ -1,13 +1,722 @@
 [
   {
+    "id": "oll-1-01",
+    "set": "OLL",
+    "caseId": "1",
+    "name": "OLL 1 R U2 R' sledge U2 sledge",
+    "alg": "R U2 R2 F R F' U2 R' F R F'",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-1-02",
+    "set": "OLL",
+    "caseId": "1",
+    "name": "OLL 1",
+    "alg": "R U' R2 D' r U' r' D R2 U R'",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-2-01",
+    "set": "OLL",
+    "caseId": "2",
+    "name": "OLL 2",
+    "alg": "(r U r') U2 (R U2 R') U2 (r U' r')",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-2-02",
+    "set": "OLL",
+    "caseId": "2",
+    "name": "OLL 2",
+    "alg": "R U' R2 D' r U r' D R2 U R'",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-2-03",
+    "set": "OLL",
+    "caseId": "2",
+    "name": "OLL 2",
+    "alg": "F R U R' U' S R U R' U' f'",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-3-01",
+    "set": "OLL",
+    "caseId": "3",
+    "name": "OLL 3 Inverse of OLL 4",
+    "alg": "R' F2 R2 U2 R' F R U2 R2 F2 R",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-3-02",
+    "set": "OLL",
+    "caseId": "3",
+    "name": "OLL 3",
+    "alg": "f (R U R' U') f' U' F (R U R' U') F'",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-3-03",
+    "set": "OLL",
+    "caseId": "3",
+    "name": "OLL 3",
+    "alg": "r' R2 U R' U r U2 r' U M'",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-4-01",
+    "set": "OLL",
+    "caseId": "4",
+    "name": "OLL 4 Inverse of OLL 3",
+    "alg": "R' F2 R2 U2 R' F' R U2 R2 F2 R",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-4-02",
+    "set": "OLL",
+    "caseId": "4",
+    "name": "OLL 4",
+    "alg": "f R U R' U' f' U F R U R' U' F'",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-4-03",
+    "set": "OLL",
+    "caseId": "4",
+    "name": "OLL 4",
+    "alg": "M U' r U2 r' U' R U' R' M'",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-5-01",
+    "set": "OLL",
+    "caseId": "5",
+    "name": "OLL 5 Wide sune",
+    "alg": "r' U2 R U R' U r",
+    "tags": [
+      "square",
+      "no-rotation",
+      "sune-family"
+    ],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-6-01",
+    "set": "OLL",
+    "caseId": "6",
+    "name": "OLL 6 Wide antisune",
+    "alg": "r U2 R' U' R U' r'",
+    "tags": [
+      "square",
+      "no-rotation",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-7-01",
+    "set": "OLL",
+    "caseId": "7",
+    "name": "OLL 7 Wide sune",
+    "alg": "r U R' U R U2 r'",
+    "tags": [
+      "lightning",
+      "no-rotation",
+      "sune-family"
+    ],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-8-01",
+    "set": "OLL",
+    "caseId": "8",
+    "name": "OLL 8 Wide antisune",
+    "alg": "r' U' R U' R' U2 r",
+    "tags": [
+      "lightning",
+      "no-rotation",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-9-01",
+    "set": "OLL",
+    "caseId": "9",
+    "name": "OLL 9 sexy R' F R sexy F'",
+    "alg": "(R U R' U') R' F R2 U R' U' F'",
+    "tags": [
+      "fish",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-9-02",
+    "set": "OLL",
+    "caseId": "9",
+    "name": "OLL 9",
+    "alg": "R U2 R' U' S' R U' R' S",
+    "tags": [
+      "fish",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-9-03",
+    "set": "OLL",
+    "caseId": "9",
+    "name": "OLL 9",
+    "alg": "F' U' F r U' r' U r U r'",
+    "tags": [
+      "fish",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-10-01",
+    "set": "OLL",
+    "caseId": "10",
+    "name": "OLL 10 Sune with sledge in the middle",
+    "alg": "R U R' U R' F R F' R U2 R'",
+    "tags": [
+      "fish",
+      "no-rotation",
+      "sune-family"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-10-02",
+    "set": "OLL",
+    "caseId": "10",
+    "name": "OLL 10",
+    "alg": "F U F' R' F R U' R' F' R",
+    "tags": [
+      "fish",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-11-01",
+    "set": "OLL",
+    "caseId": "11",
+    "name": "OLL 11 S sune U2 S'",
+    "alg": "S R U R' U R U2 R' U2 S'",
+    "tags": [
+      "lightning",
+      "no-rotation",
+      "slice",
+      "sune-family"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-11-02",
+    "set": "OLL",
+    "caseId": "11",
+    "name": "OLL 11",
+    "alg": "r' R2 U R' U R U2 R' U M'",
+    "tags": [
+      "lightning",
+      "no-rotation",
+      "slice",
+      "sune-family"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-12-01",
+    "set": "OLL",
+    "caseId": "12",
+    "name": "OLL 12 S antisune U2 S'",
+    "alg": "S R' U' R U' R' U2 R U2 S'",
+    "tags": [
+      "lightning",
+      "no-rotation",
+      "slice",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-12-02",
+    "set": "OLL",
+    "caseId": "12",
+    "name": "OLL 12",
+    "alg": "r R2' U' R U' R' U2 R U' M",
+    "tags": [
+      "lightning",
+      "no-rotation",
+      "slice",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-12-03",
+    "set": "OLL",
+    "caseId": "12",
+    "name": "OLL 12",
+    "alg": "F (R U R' U') F' U F (R U R' U') F'",
+    "tags": [
+      "lightning",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-13-01",
+    "set": "OLL",
+    "caseId": "13",
+    "name": "OLL 13 Inverse of OLL 9, F inverse sexy R' F' R inverse sexy",
+    "alg": "F U R U' R2 F' R U R U' R'",
+    "tags": [
+      "knight",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-13-02",
+    "set": "OLL",
+    "caseId": "13",
+    "name": "OLL 13",
+    "alg": "F U R U2 R' U' R U R' F'",
+    "tags": [
+      "knight",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-14-01",
+    "set": "OLL",
+    "caseId": "14",
+    "name": "OLL 14",
+    "alg": "(R' F R) U (R' F' R) (F U' F')",
+    "tags": [
+      "knight",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-15-01",
+    "set": "OLL",
+    "caseId": "15",
+    "name": "OLL 15",
+    "alg": "l' U' l L' U' L U l' U l",
+    "tags": [
+      "knight",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-16-01",
+    "set": "OLL",
+    "caseId": "16",
+    "name": "OLL 16",
+    "alg": "r U r' R U R' U' r U' r'",
+    "tags": [
+      "knight",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-17-01",
+    "set": "OLL",
+    "caseId": "17",
+    "name": "OLL 17 Hedge inverse sexy with S moves inserted",
+    "alg": "F R' F' R U S' R U' R' S",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-17-02",
+    "set": "OLL",
+    "caseId": "17",
+    "name": "OLL 17",
+    "alg": "F R' F' R2 r' U R U' R' U' M'",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-17-03",
+    "set": "OLL",
+    "caseId": "17",
+    "name": "OLL 17",
+    "alg": "(R U R' U) (R' F R F') U2 (R' F R F')",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-18-01",
+    "set": "OLL",
+    "caseId": "18",
+    "name": "OLL 18",
+    "alg": "R U2 R2 F R F' U2 M' U R U' r'",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 12,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-18-02",
+    "set": "OLL",
+    "caseId": "18",
+    "name": "OLL 18",
+    "alg": "r U R' U R U2 r2 U' R U' R' U2 r",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-19-01",
+    "set": "OLL",
+    "caseId": "19",
+    "name": "OLL 19 Sexy sledge with S moves inserted",
+    "alg": "S' R U R' S U' R' F R F'",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-19-02",
+    "set": "OLL",
+    "caseId": "19",
+    "name": "OLL 19",
+    "alg": "R' U2 F R U R' U' F2 U2 F R",
+    "tags": [
+      "dot",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-19-03",
+    "set": "OLL",
+    "caseId": "19",
+    "name": "OLL 19",
+    "alg": "r U2 R' U' R U' r2 U2 R U R' U r",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-20-01",
+    "set": "OLL",
+    "caseId": "20",
+    "name": "OLL 20",
+    "alg": "S R' U' R U R U R U' R' S'",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-20-02",
+    "set": "OLL",
+    "caseId": "20",
+    "name": "OLL 20",
+    "alg": "r U R' U' M2 U R U' R' U' M'",
+    "tags": [
+      "dot",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
     "id": "oll-21-01",
     "set": "OLL",
     "caseId": "21",
-    "name": "OLL 21 H",
+    "name": "OLL 21 Double sune",
     "alg": "R U R' U R U' R' U R U2 R'",
-    "tags": ["right-hand", "no-rotation", "common"],
+    "tags": [
+      "edges-oriented",
+      "no-rotation",
+      "sune-family"
+    ],
     "metrics": {
       "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-21-02",
+    "set": "OLL",
+    "caseId": "21",
+    "name": "OLL 21",
+    "alg": "R U2 R' U' R U R' U' R U' R'",
+    "tags": [
+      "edges-oriented",
+      "no-rotation",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-21-03",
+    "set": "OLL",
+    "caseId": "21",
+    "name": "OLL 21",
+    "alg": "F (R U R' U') (R U R' U') (R U R' U') F'",
+    "tags": [
+      "edges-oriented",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 14,
       "hasRotation": false,
       "sliceMoves": 0
     }
@@ -16,9 +725,12 @@
     "id": "oll-22-01",
     "set": "OLL",
     "caseId": "22",
-    "name": "OLL 22 Anti-Sune",
+    "name": "OLL 22",
     "alg": "R U2 R2 U' R2 U' R2 U2 R",
-    "tags": ["right-hand", "common"],
+    "tags": [
+      "edges-oriented",
+      "no-rotation"
+    ],
     "metrics": {
       "moveCount": 9,
       "hasRotation": false,
@@ -26,14 +738,49 @@
     }
   },
   {
-    "id": "oll-27-01",
+    "id": "oll-23-01",
     "set": "OLL",
-    "caseId": "27",
-    "name": "OLL 27 Sune",
-    "alg": "R U R' U R U2 R'",
-    "tags": ["right-hand", "no-rotation", "common"],
+    "caseId": "23",
+    "name": "OLL 23",
+    "alg": "R2 D R' U2 R D' R' U2 R'",
+    "tags": [
+      "edges-oriented",
+      "no-rotation"
+    ],
     "metrics": {
-      "moveCount": 7,
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-24-01",
+    "set": "OLL",
+    "caseId": "24",
+    "name": "OLL 24",
+    "alg": "r U R' U' r' F R F'",
+    "tags": [
+      "edges-oriented",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 8,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-25-01",
+    "set": "OLL",
+    "caseId": "25",
+    "name": "OLL 25",
+    "alg": "F' r U R' U' r' F R",
+    "tags": [
+      "edges-oriented",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 8,
       "hasRotation": false,
       "sliceMoves": 0
     }
@@ -42,11 +789,323 @@
     "id": "oll-26-01",
     "set": "OLL",
     "caseId": "26",
-    "name": "OLL 26 Anti-Sune Variant",
+    "name": "OLL 26",
     "alg": "R U2 R' U' R U' R'",
-    "tags": ["right-hand", "no-rotation", "common"],
+    "tags": [
+      "edges-oriented",
+      "no-rotation"
+    ],
     "metrics": {
       "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-27-01",
+    "set": "OLL",
+    "caseId": "27",
+    "name": "OLL 27",
+    "alg": "R U R' U R U2 R'",
+    "tags": [
+      "edges-oriented",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-28-01",
+    "set": "OLL",
+    "caseId": "28",
+    "name": "OLL 28 Inverse of OLL 57, Can be written as commutator [R' F R, S]",
+    "alg": "R' F R S R' F' R S'",
+    "tags": [
+      "corners-oriented",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 8,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-28-02",
+    "set": "OLL",
+    "caseId": "28",
+    "name": "OLL 28",
+    "alg": "M' U' M U2 M' U' M",
+    "tags": [
+      "corners-oriented",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 4
+    }
+  },
+  {
+    "id": "oll-28-03",
+    "set": "OLL",
+    "caseId": "28",
+    "name": "OLL 28",
+    "alg": "r U R' U' M U R U' R'",
+    "tags": [
+      "corners-oriented",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-29-01",
+    "set": "OLL",
+    "caseId": "29",
+    "name": "OLL 29",
+    "alg": "r2 D' r U r' D r2 U' r' U' r",
+    "tags": [
+      "awkward",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-30-01",
+    "set": "OLL",
+    "caseId": "30",
+    "name": "OLL 30",
+    "alg": "r' D' r U' r' D r2 U' r' U r U r'",
+    "tags": [
+      "awkward",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-30-02",
+    "set": "OLL",
+    "caseId": "30",
+    "name": "OLL 30",
+    "alg": "F R' F R2 U' R' U' R U R' F2",
+    "tags": [
+      "awkward",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-30-03",
+    "set": "OLL",
+    "caseId": "30",
+    "name": "OLL 30",
+    "alg": "F U R U2 R' U' R U2 R' U' F'",
+    "tags": [
+      "awkward",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-31-01",
+    "set": "OLL",
+    "caseId": "31",
+    "name": "OLL 31 R' U' (OLL 44) R",
+    "alg": "R' U' F U R U' R' F' R",
+    "tags": [
+      "p-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-32-01",
+    "set": "OLL",
+    "caseId": "32",
+    "name": "OLL 32 S sexy sledge S'",
+    "alg": "S R U R' U' R' F R f'",
+    "tags": [
+      "p-shape",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-32-02",
+    "set": "OLL",
+    "caseId": "32",
+    "name": "OLL 32",
+    "alg": "L U F' U' L' U L F L'",
+    "tags": [
+      "p-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-33-01",
+    "set": "OLL",
+    "caseId": "33",
+    "name": "OLL 33",
+    "alg": "(R U R' U') (R' F R F')",
+    "tags": [
+      "t-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 8,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-34-01",
+    "set": "OLL",
+    "caseId": "34",
+    "name": "OLL 34",
+    "alg": "f R f' U' r' U' R U M'",
+    "tags": [
+      "c-shape",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-34-02",
+    "set": "OLL",
+    "caseId": "34",
+    "name": "OLL 34",
+    "alg": "R U R2 U' R' F R U R U' F'",
+    "tags": [
+      "c-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-34-03",
+    "set": "OLL",
+    "caseId": "34",
+    "name": "OLL 34",
+    "alg": "F R U R' U' R' F' r U R U' r'",
+    "tags": [
+      "c-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 12,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-35-01",
+    "set": "OLL",
+    "caseId": "35",
+    "name": "OLL 35 R U2 R' sledge R U2 R'",
+    "alg": "R U2 R2 F R F' R U2 R'",
+    "tags": [
+      "fish",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-36-01",
+    "set": "OLL",
+    "caseId": "36",
+    "name": "OLL 36",
+    "alg": "R U R' F' R U R' U' R' F R U' R' F R F'",
+    "tags": [
+      "w-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 16,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-36-02",
+    "set": "OLL",
+    "caseId": "36",
+    "name": "OLL 36",
+    "alg": "R' F' U' F2 U R U' R' F' R",
+    "tags": [
+      "w-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-36-03",
+    "set": "OLL",
+    "caseId": "36",
+    "name": "OLL 36",
+    "alg": "R U R2 F' U' F U R2 U2 R'",
+    "tags": [
+      "w-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
       "hasRotation": false,
       "sliceMoves": 0
     }
@@ -55,11 +1114,30 @@
     "id": "oll-37-01",
     "set": "OLL",
     "caseId": "37",
-    "name": "OLL 37 Fish-37",
+    "name": "OLL 37",
     "alg": "F R U' R' U' R U R' F'",
-    "tags": ["right-hand", "no-rotation", "common"],
+    "tags": [
+      "fish",
+      "no-rotation"
+    ],
     "metrics": {
       "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-37-02",
+    "set": "OLL",
+    "caseId": "37",
+    "name": "OLL 37",
+    "alg": "F R' F' R U R U' R'",
+    "tags": [
+      "fish",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 8,
       "hasRotation": false,
       "sliceMoves": 0
     }
@@ -68,13 +1146,491 @@
     "id": "oll-38-01",
     "set": "OLL",
     "caseId": "38",
-    "name": "OLL 38 Fish-38",
+    "name": "OLL 38",
     "alg": "R U R' U R U' R' U' R' F R F'",
-    "tags": ["right-hand", "common"],
+    "tags": [
+      "w-shape",
+      "no-rotation"
+    ],
     "metrics": {
       "moveCount": 12,
       "hasRotation": false,
       "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-38-02",
+    "set": "OLL",
+    "caseId": "38",
+    "name": "OLL 38",
+    "alg": "F R U' R' S U' R U R' f'",
+    "tags": [
+      "w-shape",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-39-01",
+    "set": "OLL",
+    "caseId": "39",
+    "name": "OLL 39",
+    "alg": "f' r U r' U' r' F r S",
+    "tags": [
+      "lightning",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-39-02",
+    "set": "OLL",
+    "caseId": "39",
+    "name": "OLL 39",
+    "alg": "L F' L' U' L U F U' L'",
+    "tags": [
+      "lightning",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-39-03",
+    "set": "OLL",
+    "caseId": "39",
+    "name": "OLL 39",
+    "alg": "R U R' F' U' F U R U2 R'",
+    "tags": [
+      "lightning",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-40-01",
+    "set": "OLL",
+    "caseId": "40",
+    "name": "OLL 40",
+    "alg": "R' F R U R' U' F' U R",
+    "tags": [
+      "lightning",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-40-02",
+    "set": "OLL",
+    "caseId": "40",
+    "name": "OLL 40",
+    "alg": "f R' F' R U R U' R' S'",
+    "tags": [
+      "lightning",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 1
+    }
+  },
+  {
+    "id": "oll-41-01",
+    "set": "OLL",
+    "caseId": "41",
+    "name": "OLL 41 Sune F sexy F'",
+    "alg": "R U R' U R U2 R' F R U R' U' F'",
+    "tags": [
+      "awkward",
+      "no-rotation",
+      "sune-family"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-41-02",
+    "set": "OLL",
+    "caseId": "41",
+    "name": "OLL 41",
+    "alg": "F U R2 D R' U' R D' R2 F'",
+    "tags": [
+      "awkward",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-42-01",
+    "set": "OLL",
+    "caseId": "42",
+    "name": "OLL 42 Antisune F sexy F'",
+    "alg": "R' U' R U' R' U2 R F R U R' U' F'",
+    "tags": [
+      "awkward",
+      "no-rotation",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-43-01",
+    "set": "OLL",
+    "caseId": "43",
+    "name": "OLL 43",
+    "alg": "R' U' F' U F R",
+    "tags": [
+      "p-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 6,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-43-02",
+    "set": "OLL",
+    "caseId": "43",
+    "name": "OLL 43",
+    "alg": "F' U' L' U L F",
+    "tags": [
+      "p-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 6,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-44-01",
+    "set": "OLL",
+    "caseId": "44",
+    "name": "OLL 44",
+    "alg": "F U R U' R' F'",
+    "tags": [
+      "p-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 6,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-45-01",
+    "set": "OLL",
+    "caseId": "45",
+    "name": "OLL 45",
+    "alg": "F R U R' U' F'",
+    "tags": [
+      "t-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 6,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-46-01",
+    "set": "OLL",
+    "caseId": "46",
+    "name": "OLL 46",
+    "alg": "R' U' R' F R F' U R",
+    "tags": [
+      "c-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 8,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-47-01",
+    "set": "OLL",
+    "caseId": "47",
+    "name": "OLL 47",
+    "alg": "F' (L' U' L U) (L' U' L U) F",
+    "tags": [
+      "l-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-48-01",
+    "set": "OLL",
+    "caseId": "48",
+    "name": "OLL 48",
+    "alg": "F (R U R' U') (R U R' U') F'",
+    "tags": [
+      "l-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-49-01",
+    "set": "OLL",
+    "caseId": "49",
+    "name": "OLL 49",
+    "alg": "r U' r2 U r2 U r2 U' r",
+    "tags": [
+      "l-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-50-01",
+    "set": "OLL",
+    "caseId": "50",
+    "name": "OLL 50",
+    "alg": "r' U r2 U' r2 U' r2 U r'",
+    "tags": [
+      "l-shape",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-51-01",
+    "set": "OLL",
+    "caseId": "51",
+    "name": "OLL 51",
+    "alg": "F (U R U' R') (U R U' R') F'",
+    "tags": [
+      "line",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-52-01",
+    "set": "OLL",
+    "caseId": "52",
+    "name": "OLL 52",
+    "alg": "R' F' U' F U' R U R' U R",
+    "tags": [
+      "line",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-53-01",
+    "set": "OLL",
+    "caseId": "53",
+    "name": "OLL 53 Double wide antisune",
+    "alg": "r' U' R U' R' U R U' R' U2 r",
+    "tags": [
+      "l-shape",
+      "no-rotation",
+      "sune-family",
+      "antisune-family"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-54-01",
+    "set": "OLL",
+    "caseId": "54",
+    "name": "OLL 54 Double wide sune",
+    "alg": "r U R' U R U' R' U R U2 r'",
+    "tags": [
+      "l-shape",
+      "no-rotation",
+      "sune-family"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-55-01",
+    "set": "OLL",
+    "caseId": "55",
+    "name": "OLL 55",
+    "alg": "R' F U R U' R2 F' R2 U R' U' R",
+    "tags": [
+      "line",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 12,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-55-02",
+    "set": "OLL",
+    "caseId": "55",
+    "name": "OLL 55",
+    "alg": "R U2 R2 U' R U' R' U2 F R F'",
+    "tags": [
+      "line",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-55-03",
+    "set": "OLL",
+    "caseId": "55",
+    "name": "OLL 55",
+    "alg": "R' F R U R U' R2 F' R2 U' R' U R U R'",
+    "tags": [
+      "line",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-56-01",
+    "set": "OLL",
+    "caseId": "56",
+    "name": "OLL 56",
+    "alg": "r U r' U R U' R' U R U' R' r U' r'",
+    "tags": [
+      "line",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 14,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-56-02",
+    "set": "OLL",
+    "caseId": "56",
+    "name": "OLL 56",
+    "alg": "F R U R' U' R F' r U R' U' r'",
+    "tags": [
+      "line",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 12,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "oll-57-01",
+    "set": "OLL",
+    "caseId": "57",
+    "name": "OLL 57 Inverse of OLL 28, Can be written as commutator [S, R' F R]",
+    "alg": "S R' F R S' R' F' R",
+    "tags": [
+      "corners-oriented",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 8,
+      "hasRotation": false,
+      "sliceMoves": 2
+    }
+  },
+  {
+    "id": "oll-57-02",
+    "set": "OLL",
+    "caseId": "57",
+    "name": "OLL 57",
+    "alg": "R U R' U' M' U R U' r'",
+    "tags": [
+      "corners-oriented",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 1
     }
   }
 ]

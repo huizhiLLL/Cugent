@@ -1,24 +1,13 @@
 [
   {
-    "id": "pll-t-01",
-    "set": "PLL",
-    "caseId": "T",
-    "name": "T Perm",
-    "alg": "R U R' U' R' F R2 U' R' U' R U R' F'",
-    "tags": ["right-hand", "no-rotation", "common"],
-    "metrics": {
-      "moveCount": 14,
-      "hasRotation": false,
-      "sliceMoves": 0
-    }
-  },
-  {
     "id": "pll-aa-01",
     "set": "PLL",
     "caseId": "Aa",
     "name": "Aa Perm",
-    "alg": "x R' U R' D2 R U' R' D2 R2 x'",
-    "tags": ["right-hand", "common"],
+    "alg": "x (R' U R') D2 (R U' R') D2 R2 x'",
+    "tags": [
+      "adj-corners"
+    ],
     "metrics": {
       "moveCount": 11,
       "hasRotation": true,
@@ -30,11 +19,140 @@
     "set": "PLL",
     "caseId": "Ab",
     "name": "Ab Perm",
-    "alg": "x R' U R' D2 R U' R' D2 R2 x'",
-    "tags": ["right-hand", "common"],
+    "alg": "x R2' D2 (R U R') D2 (R U' R) x'",
+    "tags": [
+      "adj-corners"
+    ],
     "metrics": {
       "moveCount": 11,
       "hasRotation": true,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-e-01",
+    "set": "PLL",
+    "caseId": "E",
+    "name": "E Perm",
+    "alg": "x' (R U' R' D) (R U R' D') (R U R' D) (R U' R' D') x",
+    "tags": [
+      "diag-corners"
+    ],
+    "metrics": {
+      "moveCount": 18,
+      "hasRotation": true,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-e-02",
+    "set": "PLL",
+    "caseId": "E",
+    "name": "E Perm",
+    "alg": "R' U' R' D' R U' R' D R U R' D' R U R' D R2",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 17,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-f-01",
+    "set": "PLL",
+    "caseId": "F",
+    "name": "F Perm",
+    "alg": "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",
+    "tags": [
+      "adj-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 18,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ga-01",
+    "set": "PLL",
+    "caseId": "Ga",
+    "name": "Ga Perm",
+    "alg": "R2 U R' U R' U' R U' R2 D U' R' U R D'",
+    "tags": [
+      "g-perm",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-gb-01",
+    "set": "PLL",
+    "caseId": "Gb",
+    "name": "Gb Perm",
+    "alg": "R' U' R U D' R2 U R' U R U' R U' R2 D",
+    "tags": [
+      "g-perm",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-gc-01",
+    "set": "PLL",
+    "caseId": "Gc",
+    "name": "Gc Perm",
+    "alg": "R2 F2 R U2 R U2 R' F R U R' U' R' F R2",
+    "tags": [
+      "g-perm",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-gc-02",
+    "set": "PLL",
+    "caseId": "Gc",
+    "name": "Gc Perm",
+    "alg": "R2 U' R U' R U R' U R2 D' U R U' R' D",
+    "tags": [
+      "g-perm",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-gd-01",
+    "set": "PLL",
+    "caseId": "Gd",
+    "name": "Gd Perm",
+    "alg": "R U R' U' D R2 U' R U' R' U R' U R2 D'",
+    "tags": [
+      "g-perm",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": false,
       "sliceMoves": 0
     }
   },
@@ -43,8 +161,12 @@
     "set": "PLL",
     "caseId": "H",
     "name": "H Perm",
-    "alg": "M2 U M2 U2 M2 U M2",
-    "tags": ["slice", "common"],
+    "alg": "M2 U' M2 U2 M2 U' M2",
+    "tags": [
+      "edge-perm",
+      "no-rotation",
+      "slice"
+    ],
     "metrics": {
       "moveCount": 7,
       "hasRotation": false,
@@ -52,14 +174,160 @@
     }
   },
   {
+    "id": "pll-ja-01",
+    "set": "PLL",
+    "caseId": "Ja",
+    "name": "Ja Perm",
+    "alg": "x R2 F R F' R U2 r' U r U2 x'",
+    "tags": [
+      "adj-corners"
+    ],
+    "metrics": {
+      "moveCount": 12,
+      "hasRotation": true,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ja-02",
+    "set": "PLL",
+    "caseId": "Ja",
+    "name": "Ja Perm",
+    "alg": "L' U' L F L' U' L U L F' L2 U L",
+    "tags": [
+      "adj-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ja-03",
+    "set": "PLL",
+    "caseId": "Ja",
+    "name": "Ja Perm",
+    "alg": "R' U L' U2 R U' R' U2 R L",
+    "tags": [
+      "adj-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
     "id": "pll-jb-01",
     "set": "PLL",
     "caseId": "Jb",
     "name": "Jb Perm",
-    "alg": "R U R' F' R U R' U' R' F R2 U' R' U'",
-    "tags": ["right-hand", "common"],
+    "alg": "(R U R' F') (R U R' U') R' F R2 U' R' U'",
+    "tags": [
+      "adj-corners",
+      "no-rotation"
+    ],
     "metrics": {
-      "moveCount": 15,
+      "moveCount": 14,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-na-01",
+    "set": "PLL",
+    "caseId": "Na",
+    "name": "Na Perm",
+    "alg": "(R U R' U) (R U R' F' R U R' U' R' F R2 U' R') (U2 R U' R')",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 21,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-na-02",
+    "set": "PLL",
+    "caseId": "Na",
+    "name": "Na Perm",
+    "alg": "F' R U R' U' R' F R2 F U' R' U' R U F' R'",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 16,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-na-03",
+    "set": "PLL",
+    "caseId": "Na",
+    "name": "Na Perm",
+    "alg": "R F U' R' U R U F' R2 F' R U R U' R' F",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 16,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-nb-01",
+    "set": "PLL",
+    "caseId": "Nb",
+    "name": "Nb Perm",
+    "alg": "r' D' F r U' r' F' D r2 U r' U' r' F r F'",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 16,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-nb-02",
+    "set": "PLL",
+    "caseId": "Nb",
+    "name": "Nb Perm",
+    "alg": "R' U R U' R' F' U' F R U R' F R' F' R U' R",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 17,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-nb-03",
+    "set": "PLL",
+    "caseId": "Nb",
+    "name": "Nb Perm",
+    "alg": "R' U L' U2 R U' L R' U L' U2 R U' L",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 14,
       "hasRotation": false,
       "sliceMoves": 0
     }
@@ -69,23 +337,110 @@
     "set": "PLL",
     "caseId": "Ra",
     "name": "Ra Perm",
-    "alg": "R U' R' U' R U R D R' U' R D' R' U2 R'",
-    "tags": ["right-hand", "common"],
+    "alg": "(R U' R' U') R U (R D R') U' (R D' R') U2 R' U'",
+    "tags": [
+      "adj-corners",
+      "no-rotation"
+    ],
     "metrics": {
-      "moveCount": 17,
+      "moveCount": 16,
       "hasRotation": false,
       "sliceMoves": 0
     }
   },
   {
-    "id": "pll-u-a-01",
+    "id": "pll-ra-02",
+    "set": "PLL",
+    "caseId": "Ra",
+    "name": "Ra Perm",
+    "alg": "R U R' F' R U2 R' U2 R' F R U R U2 R'",
+    "tags": [
+      "adj-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-rb-01",
+    "set": "PLL",
+    "caseId": "Rb",
+    "name": "Rb Perm",
+    "alg": "(R' U2 R U2) R' F (R U R' U') R' F' R2",
+    "tags": [
+      "adj-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 13,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-t-01",
+    "set": "PLL",
+    "caseId": "T",
+    "name": "T Perm",
+    "alg": "(R U R' U') R' F R2 U' R' U' (R U R' F')",
+    "tags": [
+      "adj-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 14,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ua-01",
+    "set": "PLL",
+    "caseId": "Ua",
+    "name": "Ua Perm",
+    "alg": "M2 U M U2 M' U M2",
+    "tags": [
+      "edge-perm",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 4
+    }
+  },
+  {
+    "id": "pll-ua-02",
     "set": "PLL",
     "caseId": "Ua",
     "name": "Ua Perm",
     "alg": "R U' R U R U R U' R' U' R2",
-    "tags": ["right-hand", "no-rotation", "common"],
+    "tags": [
+      "edge-perm",
+      "no-rotation"
+    ],
     "metrics": {
       "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ua-03",
+    "set": "PLL",
+    "caseId": "Ua",
+    "name": "Ua Perm",
+    "alg": "R U R' U R' U' R2 U' R' U R' U R",
+    "tags": [
+      "edge-perm",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 13,
       "hasRotation": false,
       "sliceMoves": 0
     }
@@ -95,12 +450,145 @@
     "set": "PLL",
     "caseId": "Ub",
     "name": "Ub Perm",
-    "alg": "R2 U R U R' U' R' U' R' U R'",
-    "tags": ["right-hand", "no-rotation", "common"],
+    "alg": "M2 U' M U2 M' U' M2",
+    "tags": [
+      "edge-perm",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 7,
+      "hasRotation": false,
+      "sliceMoves": 4
+    }
+  },
+  {
+    "id": "pll-ub-02",
+    "set": "PLL",
+    "caseId": "Ub",
+    "name": "Ub Perm",
+    "alg": "R2' U R U R' U' R3 U' R' U R'",
+    "tags": [
+      "edge-perm",
+      "no-rotation"
+    ],
     "metrics": {
       "moveCount": 11,
       "hasRotation": false,
       "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-ub-03",
+    "set": "PLL",
+    "caseId": "Ub",
+    "name": "Ub Perm",
+    "alg": "R' U R' U' R' U' R' U R U R2",
+    "tags": [
+      "edge-perm",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 11,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-v-01",
+    "set": "PLL",
+    "caseId": "V",
+    "name": "V Perm",
+    "alg": "(R' U R' U') (R D' R' D) R' U D' R2 U' R2 D R2",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 16,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-v-02",
+    "set": "PLL",
+    "caseId": "V",
+    "name": "V Perm",
+    "alg": "R' U R' U' y R' F' R2 U' R' U R' F R F",
+    "tags": [
+      "diag-corners"
+    ],
+    "metrics": {
+      "moveCount": 15,
+      "hasRotation": true,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-y-01",
+    "set": "PLL",
+    "caseId": "Y",
+    "name": "Y Perm",
+    "alg": "F (R U' R' U') (R U R' F') (R U R' U') (R' F R F')",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 17,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-y-02",
+    "set": "PLL",
+    "caseId": "Y",
+    "name": "Y Perm",
+    "alg": "F R' F R2 U' R' U' R U R' F' R U R' U' F'",
+    "tags": [
+      "diag-corners",
+      "no-rotation"
+    ],
+    "metrics": {
+      "moveCount": 16,
+      "hasRotation": false,
+      "sliceMoves": 0
+    }
+  },
+  {
+    "id": "pll-z-01",
+    "set": "PLL",
+    "caseId": "Z",
+    "name": "Z Perm",
+    "alg": "M2 U' M2 U' M' U2 M2 U2 M' U2",
+    "tags": [
+      "edge-perm",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 10,
+      "hasRotation": false,
+      "sliceMoves": 5
+    }
+  },
+  {
+    "id": "pll-z-02",
+    "set": "PLL",
+    "caseId": "Z",
+    "name": "Z Perm",
+    "alg": "M' U' M2 U' M2 U' M' U2 M2",
+    "tags": [
+      "edge-perm",
+      "no-rotation",
+      "slice"
+    ],
+    "metrics": {
+      "moveCount": 9,
+      "hasRotation": false,
+      "sliceMoves": 5
     }
   }
 ]

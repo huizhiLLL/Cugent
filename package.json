@@ -9,7 +9,8 @@
     "build": "vite build",
     "test": "node --test test/*.test.js",
     "poc": "node scripts/poc.js",
-    "agent:poc": "node scripts/agent-poc.js"
+    "agent:poc": "node scripts/agent-poc.js",
+    "alg:import:cubingapp": "node scripts/algorithms/import-cubingapp-oll-pll.js"
   },
   "engines": {
     "node": ">=22"
