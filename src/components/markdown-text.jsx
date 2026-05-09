@@ -11,6 +11,7 @@ import remarkGfm from "remark-gfm";
 import { memo, useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 
+import { TwistyPreview } from "@/components/playback-preview";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { cn } from "@/lib/utils";
 
@@ -113,12 +114,22 @@ const defaultComponents = memoizeMarkdownComponents({
       {...props} />
   ),
   a: ({ className, ...props }) => (
-    <a
-      className={cn(
-        "aui-md-a text-primary underline underline-offset-2 hover:text-primary/80",
-        className
-      )}
-      {...props} />
+    isPlaybackUrl(props.href)
+      ? (
+        <TwistyPreview
+          playback={props.href}
+          title={extractNodeText(props.children) || "公式预览"}
+          compact
+        />
+      )
+      : (
+        <a
+          className={cn(
+            "aui-md-a text-primary underline underline-offset-2 hover:text-primary/80",
+            className
+          )}
+          {...props} />
+      )
   ),
   blockquote: ({ className, ...props }) => (
     <blockquote
@@ -208,3 +219,36 @@ const defaultComponents = memoizeMarkdownComponents({
   },
   CodeHeader,
 });
+
+function isPlaybackUrl(href) {
+  if (!href) {
+    return false;
+  }
+
+  try {
+    const parsedUrl = new URL(href);
+    return parsedUrl.hostname === "alg.cubing.net" && parsedUrl.searchParams.get("view") === "playback";
+  } catch {
+    return false;
+  }
+}
+
+function extractNodeText(children) {
+  if (typeof children === "string") {
+    return children;
+  }
+
+  if (Array.isArray(children)) {
+    return children
+      .map((child) => extractNodeText(child))
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+  }
+
+  if (children && typeof children === "object" && "props" in children) {
+    return extractNodeText(children.props?.children);
+  }
+
+  return "";
+}

@@ -5,6 +5,7 @@ import { KPattern } from "cubing/kpuzzle";
 import { cube3x3x3 } from "cubing/puzzles";
 import {
   buildPlaybackBBCode,
+  calculateEffectiveMoveCount,
   createSolveReview,
   identifyOllCaseFromPatternData,
   identifyPllCaseFromPatternData,
@@ -16,6 +17,7 @@ import {
   parseTimedMoves,
   generateCoachSuggestions,
   searchAlgorithms,
+  simplifyAlgMoves,
   traceCubeState
 } from "../src/cubing-tools/index.js";
 import { buildChatCompletionMessages, buildPromptMessages, composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
@@ -83,6 +85,14 @@ test("buildEditedConversation preserves prior assistant message when editing lat
 
 test("parseTimedMoves rejects decreasing timestamps", () => {
   assert.throws(() => parseTimedMoves("U@20 R@10"), /timestamp 必须递增/);
+});
+
+test("calculateEffectiveMoveCount merges repeated turns and cancels inverse turns", () => {
+  assert.equal(calculateEffectiveMoveCount("U U"), 1);
+  assert.equal(calculateEffectiveMoveCount("U U'"), 0);
+  assert.equal(calculateEffectiveMoveCount("U U U"), 1);
+  assert.equal(calculateEffectiveMoveCount("R2 R2"), 0);
+  assert.deepEqual(simplifyAlgMoves("U U R R' U'"), ["U"]);
 });
 
 test("parseSegmentedSolution parses CFOP labels", () => {
@@ -200,6 +210,10 @@ test("inferCf4opSegments splits segments from monotonic cf4op progress", () => {
 
   assert.equal(inferred.orientationIndex, null);
   assert.deepEqual(
+    inferred.progressTrace.map((entry) => entry.progress),
+    [7, 6, 5, 4, 3, 2, 1, 0]
+  );
+  assert.deepEqual(
     inferred.segments.map((segment) => segment.label),
     ["Cross", "F2L 1", "F2L 2", "F2L 3", "F2L 4", "OLL", "PLL"]
   );
@@ -233,14 +247,14 @@ test("inferCf4opSegments ignores progress rebounds after earlier breakthroughs",
 
   const inferred = inferCf4opSegments({ moves, stateTrace });
 
-  assert.equal(inferred.orientationIndex, null);
+  assert.equal(inferred.orientationIndex, 1);
   assert.deepEqual(
     inferred.progressTrace.map((entry) => entry.progress),
-    [7, 7, 6, 7, 5]
+    [3, 3, 3, 3, 0]
   );
   assert.deepEqual(
     inferred.segments.map((segment) => segment.label),
-    ["Cross", "F2L 1"]
+    ["F2L 4"]
   );
 });
 
@@ -272,6 +286,50 @@ test("inferCf4opSegments drops zero-move noise segments during post process", ()
       { label: "F2L 2", moveCount: 1 }
     ]
   );
+});
+
+test("createSolveReview chooses a stable orientation trace for real no-segment solves", async () => {
+  const review = await createSolveReview({
+    scramble: "B' R' U2 L2 F U2 L2 B2 F' D2 F R2 B D R U2 L F2 R' U",
+    timedMoves: `["U'@0 F'@136 U'@265 F'@448 F'@504 U'@729 F@1475 D@1582 F'@1792 D@2166 R'@2233 D'@2294 R@2367 R@2423 D'@2483 R'@2572 D@2621 R@2674 D'@2720 R'@3083 R@3360 D'@3409 R'@3475 L@3628 D@3739 D@3788 L'@3850 D@4356 L'@4444 D@4505 L@4563 D'@5008 R@5112 D'@5170 R'@5237 D@5294 R@5343 D'@5383 R'@5474 D@5537 D@5590 R@5641 D'@5694 R'@5759 D@6236 R@6327 D@6434 R'@6506 D'@6614 L@6669 R'@6803 B@6852 R@6913 B'@6958 L'@7049 R@7544 D'@7605 R'@7685 D'@7778 R@7896 D@8146 R@8232 U@8283 R'@8380 D'@8430 R@8495 U'@8544 R'@8664 D@8737 D@8775 R'@8818 D'@8888 D'@8916","333"]`
+  });
+
+  assert.equal(review.segmentation.orientationIndex, 8);
+  assert.deepEqual(
+    review.segmentation.progressTrace.map((entry) => entry.progress),
+    [
+      7, 7, 7, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 5, 5, 5, 5, 5, 5, 5,
+      5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0
+    ]
+  );
+  assert.deepEqual(
+    review.segments.map((segment) => ({ label: segment.label, moveCount: segment.moveCount })),
+    [
+      { label: "Cross", moveCount: 6 },
+      { label: "F2L 1", moveCount: 7 },
+      { label: "F2L 2", moveCount: 14 },
+      { label: "F2L 3", moveCount: 4 },
+      { label: "F2L 4", moveCount: 13 },
+      { label: "OLL", moveCount: 11 },
+      { label: "PLL", moveCount: 18 }
+    ]
+  );
+  assert.deepEqual(
+    review.cfopAnalysis.stages.map((stage) => ({ label: stage.label, completed: stage.goal.completed, evidence: stage.goal.evidence })),
+    [
+      { label: "Cross", completed: true, evidence: "Cross target solved under current analysis orientation" },
+      { label: "F2L 1", completed: true, evidence: "1/4 F2L pairs solved, expected at least 1/4" },
+      { label: "F2L 2", completed: true, evidence: "2/4 F2L pairs solved, expected at least 2/4" },
+      { label: "F2L 3", completed: true, evidence: "3/4 F2L pairs solved, expected at least 3/4" },
+      { label: "F2L 4", completed: true, evidence: "4/4 F2L pairs solved, expected at least 4/4" },
+      { label: "OLL", completed: true, evidence: "U-layer orientation target solved under current analysis orientation" },
+      { label: "PLL", completed: true, evidence: "Cube is solved after PLL" }
+    ]
+  );
+  assert.match(review.segments.find((segment) => segment.label === "OLL").playback.bbcode, /setup=.*_x2_y&alg=y-_x2-/);
+  assert.match(review.segments.find((segment) => segment.label === "PLL").playback.bbcode, /setup=.*_x2&alg=x2-_/);
 });
 
 test("searchAlgorithms filters by set, caseId and tags", () => {
@@ -392,7 +450,7 @@ U' R' // F2L 1
 
   assert.ok(suggestions.some((suggestion) => suggestion.type === "stage-goal"));
   assert.ok(suggestions.some((suggestion) => suggestion.type === "pause"));
-  assert.ok(suggestions.some((suggestion) => suggestion.type === "algorithm-candidates"));
+  assert.ok(!suggestions.some((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "f2l"));
 });
 
 test("generateCoachSuggestions includes pause window evidence", async () => {
@@ -412,60 +470,169 @@ U' R' // F2L 1
   assert.ok(pauseSuggestion.evidence.some((line) => /状态摘要：.*底层角已归位/.test(line)));
 });
 
-test("generateCoachSuggestions uses recognized PLL caseId in algorithm candidates", async () => {
-  const pllAlg = "R U R' U' R' F R2 U' R' U' R U R' F'";
-  const review = await createSolveReview({
-    scramble: invertAlg(pllAlg),
-    timedMoves: pllAlg.split(" ").map((move, index) => `${move}@${index * 120}`).join(" "),
-    segmentedSolution: `
-${pllAlg} // PLL
-`
-  });
+test("generateCoachSuggestions recommends recognized PLL algorithms when actual effective move count is much longer", () => {
+  const review = {
+    scramble: "R U",
+    summary: { pauseThresholdMs: 500 },
+    validation: { warnings: [] },
+    segments: [{
+      id: "pll",
+      label: "PLL",
+      pauses: [],
+      pauseWindows: [],
+      setupAlg: "R U",
+      displaySetupAlg: "x2 R U"
+    }],
+    cfopAnalysis: {
+      stages: [{
+        segmentId: "pll",
+        label: "PLL",
+        stageType: "pll",
+        pauses: 0,
+        moveCount: 18,
+        effectiveMoveCount: 18,
+        goal: {
+          completed: true,
+          evidence: "Cube is solved after PLL"
+        },
+        recognition: {
+          pll: {
+            matched: true,
+            caseId: "T"
+          }
+        }
+      }]
+    }
+  };
 
-  const pllSuggestion = review.coachSuggestions.suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "pll");
+  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "pll");
 
   assert.ok(pllSuggestion);
-  assert.ok(pllSuggestion.candidates);
-  assert.equal(review.segments[0].recognition?.pll?.caseId, "T");
   assert.equal(pllSuggestion.candidates.length, 1);
   assert.equal(pllSuggestion.candidates[0].caseId, "T");
+  assert.match(pllSuggestion.candidates[0].playback.bbcode, /setup=x2_R_U/);
+  assert.ok(pllSuggestion.evidence.some((line) => /当前实际使用约 18 步/.test(line)));
 });
 
-test("generateCoachSuggestions relaxes no-rotation filter for recognized PLL case fallback", async () => {
-  const pllAlg = "x R' U R' D2 R U' R' D2 R2 x'";
-  const review = await createSolveReview({
-    scramble: invertAlg(pllAlg),
-    timedMoves: pllAlg.split(" ").map((move, index) => `${move}@${index * 120}`).join(" "),
-    segmentedSolution: `
-${pllAlg} // PLL
-`
-  });
+test("generateCoachSuggestions relaxes no-rotation filter for recognized PLL case fallback", () => {
+  const review = {
+    scramble: "R U",
+    summary: { pauseThresholdMs: 500 },
+    validation: { warnings: [] },
+    segments: [{
+      id: "pll",
+      label: "PLL",
+      pauses: [],
+      pauseWindows: [],
+      setupAlg: "R U"
+    }],
+    cfopAnalysis: {
+      stages: [{
+        segmentId: "pll",
+        label: "PLL",
+        stageType: "pll",
+        pauses: 0,
+        moveCount: 16,
+        effectiveMoveCount: 16,
+        goal: {
+          completed: true,
+          evidence: "Cube is solved after PLL"
+        },
+        recognition: {
+          pll: {
+            matched: true,
+            caseId: "Aa"
+          }
+        }
+      }]
+    }
+  };
 
-  const pllSuggestion = review.coachSuggestions.suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "pll");
+  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "pll");
 
   assert.ok(pllSuggestion);
-  assert.equal(review.segments[0].recognition?.pll?.caseId, "Aa");
   assert.equal(pllSuggestion.candidates.length, 1);
   assert.equal(pllSuggestion.candidates[0].caseId, "Aa");
 });
 
-test("generateCoachSuggestions uses recognized OLL caseId in algorithm candidates", async () => {
-  const ollAlg = "R U R' U R U2 R'";
-  const review = await createSolveReview({
-    scramble: invertAlg(ollAlg),
-    timedMoves: ollAlg.split(" ").map((move, index) => `${move}@${index * 120}`).join(" "),
-    segmentedSolution: `
-${ollAlg} // OLL
-`
-  });
+test("generateCoachSuggestions uses recognized OLL caseId in algorithm candidates", () => {
+  const review = {
+    scramble: "R U",
+    summary: { pauseThresholdMs: 500 },
+    validation: { warnings: [] },
+    segments: [{
+      id: "oll",
+      label: "OLL",
+      pauses: [],
+      pauseWindows: [],
+      setupAlg: "R U"
+    }],
+    cfopAnalysis: {
+      stages: [{
+        segmentId: "oll",
+        label: "OLL",
+        stageType: "oll",
+        pauses: 0,
+        moveCount: 11,
+        effectiveMoveCount: 11,
+        goal: {
+          completed: true,
+          evidence: "U-layer orientation target solved under current analysis orientation"
+        },
+        recognition: {
+          oll: {
+            matched: true,
+            caseId: "27"
+          }
+        }
+      }]
+    }
+  };
 
-  const ollSuggestion = review.coachSuggestions.suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "oll");
+  const ollSuggestion = generateCoachSuggestions(review, { opRecommendationGap: 1 }).suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "oll");
 
   assert.ok(ollSuggestion);
-  assert.ok(ollSuggestion.candidates);
-  assert.equal(review.segments[0].recognition?.oll?.caseId, "27");
   assert.equal(ollSuggestion.candidates.length, 1);
   assert.equal(ollSuggestion.candidates[0].caseId, "27");
+});
+
+test("generateCoachSuggestions skips OLL/PLL algorithm candidates when move gap is not large enough", () => {
+  const review = {
+    scramble: "R U",
+    summary: { pauseThresholdMs: 500 },
+    validation: { warnings: [] },
+    segments: [{
+      id: "pll",
+      label: "PLL",
+      pauses: [],
+      pauseWindows: [],
+      setupAlg: "R U"
+    }],
+    cfopAnalysis: {
+      stages: [{
+        segmentId: "pll",
+        label: "PLL",
+        stageType: "pll",
+        pauses: 0,
+        moveCount: 14,
+        effectiveMoveCount: 14,
+        goal: {
+          completed: true,
+          evidence: "Cube is solved after PLL"
+        },
+        recognition: {
+          pll: {
+            matched: true,
+            caseId: "T"
+          }
+        }
+      }]
+    }
+  };
+
+  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-candidates");
+
+  assert.equal(pllSuggestion, undefined);
 });
 
 test("createSolveReview infers cf4op segmentation when segmentedSolution is missing", async () => {
@@ -767,6 +934,66 @@ test("buildPromptMessages uses intent-specific prompt profile", () => {
   assert.match(messages[1].content[0].text, /像教练推荐公式/);
 });
 
+test("buildPromptMessages adds strict markdown playback link instruction when candidates include playback urls", () => {
+  const messages = buildPromptMessages({
+    message: "这次 PLL 有没有更好的公式？",
+    context: {},
+    turn: {
+      intent: { type: "solve-import" },
+      toolCalls: [],
+      toolResult: {
+        type: "solve-review",
+        review: {
+          coachSuggestions: {
+            suggestions: [
+              {
+                type: "algorithm-candidates",
+                candidates: [
+                  {
+                    id: "pll-t-1",
+                    alg: "R U R' U'",
+                    playback: {
+                      url: "https://alg.cubing.net/?alg=R_U_R-_U-&view=playback"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    fallbackResponse: {
+      kind: "solve-review",
+      text: "本地有候选公式。"
+    }
+  });
+
+  assert.match(messages[0].content[0].text, /标准 Markdown 链接格式/);
+  assert.match(messages[0].content[0].text, /必须原样使用工具结果里给出的 playback\.url/);
+});
+
+test("buildPromptMessages skips playback link instruction when no candidate links exist", () => {
+  const messages = buildPromptMessages({
+    message: "帮我总结一下",
+    context: {},
+    turn: {
+      intent: { type: "chat" },
+      toolCalls: [],
+      toolResult: {
+        type: "chat",
+        message: "未命中特定魔方工具，交给普通聊天模型处理。"
+      }
+    },
+    fallbackResponse: {
+      kind: "chat-fallback",
+      text: "普通回复。"
+    }
+  });
+
+  assert.match(messages[0].content[0].text, /不需要额外输出链接/);
+});
+
 test("buildChatCompletionMessages flattens prompt parts to plain string content", () => {
   const messages = buildChatCompletionMessages([
     {
@@ -891,4 +1118,26 @@ ${ollAlg} // OLL
 
   assert.equal(response.kind, "solve-review");
   assert.ok(response.evidence.some((line) => /OLL 识别：27 \(OLL 27 OCLL-27\)/.test(line)));
+});
+
+test("composeResponse hides pause and F2L algorithm candidate highlights in solve-review details", async () => {
+  const review = await createSolveReview({
+    scramble: "R U R' U'",
+    timedMoves: "U@0 R@100 U'@900 R'@1100",
+    segmentedSolution: `
+U R // Cross
+U' R' // F2L 1
+`
+  });
+
+  const response = composeResponse({
+    toolResult: {
+      type: "solve-review",
+      review
+    }
+  });
+
+  assert.equal(response.kind, "solve-review");
+  assert.ok(response.highlights.every((item) => !/明显停顿/.test(item.title)));
+  assert.ok(response.highlights.every((item) => !(item.title.includes("候选公式") && item.title.includes("F2L"))));
 });

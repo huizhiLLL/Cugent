@@ -168,10 +168,11 @@ PoC 阶段需要的流程是：
 
 当前 `analyzeCFOP` 只判断阶段目标是否达成：
 
-- Cross：D 面 4 条棱是否回到 solved 状态。
-- F2L：D 层 4 个角和中层 4 条棱是否回到 solved 状态。
-- OLL：U 层角/棱朝向是否完成。
-- PLL：整 cube 是否 solved。
+- 如果无分段推断已经选出了固定朝向，则阶段验证优先沿用该朝向；否则按默认朝向验证。
+- Cross：验证 cross mask 是否成立。
+- F2L 1-4：验证在当前朝向下，已完成的 F2L pair 数是否达到当前分段标签要求。
+- OLL：验证 OLL mask 是否成立。
+- PLL：验证整 cube 是否 solved。
 
 它暂不做 F2L case 识别、OLL/PLL case 命名或公式推荐。
 
@@ -182,10 +183,11 @@ PoC 阶段需要的流程是：
 - 先用 `cubing.js` 生成逐步 `stateTrace.timeline`。
 - 把每一步状态转换为 3x3 facelet 视图。
 - 参考 csTimer 的 mask 思路计算 `cf4op` progress。
-- 在 24 个固定视角中选择一条整体最稳定的 progress 轨迹。
-- 按 progress 下降点自动切出 `Cross / F2L 1 / F2L 2 / F2L 3 / F2L 4 / OLL / PLL`。
+- 为 24 个固定视角分别生成 progress 轨迹，按最终进度、阶段突破数和反弹次数选择一条更稳定的固定朝向轨迹。
+- 对选中的单一朝向轨迹取 running minimum，降低中途打断、重抓或阶段短暂回退带来的假切点。
+- 按平滑后的 progress 下降点自动切出 `Cross / F2L 1 / F2L 2 / F2L 3 / F2L 4 / OLL / PLL`。
 
-该推断结果会写入 `review.segmentation`，包含 `source`、`method`、`confidence` 与 `progressTrace`，供后续 agent 和前端展示使用。
+该推断结果会写入 `review.segmentation`，包含 `source`、`method`、`orientationIndex`、`confidence`、`progressTrace` 与 `rawProgressTrace`，供后续 agent 和前端展示使用。
 
 ### OLL / PLL 识别先读阶段开始前状态
 
@@ -194,6 +196,13 @@ PoC 阶段需要的流程是：
 ### 教练建议是结构化证据，不是最终话术
 
 `coachSuggestions` 会综合输入校验、阶段目标、停顿、TPS 和公式候选，生成建议对象。每条建议包含 type、priority、target、evidence、action，供 Agent/LLM 在 chat 中组织成自然语言回答。
+
+当前公式推荐策略：
+
+- `F2L` 暂不做 case 识别，也不做公式推荐。
+- `OLL / PLL` 只有在阶段 case 已识别、且当前实际使用公式的有效步数明显高于本地公式库候选时，才生成候选推荐。
+- 实际步数会先按相邻同轴转动归并，例如 `U U -> U2` 记为 1 步，`U U' -> 0` 步，再用于和候选公式比较。
+- 候选公式的播放链接会带上阶段开始前的 `setup`，便于直接在 3D 预览中对照当前 case。
 
 当前建议类型：
 

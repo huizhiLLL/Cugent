@@ -1,9 +1,12 @@
 import { searchAlgorithms } from "./algorithm-search.js";
+import { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";
 
 const DEFAULT_SLOW_TPS = 3;
+const DEFAULT_OP_RECOMMENDATION_GAP = 3;
 
 export function generateCoachSuggestions(review, {
   slowTpsThreshold = DEFAULT_SLOW_TPS,
+  opRecommendationGap = DEFAULT_OP_RECOMMENDATION_GAP,
   algorithmTags = ["right-hand", "no-rotation"]
 } = {}) {
   const suggestions = [
@@ -11,14 +14,15 @@ export function generateCoachSuggestions(review, {
     ...buildStageGoalSuggestions(review),
     ...buildPauseSuggestions(review),
     ...buildSlowStageSuggestions(review, slowTpsThreshold),
-    ...buildAlgorithmSuggestions(review, algorithmTags)
+    ...buildAlgorithmSuggestions(review, algorithmTags, opRecommendationGap)
   ];
 
   return {
     version: 1,
     assumptions: [
       "建议基于确定性工具输出生成，LLM 只负责解释和排序话术。",
-      "当前公式建议只来自本地小型样例库，尚未做自动 case 识别。"
+      "当前只对已识别的 OLL / PLL 做公式推荐，F2L 暂不做 case 识别和公式推荐。",
+      "当前公式建议只来自本地小型样例库。"
     ],
     suggestions: suggestions.map((suggestion, index) => ({
       id: `suggestion-${index + 1}`,
@@ -104,8 +108,9 @@ function buildSlowStageSuggestions(review, slowTpsThreshold) {
     }));
 }
 
-function buildAlgorithmSuggestions(review, algorithmTags) {
+function buildAlgorithmSuggestions(review, algorithmTags, opRecommendationGap) {
   return review.cfopAnalysis.stages.flatMap((stage) => {
+    const segment = review.segments.find((item) => item.id === stage.segmentId);
     const query = buildAlgorithmQuery(stage, algorithmTags);
     if (!query) {
       return [];
@@ -116,35 +121,55 @@ function buildAlgorithmSuggestions(review, algorithmTags) {
       return [];
     }
 
+    const bestCandidate = candidates.results[0];
+    const actualEffectiveMoveCount = segment?.effectiveMoveCount ?? stage.effectiveMoveCount ?? stage.moveCount;
+    const recommendedEffectiveMoveCount = bestCandidate.metrics.effectiveMoveCount ?? bestCandidate.metrics.moveCount;
+    const moveGap = actualEffectiveMoveCount - recommendedEffectiveMoveCount;
+
+    if (moveGap < opRecommendationGap) {
+      return [];
+    }
+
+      const candidatesWithPlayback = candidates.results.map((candidate) => ({
+        ...candidate,
+        playback: {
+          url: buildAlgCubingNetUrl({
+            setup: segment?.displaySetupAlg ?? segment?.setupAlg ?? review.scramble,
+            alg: candidate.alg
+          }),
+          bbcode: buildPlaybackBBCode({
+            setup: segment?.displaySetupAlg ?? segment?.setupAlg ?? review.scramble,
+            alg: candidate.alg,
+          label: candidate.name
+        })
+        }
+      }));
+
     return [{
       type: "algorithm-candidates",
-      priority: stage.pauses > 0 || !stage.goal.completed ? "medium" : "low",
+      priority: "medium",
       title: `${stage.label} 可参考候选公式`,
       target: {
         segmentId: stage.segmentId,
         stageType: stage.stageType
       },
       evidence: [
-        stage.goal.evidence,
+        `当前实际使用约 ${actualEffectiveMoveCount} 步，已按相邻同轴合并与抵消规则归并`,
+        `库内首选候选约 ${recommendedEffectiveMoveCount} 步，少了 ${moveGap} 步`,
         `本地公式库命中 ${candidates.total} 条候选`
       ],
-      action: "将候选公式作为对比材料，不直接替代用户当前公式；需要结合 case 识别和手法偏好再决定。",
-      candidates: candidates.results
+      action: "可以先对比当前公式与候选公式的步数和转动结构，再结合手法偏好决定是否替换。",
+      candidates: candidatesWithPlayback
     }];
   });
 }
 
 function buildAlgorithmQuery(stage, algorithmTags) {
-  if (stage.stageType === "f2l") {
-    return {
-      set: "F2L",
-      caseId: "basic-insert",
-      tags: algorithmTags.includes("beginner-friendly") ? algorithmTags : [...algorithmTags, "beginner-friendly"]
-    };
-  }
-
   if (stage.stageType === "oll") {
     const recognizedOllCaseId = stage.recognition?.oll?.matched ? stage.recognition.oll.caseId : null;
+    if (!recognizedOllCaseId) {
+      return null;
+    }
     return {
       set: "OLL",
       caseId: recognizedOllCaseId,
@@ -154,6 +179,9 @@ function buildAlgorithmQuery(stage, algorithmTags) {
 
   if (stage.stageType === "pll") {
     const recognizedPllCaseId = stage.recognition?.pll?.matched ? stage.recognition.pll.caseId : null;
+    if (!recognizedPllCaseId) {
+      return null;
+    }
     return {
       set: "PLL",
       caseId: recognizedPllCaseId,

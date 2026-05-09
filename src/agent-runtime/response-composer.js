@@ -35,7 +35,9 @@ export function composeResponse(agentTurn) {
 }
 
 function composeSolveReviewResponse(review) {
-  const topSuggestions = review.coachSuggestions.suggestions.slice(0, 3);
+  const topSuggestions = review.coachSuggestions.suggestions
+    .filter((suggestion) => shouldShowSolveReviewHighlight(suggestion))
+    .slice(0, 3);
   const ollRecognition = review.segments.find((segment) => segment.label.trim().toLowerCase() === "oll")?.recognition?.oll;
   const pllRecognition = review.segments.find((segment) => segment.label.trim().toLowerCase() === "pll")?.recognition?.pll;
   const evidence = [
@@ -80,7 +82,8 @@ function composeAlgorithmSearchResponse(result) {
     name: candidate.name,
     alg: candidate.alg,
     evidence: `${candidate.metrics.moveCount} moves，${candidate.metrics.hasRotation ? "有转体" : "无转体"}，slice moves ${candidate.metrics.sliceMoves}`,
-    playback: candidate.playback?.bbcode
+    playback: candidate.playback?.bbcode,
+    playbackUrl: candidate.playback?.url
   }));
 
   return {
@@ -132,9 +135,22 @@ function formatSuggestion(suggestion) {
       id: candidate.id,
       name: candidate.name,
       alg: candidate.alg,
-      playback: candidate.playback?.bbcode
+      playback: candidate.playback?.bbcode,
+      playbackUrl: candidate.playback?.url
     })) ?? []
   };
+}
+
+function shouldShowSolveReviewHighlight(suggestion) {
+  if (suggestion.type === "pause") {
+    return false;
+  }
+
+  if (suggestion.type === "algorithm-candidates") {
+    return suggestion.target?.stageType === "oll" || suggestion.target?.stageType === "pll";
+  }
+
+  return true;
 }
 
 function formatQuery(query) {

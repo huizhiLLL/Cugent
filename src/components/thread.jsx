@@ -106,7 +106,7 @@ const ThreadWelcome = ({ onOpenSmartCube }) => {
   return (
     <div className="aui-thread-welcome-root flex min-h-full flex-1 flex-col items-center justify-center gap-7 pb-20">
       <h1 className="aui-thread-welcome-title fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-center font-medium text-2xl duration-200">
-        今天想分析什么，会枝？
+        今天想分析什么？
       </h1>
       <Composer onOpenSmartCube={onOpenSmartCube} />
     </div>

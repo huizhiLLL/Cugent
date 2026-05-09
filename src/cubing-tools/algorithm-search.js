@@ -1,7 +1,8 @@
 import f2lAlgorithms from "../../data/algorithms/f2l.json" with { type: "json" };
 import ollAlgorithms from "../../data/algorithms/oll.json" with { type: "json" };
 import pllAlgorithms from "../../data/algorithms/pll.json" with { type: "json" };
-import { buildPlaybackBBCode } from "./playback-url.js";
+import { calculateEffectiveMoveCount } from "./alg-metrics.js";
+import { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";
 
 const ALGORITHMS = [...f2lAlgorithms, ...ollAlgorithms, ...pllAlgorithms];
 
@@ -47,13 +48,23 @@ export function listAlgorithmSets() {
 }
 
 function enrichAlgorithm(algorithm, includePlayback) {
+  const metrics = {
+    ...algorithm.metrics,
+    effectiveMoveCount: calculateEffectiveMoveCount(algorithm.alg)
+  };
+
   if (!includePlayback) {
-    return { ...algorithm };
+    return {
+      ...algorithm,
+      metrics
+    };
   }
 
   return {
     ...algorithm,
+    metrics,
     playback: {
+      url: buildAlgCubingNetUrl({ alg: algorithm.alg }),
       bbcode: buildPlaybackBBCode({ alg: algorithm.alg, label: algorithm.name })
     }
   };

@@ -1,4 +1,5 @@
 export { listAlgorithmSets, searchAlgorithms } from "./algorithm-search.js";
+export { calculateEffectiveMoveCount, simplifyAlgMoves } from "./alg-metrics.js";
 export { analyzeCFOP } from "./cfop-analyzer.js";
 export { inferCf4opSegments } from "./cfop-inference.js";
 export { identifyOllCaseFromPattern, identifyOllCaseFromPatternData, listRecognizableOllCases } from "./oll-recognition.js";

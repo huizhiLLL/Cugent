@@ -1,4 +1,6 @@
 import { parseSegmentedSolution, parseTimedMoves } from "./parsers.js";
+import { Alg } from "cubing/alg";
+import { calculateEffectiveMoveCount, simplifyAlgMoves } from "./alg-metrics.js";
 import { buildAlgCubingNetUrl, buildPlaybackBBCode } from "./playback-url.js";
 import { analyzeCFOP } from "./cfop-analyzer.js";
 import { generateCoachSuggestions } from "./coach-suggestions.js";
@@ -37,7 +39,7 @@ export async function createSolveReview({
       ok: true,
       warnings: []
     };
-  const segments = assignSegments(moves, parsedSegments, pauseThresholdMs);
+  const segments = assignSegments(moves, parsedSegments, pauseThresholdMs, scramble);
   const segmentsWithState = await attachSegmentStates(segments, stateTrace);
   const baseReview = {
     puzzle,
@@ -61,7 +63,7 @@ export async function createSolveReview({
 
   const reviewWithAnalysis = {
     ...baseReview,
-    cfopAnalysis: analyzeCFOP(baseReview)
+    cfopAnalysis: await analyzeCFOP(baseReview)
   };
 
   return {
@@ -108,13 +110,16 @@ function validateSegmentAlignment(moves, parsedSegments) {
   };
 }
 
-function assignSegments(moves, parsedSegments, pauseThresholdMs) {
+function assignSegments(moves, parsedSegments, pauseThresholdMs, scramble) {
   let cursor = 0;
 
   return parsedSegments.map((segment) => {
     const startMove = cursor;
     const endMove = cursor + segment.moveCount - 1;
     const segmentMoves = moves.slice(startMove, endMove + 1);
+    const setupMoves = moves.slice(0, startMove).map((move) => move.move);
+    const setupAlg = [scramble, ...setupMoves].filter(Boolean).join(" ").trim();
+    const simplifiedMoves = simplifyAlgMoves(segment.moves);
 
     for (const move of segmentMoves) {
       move.segmentId = segment.id;
@@ -130,9 +135,12 @@ function assignSegments(moves, parsedSegments, pauseThresholdMs) {
       endMove,
       durationMs,
       tps: calculateTps(segmentMoves.length, durationMs),
+      setupAlg,
+      effectiveMoveCount: calculateEffectiveMoveCount(segment.moves),
+      simplifiedMoves,
       pauses: segmentMoves.filter((move) => move.deltaMs >= pauseThresholdMs),
       pauseWindows: buildPauseWindows(segmentMoves, pauseThresholdMs),
-      playback: buildSegmentPlayback(segment)
+      playback: buildSegmentPlayback(segment, setupAlg)
     };
   });
 }
@@ -150,10 +158,15 @@ async function attachSegmentStates(segments, stateTrace) {
       }
     };
     const recognition = await recognizeSegmentCase(segmentWithState);
+    const displaySetupAlg = buildDisplaySetupAlg(segmentWithState.setupAlg, recognition);
+    const displayAlg = buildDisplayAlg(segmentWithState.moves.join(" "), recognition);
     const pauseWindows = buildPauseWindowsWithState(segmentWithState, recognition);
 
     return {
       ...segmentWithState,
+      displaySetupAlg,
+      displayAlg,
+      playback: buildSegmentPlayback(segmentWithState, displaySetupAlg, displayAlg),
       pauseWindows,
       recognition
     };
@@ -219,16 +232,45 @@ function calculateTps(moveCount, durationMs) {
   return Number((moveCount / (durationMs / 1000)).toFixed(2));
 }
 
-function buildSegmentPlayback(segment) {
-  const alg = segment.moves.join(" ");
+function buildSegmentPlayback(segment, setupAlg, displayAlg = "") {
+  const alg = displayAlg || segment.moves.join(" ");
   if (!alg) {
     return null;
   }
 
   return {
-    url: buildAlgCubingNetUrl({ alg }),
-    bbcode: buildPlaybackBBCode({ alg, label: segment.label })
+    url: buildAlgCubingNetUrl({ setup: setupAlg, alg }),
+    bbcode: buildPlaybackBBCode({ setup: setupAlg, alg, label: segment.label })
   };
+}
+
+function buildDisplaySetupAlg(setupAlg, recognition) {
+  const orientation = recognition?.oll?.matched
+    ? recognition.oll.orientation
+    : recognition?.pll?.matched
+      ? recognition.pll.orientation
+      : null;
+
+  if (!orientation || orientation === "identity") {
+    return setupAlg;
+  }
+
+  return [setupAlg, orientation].filter(Boolean).join(" ").trim();
+}
+
+function buildDisplayAlg(alg, recognition) {
+  const orientation = recognition?.oll?.matched
+    ? recognition.oll.orientation
+    : recognition?.pll?.matched
+      ? recognition.pll.orientation
+      : null;
+
+  if (!orientation || orientation === "identity" || !alg.trim()) {
+    return alg;
+  }
+
+  const inverseOrientation = new Alg(orientation).invert().toString();
+  return new Alg([inverseOrientation, alg, orientation].filter(Boolean).join(" ")).toString();
 }
 
 function buildPauseWindows(segmentMoves, pauseThresholdMs) {
