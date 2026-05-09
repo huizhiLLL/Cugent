@@ -279,6 +279,13 @@ button {
   color: var(--background);
 }
 
+.aui-composer-cancel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 0.35rem 1.2rem rgba(24, 35, 48, 0.08);
+}
+
 .aui-composer-send:disabled {
   border: 1px solid var(--border);
   background: var(--muted);
@@ -288,6 +295,10 @@ button {
 
 .aui-composer-send:not(:disabled):hover {
   background: color-mix(in oklch, var(--foreground) 88%, var(--background));
+}
+
+.aui-composer-cancel:hover {
+  background: color-mix(in oklch, var(--surface) 76%, var(--muted));
 }
 
 .aui-thread-welcome-root {
