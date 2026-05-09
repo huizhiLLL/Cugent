@@ -26,7 +26,7 @@
   --line: color-mix(in oklch, var(--border) 88%, transparent);
   --line-strong: color-mix(in oklch, var(--border) 100%, var(--foreground) 6%);
   --accent: oklch(0.97 0 0);
-  --accent-dark: #3f7572;
+  --accent-dark: #113231;
   --good: #4f7d66;
   --warn: #a8743a;
   --icon-size: 1rem;
@@ -456,12 +456,12 @@ h3 {
 
 .aui-user-message-footer {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 4px);
   right: 0;
 }
 
 .aui-user-message-footer-spacer {
-  min-height: 36px;
+  min-height: 32px;
 }
 
 .aui-user-action-bar-wrapper-placeholder {
@@ -785,34 +785,38 @@ code {
 
 .settings-form {
   display: grid;
-}
-
-.settings-page-title {
-  padding: 0 0 18px;
-  color: var(--foreground);
-  font-size: 1.6rem;
-  font-weight: 600;
+  gap: 0;
 }
 
 .settings-row {
   display: grid;
   align-items: start;
-  gap: 14px;
+  gap: 16px;
   padding: 26px 0;
-  border-top: 1px solid var(--line);
+  border-top: 0;
 }
 
 .settings-row-toggle {
-  grid-template-columns: minmax(0, 1fr) auto;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--line);
 }
 
 .settings-row-field {
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: 1fr;
 }
 
-.settings-row-copy {
-  display: grid;
-  gap: 8px;
+.settings-row-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.settings-row-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
 }
 
 .settings-row-label {
@@ -825,6 +829,129 @@ code {
   color: var(--text-muted);
   font-size: 0.94rem;
   line-height: 1.6;
+}
+
+.settings-input {
+  height: 48px;
+  max-width: 680px;
+  padding-inline: 16px;
+  border-radius: 16px;
+  border-color: color-mix(in oklch, var(--line-strong) 72%, white);
+  background: color-mix(in oklch, var(--surface) 90%, white);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.settings-input:focus-visible {
+  border-color: color-mix(in oklch, var(--accent-dark) 46%, white);
+  box-shadow:
+    0 0 0 4px color-mix(in oklch, var(--accent-dark) 12%, white),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.settings-switch {
+  position: relative;
+  flex: none;
+  width: 54px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--muted) 72%, white);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--line-strong) 72%, white),
+    inset 0 10px 22px rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.settings-switch:hover {
+  transform: translateY(-1px);
+}
+
+.settings-switch[data-checked="true"] {
+  background: color-mix(in oklch, var(--accent-dark) 84%, white);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--accent-dark) 74%, black),
+    0 10px 24px color-mix(in oklch, var(--accent-dark) 24%, transparent);
+}
+
+.settings-switch:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px color-mix(in oklch, var(--accent-dark) 20%, white),
+    inset 0 0 0 1px color-mix(in oklch, var(--accent-dark) 74%, black);
+}
+
+.settings-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fffdfa;
+  box-shadow:
+    0 2px 8px rgba(17, 24, 39, 0.18),
+    0 1px 2px rgba(17, 24, 39, 0.1);
+  transition: transform 180ms ease;
+}
+
+.settings-switch[data-checked="true"] .settings-switch-thumb {
+  transform: translateX(22px);
+}
+
+.settings-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 28px;
+}
+
+.conversation-manage-form {
+  display: grid;
+  gap: 18px;
+}
+
+.conversation-manage-field {
+  display: grid;
+  gap: 10px;
+}
+
+.conversation-manage-field span {
+  color: var(--foreground);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.conversation-manage-field input {
+  height: 46px;
+  padding-inline: 14px;
+  border-radius: 14px;
+}
+
+.conversation-manage-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.aui-edit-composer-send {
+  color: #fffdfa;
+  background: var(--accent-dark);
+  box-shadow: 0 8px 18px color-mix(in oklch, var(--accent-dark) 18%, transparent);
+}
+
+.aui-edit-composer-send:hover {
+  color: #fffdfa;
+  background: color-mix(in oklch, var(--accent-dark) 88%, black);
+}
+
+.aui-edit-composer-send:disabled {
+  color: #fffdfa;
+  background: color-mix(in oklch, var(--accent-dark) 72%, white);
 }
 
 .action-dialog-content {
@@ -985,9 +1112,9 @@ twisty-player {
 
   .mobile-menu-button {
     display: inline-flex;
-    width: 30px;
-    height: 30px;
-    padding: 7px;
+    width: 38px;
+    height: 38px;
+    padding: 8px;
   }
 
   .sidebar-nav {
@@ -996,14 +1123,15 @@ twisty-player {
   }
 
   .sidebar > .sidebar-nav .conversation-history,
-  .sidebar > .sidebar-nav .sidebar-label {
+  .sidebar > .sidebar-nav .sidebar-label,
+  .sidebar > .sidebar-footer {
     display: none;
   }
 
   .sidebar-action {
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
     padding: 0;
   }
 
@@ -1023,6 +1151,8 @@ twisty-player {
   }
 
   .mobile-history-drawer {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
     width: min(292px, 82vw);
     height: 100%;
     padding: 18px 14px;
@@ -1048,6 +1178,8 @@ twisty-player {
   .mobile-drawer-nav {
     display: grid;
     gap: 4px;
+    align-content: start;
+    min-height: 0;
   }
 
   .mobile-drawer-nav .sidebar-action {
@@ -1065,6 +1197,13 @@ twisty-player {
     opacity: 1;
   }
 
+  .mobile-drawer-footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 16px 4px 4px 6px;
+  }
+
   .settings-layout {
     grid-template-columns: 1fr;
   }
@@ -1079,8 +1218,10 @@ twisty-player {
     padding: 18px 18px 20px;
   }
 
-  .settings-row-field {
-    grid-template-columns: 1fr;
+  .settings-row-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
   }
 
   .chat-pane {

@@ -4,3 +4,4 @@ dist/
 .codex/
 ref/
 .env
+*.log

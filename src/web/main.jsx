@@ -46,6 +46,16 @@ function App() {
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [activeSettingsSection, setActiveSettingsSection] = useState("custom-llm");
+  const [renameDialogState, setRenameDialogState] = useState({
+    open: false,
+    conversationId: null,
+    title: ""
+  });
+  const [deleteDialogState, setDeleteDialogState] = useState({
+    open: false,
+    conversationId: null,
+    title: ""
+  });
   const [busy, setBusy] = useState(false);
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const pointerStartRef = useRef(null);
@@ -464,21 +474,43 @@ ${smartInput.segmentedSolution}`.trim();
   function renameConversation(conversationId) {
     const conversation = chatState.conversations.find((item) => item.id === conversationId);
     if (!conversation) return;
+    setRenameDialogState({
+      open: true,
+      conversationId,
+      title: conversation.title
+    });
+  }
 
-    const nextTitle = window.prompt("输入新的会话名称", conversation.title)?.trim();
-    if (!nextTitle) return;
+  function deleteConversation(conversationId) {
+    const conversation = chatState.conversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+    setDeleteDialogState({
+      open: true,
+      conversationId,
+      title: conversation.title
+    });
+  }
+
+  function submitRenameConversation() {
+    const conversationId = renameDialogState.conversationId;
+    const nextTitle = renameDialogState.title.trim();
+    if (!conversationId || !nextTitle) return;
 
     updateConversationById(conversationId, (conversationItem) => ({
       ...conversationItem,
       title: nextTitle,
       updatedAt: conversationItem.updatedAt
     }));
+    setRenameDialogState({
+      open: false,
+      conversationId: null,
+      title: ""
+    });
   }
 
-  function deleteConversation(conversationId) {
-    const conversation = chatState.conversations.find((item) => item.id === conversationId);
-    if (!conversation) return;
-    if (!window.confirm(`确定删除会话「${conversation.title}」吗？`)) return;
+  function confirmDeleteConversation() {
+    const conversationId = deleteDialogState.conversationId;
+    if (!conversationId) return;
 
     setChatState((previous) => {
       const remaining = previous.conversations.filter((item) => item.id !== conversationId);
@@ -494,6 +526,11 @@ ${smartInput.segmentedSolution}`.trim();
         currentConversationId: previous.currentConversationId === conversationId ? remaining[0].id : previous.currentConversationId,
         conversations: remaining
       };
+    });
+    setDeleteDialogState({
+      open: false,
+      conversationId: null,
+      title: ""
     });
   }
 
@@ -649,10 +686,6 @@ ${smartInput.segmentedSolution}`.trim();
                 <MessageSquarePlus data-icon="inline-start" />
                 <span>新建对话</span>
               </Button>
-              <Button type="button" variant="ghost" className="sidebar-action" onClick={() => setSettingsDialogOpen(true)}>
-                <Settings2 data-icon="inline-start" />
-                <span>LLM 设置</span>
-              </Button>
               <div className="conversation-history" aria-label="对话历史">
                 {sortedConversations.map((conversation) => (
                   <div className="history-row" key={conversation.id}>
@@ -677,6 +710,16 @@ ${smartInput.segmentedSolution}`.trim();
                 ))}
               </div>
             </nav>
+            <div className="mobile-drawer-footer">
+              <TooltipIconButton
+                type="button"
+                className="sidebar-settings-button"
+                aria-label="打开设置"
+                onClick={() => setSettingsDialogOpen(true)}
+              >
+                <Settings2 />
+              </TooltipIconButton>
+            </div>
           </aside>
         </div>
 
@@ -708,6 +751,85 @@ ${smartInput.segmentedSolution}`.trim();
               <Button type="button" variant="ghost" className="action-list-item" onClick={() => runQuickAction("F2L 1 这里怎么样？")}>
                 <MessageSquarePlus data-icon="inline-start" />
                 <span>追问 F2L 1</span>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={renameDialogState.open}
+          onOpenChange={(open) => {
+            setRenameDialogState((previous) => ({
+              ...previous,
+              open,
+              conversationId: open ? previous.conversationId : null,
+              title: open ? previous.title : ""
+            }));
+          }}
+        >
+          <DialogContent className="action-dialog-content sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>重命名会话</DialogTitle>
+            </DialogHeader>
+            <form
+              className="conversation-manage-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitRenameConversation();
+              }}
+            >
+              <label className="conversation-manage-field">
+                <Input
+                  autoFocus
+                  value={renameDialogState.title}
+                  onChange={(event) => setRenameDialogState((previous) => ({ ...previous, title: event.target.value }))}
+                  placeholder="输入会话名称"
+                />
+              </label>
+              <div className="conversation-manage-actions">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRenameDialogState({ open: false, conversationId: null, title: "" })}
+                >
+                  取消
+                </Button>
+                <Button type="submit" className="dialog-primary-button" disabled={!renameDialogState.title.trim()}>
+                  保存
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={deleteDialogState.open}
+          onOpenChange={(open) => {
+            setDeleteDialogState((previous) => ({
+              ...previous,
+              open,
+              conversationId: open ? previous.conversationId : null,
+              title: open ? previous.title : ""
+            }));
+          }}
+        >
+          <DialogContent className="action-dialog-content sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>删除会话</DialogTitle>
+              <DialogDescription>
+                {`确定删除会话「${deleteDialogState.title}」吗？删除后无法恢复。`}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="conversation-manage-actions">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeleteDialogState({ open: false, conversationId: null, title: "" })}
+              >
+                取消
+              </Button>
+              <Button type="button" className="dialog-primary-button" onClick={confirmDeleteConversation}>
+                删除
               </Button>
             </div>
           </DialogContent>
@@ -792,35 +914,43 @@ ${smartInput.segmentedSolution}`.trim();
                       saveCurrentLlmSettings();
                     }}
                   >
-                    <div className="settings-page-title">自定义 LLM</div>
-                    <label className="settings-row settings-row-toggle">
-                      <div className="settings-row-copy">
-                        <span className="settings-row-label">启用 LLM</span>
-                        <span className="settings-row-help">启用后，对话会尝试调用你配置的 OpenAI 兼容接口。</span>
+                    <div className="settings-row settings-row-toggle">
+                      <div className="settings-row-head">
+                        <div className="settings-row-heading">
+                          <span className="settings-row-label">启用 LLM</span>
+                          <span className="settings-row-help">启用后，对话流会加入 LLM 辅助分析</span>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={llmSettingsDraft.enabled !== false}
+                          className="settings-switch"
+                          data-checked={llmSettingsDraft.enabled !== false}
+                          onClick={() => updateLlmSettings("enabled", llmSettingsDraft.enabled === false)}
+                        >
+                          <span className="settings-switch-thumb" />
+                        </button>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={llmSettingsDraft.enabled !== false}
-                        onChange={(event) => updateLlmSettings("enabled", event.target.checked)}
-                      />
-                    </label>
+                    </div>
                     <label className="settings-row settings-row-field">
-                      <div className="settings-row-copy">
-                        <span className="settings-row-label">接口基地址</span>
-                        <span className="settings-row-help">例如 `https://api.huizhi.ink/v1`，调用时会自动补上 `/chat/completions`。</span>
+                      <div className="settings-row-heading">
+                        <span className="settings-row-label">API 地址</span>
+                        <span className="settings-row-help">例如 `https://api.huizhi.ink/v1`</span>
                       </div>
                       <Input
+                        className="settings-input"
                         value={llmSettingsDraft.baseUrl}
                         onChange={(event) => updateLlmSettings("baseUrl", event.target.value)}
                         placeholder="https://api.huizhi.ink/v1"
                       />
                     </label>
                     <label className="settings-row settings-row-field">
-                      <div className="settings-row-copy">
+                      <div className="settings-row-heading">
                         <span className="settings-row-label">API Key</span>
-                        <span className="settings-row-help">仅保存在当前浏览器本地，不会同步到其他设备。</span>
+                        <span className="settings-row-help">仅保存在本地客户端</span>
                       </div>
                       <Input
+                        className="settings-input"
                         type="password"
                         value={llmSettingsDraft.apiKey}
                         onChange={(event) => updateLlmSettings("apiKey", event.target.value)}
@@ -828,17 +958,18 @@ ${smartInput.segmentedSolution}`.trim();
                       />
                     </label>
                     <label className="settings-row settings-row-field">
-                      <div className="settings-row-copy">
+                      <div className="settings-row-heading">
                         <span className="settings-row-label">模型名</span>
-                        <span className="settings-row-help">例如 `gpt-5.4-mini` 或兼容服务提供的模型名。</span>
+                        <span className="settings-row-help">例如 `dedeepseek-v4-flash`</span>
                       </div>
                       <Input
+                        className="settings-input"
                         value={llmSettingsDraft.model}
                         onChange={(event) => updateLlmSettings("model", event.target.value)}
                         placeholder="gpt-5.4-mini"
                       />
                     </label>
-                    <DialogFooter>
+                    <div className="settings-form-actions">
                       <Button type="button" variant="ghost" onClick={resetLlmSettings}>
                         恢复默认
                       </Button>
@@ -848,7 +979,7 @@ ${smartInput.segmentedSolution}`.trim();
                       <Button type="submit" className="dialog-primary-button">
                         保存
                       </Button>
-                    </DialogFooter>
+                    </div>
                   </form>
                 ) : null}
               </section>

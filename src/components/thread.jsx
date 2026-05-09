@@ -20,6 +20,7 @@ import {
   ErrorPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
+  useAui,
   useAuiState,
 } from "@assistant-ui/react";
 import {
@@ -37,6 +38,7 @@ import {
   Trash2Icon,
   PlusIcon,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 export const Thread = ({ onOpenSmartCube, onDeleteMessage }) => {
   return (
@@ -60,7 +62,7 @@ export const Thread = ({ onOpenSmartCube, onDeleteMessage }) => {
           <AuiIf condition={(s) => !s.thread.isEmpty}>
             <div
               data-slot="aui_message-group"
-              className="mb-10 flex flex-col gap-y-8 empty:hidden">
+              className="mb-6 flex flex-col gap-y-1 empty:hidden">
               <ThreadPrimitive.Messages>
                 {() => <ThreadMessage onDeleteMessage={onDeleteMessage} />}
               </ThreadPrimitive.Messages>
@@ -319,15 +321,23 @@ const UserMessage = ({ onDeleteMessage }) => {
       <div className="aui-user-message-footer-spacer col-start-2" aria-hidden="true">
         <div className="aui-user-action-bar-wrapper-placeholder" />
       </div>
-      <BranchPicker
-        data-slot="aui_user-branch-picker"
-        className="col-span-full col-start-1 row-start-3 -me-1 justify-end" />
     </MessagePrimitive.Root>
   );
 };
 
 const UserActionBar = ({ onDeleteMessage }) => {
   const messageId = useAuiState((s) => s.message.id);
+  const canEdit = useAuiState((s) => {
+    if (s.message.role !== "user") return false;
+
+    for (let index = s.thread.messages.length - 1; index >= 0; index -= 1) {
+      if (s.thread.messages[index]?.role === "user") {
+        return s.message.index === index;
+      }
+    }
+
+    return false;
+  });
 
   return (
     <ActionBarPrimitive.Root
@@ -340,15 +350,17 @@ const UserActionBar = ({ onDeleteMessage }) => {
             <CheckIcon />
           </AuiIf>
           <AuiIf condition={(s) => !s.message.isCopied}>
-            <CopyIcon />
-          </AuiIf>
-        </TooltipIconButton>
+          <CopyIcon />
+        </AuiIf>
+      </TooltipIconButton>
       </ActionBarPrimitive.Copy>
-      <ActionBarPrimitive.Edit asChild>
-        <TooltipIconButton className="aui-user-action-edit p-4">
-          <PencilIcon />
-        </TooltipIconButton>
-      </ActionBarPrimitive.Edit>
+      {canEdit ? (
+        <ActionBarPrimitive.Edit asChild>
+          <TooltipIconButton className="aui-user-action-edit p-4">
+            <PencilIcon />
+          </TooltipIconButton>
+        </ActionBarPrimitive.Edit>
+      ) : null}
       <TooltipIconButton className="aui-user-action-delete p-4" onClick={() => onDeleteMessage?.(messageId)}>
         <Trash2Icon />
       </TooltipIconButton>
@@ -357,23 +369,48 @@ const UserActionBar = ({ onDeleteMessage }) => {
 };
 
 const EditComposer = () => {
+  const aui = useAui();
+  const rootRef = useRef(null);
+  const isEmpty = useAuiState((s) => s.composer.isEmpty);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      const element = rootRef.current;
+      if (!element || element.contains(event.target)) return;
+      aui.composer().cancel();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, [aui]);
+
   return (
     <MessagePrimitive.Root data-slot="aui_edit-composer-wrapper" className="flex flex-col px-2">
       <ComposerPrimitive.Root
+        ref={rootRef}
         className="aui-edit-composer-root ms-auto flex w-full max-w-[85%] flex-col rounded-2xl bg-muted">
         <ComposerPrimitive.Input
           className="aui-edit-composer-input min-h-14 w-full resize-none bg-transparent p-4 text-foreground text-sm outline-none"
           autoFocus />
         <div
-          className="aui-edit-composer-footer mx-3 mb-3 flex items-center gap-2 self-end">
-          <ComposerPrimitive.Cancel asChild>
-            <Button variant="ghost" size="sm">
-              Cancel
-            </Button>
-          </ComposerPrimitive.Cancel>
-          <ComposerPrimitive.Send asChild>
-            <Button size="sm">Update</Button>
-          </ComposerPrimitive.Send>
+          className="aui-edit-composer-footer mx-3 mb-3 flex items-center justify-end gap-2 self-end">
+          <TooltipIconButton
+            tooltip="发送"
+            side="bottom"
+            type="button"
+            variant="default"
+            size="icon"
+            className="aui-edit-composer-send size-8 rounded-full"
+            aria-label="发送编辑内容"
+            disabled={isEmpty}
+            onClick={() => {
+              void aui.composer().send();
+            }}
+          >
+            <ArrowUpIcon className="aui-composer-send-icon size-4" />
+          </TooltipIconButton>
         </div>
       </ComposerPrimitive.Root>
     </MessagePrimitive.Root>
