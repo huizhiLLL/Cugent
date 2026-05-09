@@ -1015,13 +1015,13 @@ test("buildChatCompletionMessages flattens prompt parts to plain string content"
 test("sanitizeLlmSettings trims baseUrl and keeps explicit values", () => {
   const settings = sanitizeLlmSettings({
     enabled: true,
-    baseUrl: "https://api.huizhi.ink/v1///",
+    baseUrl: "https://api.deepseek.com/v1///",
     apiKey: "sk-test",
     model: "gpt-4o-mini"
   });
 
   assert.equal(settings.enabled, true);
-  assert.equal(settings.baseUrl, "https://api.huizhi.ink/v1");
+  assert.equal(settings.baseUrl, "https://api.deepseek.com/v1");
   assert.equal(settings.apiKey, "sk-test");
   assert.equal(settings.model, "gpt-4o-mini");
 });
@@ -1059,8 +1059,8 @@ test("createEmptyConversation initializes empty message list", () => {
 
 test("joinChatCompletionsUrl appends chat completions path", () => {
   assert.equal(
-    joinChatCompletionsUrl("https://api.huizhi.ink/v1/"),
-    "https://api.huizhi.ink/v1/chat/completions"
+    joinChatCompletionsUrl("https://api.deepseek.com/v1/"),
+    "https://api.deepseek.com/v1/chat/completions"
   );
 });
 

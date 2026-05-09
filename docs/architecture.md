@@ -57,7 +57,7 @@ Cubing Domain Tools
 - 前端负责消息流、LLM 设置录入与本地保存。
 - 前端负责会话状态持久化、会话管理和消息级交互（复制、编辑、删除、重试）。
 - `runAgentTurn` 仍负责本地 intent 判断、工具路由和 fallback。
-- 前端只填写接口基地址，例如 `https://api.huizhi.ink/v1`；运行时请求会自动补成 `/chat/completions`。
+- 前端只填写接口基地址，例如 `https://api.deepseek.com/v1`；运行时请求会自动补成 `/chat/completions`。
 - 前端直接读取 OpenAI 兼容接口的 SSE 流，生成中的 assistant 回复会持续更新。
 
 后续接入 streaming 或正式部署时，可继续保留当前 `runAgentTurn` 作为工具路由和 fallback。

@@ -35,5 +35,8 @@
     "tw-shimmer": "^0.4.11",
     "vite": "^8.0.11",
     "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "wrangler": "^4.90.0"
   }
 }

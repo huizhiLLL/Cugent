@@ -937,13 +937,13 @@ ${smartInput.segmentedSolution}`.trim();
                     <label className="settings-row settings-row-field">
                       <div className="settings-row-heading">
                         <span className="settings-row-label">API 地址</span>
-                        <span className="settings-row-help">例如 `https://api.huizhi.ink/v1`</span>
+                        <span className="settings-row-help">例如 `https://api.deepseek.com/v1`</span>
                       </div>
                       <Input
                         className="settings-input"
                         value={llmSettingsDraft.baseUrl}
                         onChange={(event) => updateLlmSettings("baseUrl", event.target.value)}
-                        placeholder="https://api.huizhi.ink/v1"
+                        placeholder="https://api.deepseek.com/v1"
                       />
                     </label>
                     <label className="settings-row settings-row-field">
@@ -968,7 +968,7 @@ ${smartInput.segmentedSolution}`.trim();
                         className="settings-input"
                         value={llmSettingsDraft.model}
                         onChange={(event) => updateLlmSettings("model", event.target.value)}
-                        placeholder="gpt-5.4-mini"
+                        placeholder="deepseek-v4-flash"
                       />
                     </label>
                     <div className="settings-form-actions">

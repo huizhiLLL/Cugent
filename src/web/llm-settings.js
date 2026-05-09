@@ -3,9 +3,9 @@ const LEGACY_STORAGE_KEY = "cubeagent.llm.settings";
 
 export const defaultLlmSettings = {
   enabled: true,
-  baseUrl: "https://api.openai.com/v1",
+  baseUrl: "https://api.deepseek.com/v1",
   apiKey: "",
-  model: "gpt-5.4-mini"
+  model: "deepseek-v4-flash"
 };
 
 export function loadLlmSettings() {
