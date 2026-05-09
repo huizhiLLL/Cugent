@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
-import { FileInput, Menu, MessageSquarePlus, Search, Sparkles } from "lucide-react";
+import { FileInput, Menu, MessageSquarePlus, Search, Settings2, Sparkles } from "lucide-react";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Thread } from "@/components/thread";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { invertAlg } from "../cubing-tools/index.js";
 import { runAgentTurn } from "../agent-runtime/index.js";
+import { defaultLlmSettings, loadLlmSettings, saveLlmSettings, sanitizeLlmSettings } from "./llm-settings.js";
 import "./styles.css";
 
 const scramble = "B' R' U2 L2 F U2 L2 B2 F' D2 F R2 B D R U2 L F2 R' U";
@@ -93,10 +94,12 @@ function App() {
   const [smartInput, setSmartInput] = useState(sampleSmartInput);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [context, setContext] = useState({});
   const [busy, setBusy] = useState(false);
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const pointerStartRef = useRef(null);
+  const [llmSettingsDraft, setLlmSettingsDraft] = useState(() => loadLlmSettings());
 
   async function submitMessage(nextInput, { appendUser = true } = {}) {
     const trimmed = nextInput.trim();
@@ -110,7 +113,11 @@ function App() {
     }
 
     try {
-      const turn = await runAgentTurn(trimmed, context);
+      const llmSettings = sanitizeLlmSettings(llmSettingsDraft);
+      const turn = await runAgentTurn(trimmed, {
+        ...context,
+        llmSettings
+      });
       setContext((previous) => ({ ...previous, ...turn.contextPatch }));
       setMessages((items) => [
         ...items,
@@ -152,6 +159,7 @@ function App() {
     setSmartInput(sampleSmartInput);
     setActionDialogOpen(false);
     setSmartDialogOpen(false);
+    setSettingsDialogOpen(false);
     closeMobileHistory();
     setContext({});
   }
@@ -196,6 +204,24 @@ ${smartInput.segmentedSolution}`.trim();
   function runQuickAction(text) {
     setActionDialogOpen(false);
     void submitMessage(text);
+  }
+
+  function updateLlmSettings(field, value) {
+    setLlmSettingsDraft((previous) => ({
+      ...previous,
+      [field]: value
+    }));
+  }
+
+  function saveCurrentLlmSettings() {
+    const next = sanitizeLlmSettings(llmSettingsDraft);
+    setLlmSettingsDraft(next);
+    saveLlmSettings(next);
+    setSettingsDialogOpen(false);
+  }
+
+  function resetLlmSettings() {
+    setLlmSettingsDraft(defaultLlmSettings);
   }
 
   function handleEdgePointerDown(event) {
@@ -271,6 +297,10 @@ ${smartInput.segmentedSolution}`.trim();
               <MessageSquarePlus data-icon="inline-start" />
               <span className="sidebar-label">新建对话</span>
             </Button>
+            <Button type="button" variant="ghost" className="sidebar-action" onClick={() => setSettingsDialogOpen(true)} title="LLM 设置">
+              <Settings2 data-icon="inline-start" />
+              <span className="sidebar-label">LLM 设置</span>
+            </Button>
             <div className="conversation-history" aria-label="对话历史">
               {demoConversationTitles.map((title, index) => (
                 <Button
@@ -309,6 +339,10 @@ ${smartInput.segmentedSolution}`.trim();
               <Button type="button" variant="ghost" className="sidebar-action" onClick={createConversation}>
                 <MessageSquarePlus data-icon="inline-start" />
                 <span>新建对话</span>
+              </Button>
+              <Button type="button" variant="ghost" className="sidebar-action" onClick={() => setSettingsDialogOpen(true)}>
+                <Settings2 data-icon="inline-start" />
+                <span>LLM 设置</span>
               </Button>
               <div className="conversation-history" aria-label="对话历史">
                 {demoConversationTitles.map((title, index) => (
@@ -407,6 +441,68 @@ ${smartInput.segmentedSolution}`.trim();
                 </Button>
                 <Button type="submit" disabled={busy}>
                   {busy ? "导入中" : "导入"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+          <DialogContent className="smart-dialog-content sm:max-w-xl">
+            <DialogHeader>
+              <p className="eyebrow">LLM Config</p>
+              <DialogTitle>LLM 设置</DialogTitle>
+              <DialogDescription>填写 OpenAI 兼容接口配置。前端示例基地址为 `https://api.huizhi.ink/v1`，服务端调用时会自动补上 `/chat/completions`。</DialogDescription>
+            </DialogHeader>
+            <form
+              className="smart-fields"
+              onSubmit={(event) => {
+                event.preventDefault();
+                saveCurrentLlmSettings();
+              }}
+            >
+              <label className="toggle-field">
+                <span>启用 LLM</span>
+                <input
+                  type="checkbox"
+                  checked={llmSettingsDraft.enabled !== false}
+                  onChange={(event) => updateLlmSettings("enabled", event.target.checked)}
+                />
+              </label>
+              <label>
+                <span>接口基地址</span>
+                <Input
+                  value={llmSettingsDraft.baseUrl}
+                  onChange={(event) => updateLlmSettings("baseUrl", event.target.value)}
+                  placeholder="https://api.huizhi.ink/v1"
+                />
+              </label>
+              <label>
+                <span>API Key</span>
+                <Input
+                  type="password"
+                  value={llmSettingsDraft.apiKey}
+                  onChange={(event) => updateLlmSettings("apiKey", event.target.value)}
+                  placeholder="sk-..."
+                />
+              </label>
+              <label>
+                <span>模型名</span>
+                <Input
+                  value={llmSettingsDraft.model}
+                  onChange={(event) => updateLlmSettings("model", event.target.value)}
+                  placeholder="gpt-5.4-mini"
+                />
+              </label>
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={resetLlmSettings}>
+                  恢复默认
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setSettingsDialogOpen(false)}>
+                  取消
+                </Button>
+                <Button type="submit">
+                  保存
                 </Button>
               </DialogFooter>
             </form>

@@ -443,6 +443,19 @@ code {
   font-weight: 650;
 }
 
+.toggle-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toggle-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-dark);
+}
+
 .smart-fields input,
 .smart-fields textarea {
   width: 100%;

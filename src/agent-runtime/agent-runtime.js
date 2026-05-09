@@ -1,8 +1,9 @@
 import { createSolveReview, searchAlgorithms } from "../cubing-tools/index.js";
 import { detectIntent } from "./intent-detector.js";
+import { enhanceAgentTurnResponse } from "./llm-client.js";
 import { composeResponse } from "./response-composer.js";
 
-export async function runAgentTurn(message, context = {}) {
+export async function runAgentTurn(message, context = {}, options = {}) {
   let intent = detectIntent(message);
   let turn;
 
@@ -18,17 +19,17 @@ export async function runAgentTurn(message, context = {}) {
 
   if (intent.type === "solve-import") {
     turn = await runSolveImport(intent, context);
-    return withResponse(turn);
+    return withResponse(turn, { message, context, options });
   }
 
   if (intent.type === "algorithm-query") {
     turn = runAlgorithmQuery(intent, context);
-    return withResponse(turn);
+    return withResponse(turn, { message, context, options });
   }
 
   if (intent.type === "local-followup") {
     turn = runLocalFollowup(intent, context);
-    return withResponse(turn);
+    return withResponse(turn, { message, context, options });
   }
 
   turn = {
@@ -41,14 +42,50 @@ export async function runAgentTurn(message, context = {}) {
     },
     contextPatch: {}
   };
-  return withResponse(turn);
+  return withResponse(turn, { message, context, options });
 }
 
-function withResponse(turn) {
+async function withResponse(turn, { message, context, options }) {
+  const fallbackResponse = composeResponse(turn);
+  const response = await maybeEnhanceResponse({
+    message,
+    context,
+    turn,
+    fallbackResponse,
+    options
+  });
+
   return {
     ...turn,
-    response: composeResponse(turn)
+    response,
+    fallbackResponse
   };
+}
+
+async function maybeEnhanceResponse({ message, context, turn, fallbackResponse, options }) {
+  if (!shouldUseLlmResponse(turn)) {
+    return fallbackResponse;
+  }
+
+  const responseEnhancer = options.responseEnhancer ?? enhanceAgentTurnResponse;
+  if (typeof responseEnhancer !== "function") {
+    return fallbackResponse;
+  }
+
+  try {
+    return await responseEnhancer({
+      message,
+      context,
+      turn,
+      fallbackResponse
+    });
+  } catch {
+    return fallbackResponse;
+  }
+}
+
+function shouldUseLlmResponse(turn) {
+  return turn.toolResult?.type !== "error";
 }
 
 async function runSolveImport(intent, context) {

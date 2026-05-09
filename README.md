@@ -34,6 +34,7 @@
 - 生成 `coachSuggestions` 结构化建议，作为后续 Agent/LLM 的证据输入。
 - 提供轻量 `agent-runtime` 原型，支持 solve 导入、公式查询和局部追问。
 - 提供 `response-composer`，把结构化工具结果转成稳定中文 fallback 回复。
+- 提供最小 LLM 接入闭环：本地 runtime 先完成意图判断与确定性工具调用，再把工具结果交给真实 LLM 组织成更自然的中文回复；若未配置 API Key 或模型失败，会自动退回本地 fallback 回复。
 - 提供最小 Web 客户端：左侧 chat，右侧 solve context 面板。
 - 生成兼容 `alg.cubing.net` 的可嵌入播放链接，并用 `cubing.js` 的 `twisty-player` 在页面内渲染转动动画。
 
@@ -46,6 +47,27 @@ npm test
 npm run poc
 npm run agent:poc
 ```
+
+前端可在“LLM 设置”里填写：
+
+```bash
+接口基地址: https://api.huizhi.ink/v1
+API Key: sk-...
+模型名: gpt-5.4-mini
+```
+
+前端请求时会自动补成：
+
+```text
+https://api.huizhi.ink/v1/chat/completions
+```
+
+当前最小闭环策略是：
+
+- `solve-import`、`algorithm-query`、`local-followup` 先走本地确定性工具。
+- `chat` 直接交给真实 LLM。
+- 非错误型工具结果也会把 `toolResult`、`response-composer` 的 fallback 回复和当前 context 一起发给 LLM，让模型只负责自然语言组织，而不负责判断魔方事实。
+- 若兼容接口不可用、未配置 API Key、CORS 不允许或模型调用失败，则继续展示本地 fallback 回复。
 
 `npm run dev` 会启动本地 Web 客户端，默认地址是 `http://127.0.0.1:5173`。
 `npm run poc` 会运行内置样例，输出结构化复盘摘要和播放链接。

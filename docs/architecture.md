@@ -38,7 +38,7 @@ Cubing Domain Tools
 
 ### AI Chat Client
 
-负责用户体验、消息流、输入扩展和播放链接展示。当前 Web 客户端基于 React / Vite、assistant-ui 外部状态 runtime 与 shadcn 组件实现，先不接真实模型，只调用本地 `runAgentTurn`。
+负责用户体验、消息流、输入扩展和播放链接展示。当前 Web 客户端基于 React / Vite、assistant-ui 外部状态 runtime 与 shadcn 组件实现；LLM 配置由前端设置面板维护，并直接请求 OpenAI 兼容 `chat/completions`。
 
 当前客户端布局：
 
@@ -50,18 +50,25 @@ Cubing Domain Tools
 
 当前客户端的功能图标统一使用 `lucide-react`。品牌与站点图标只使用 `cubeagent-logo.png` 这类独立品牌资产，不混入功能按钮图标体系。通用功能图标的默认尺寸、描边和按钮容器由 `src/web/styles.css` 与 `TooltipIconButton` 统一控制，局部组件只在确有层级差异时覆盖尺寸。
 
-后续接入真实模型时，可保留当前 `runAgentTurn` 作为工具路由和 fallback。
+当前前端边界：
+
+- 前端负责消息流、LLM 设置录入与本地保存。
+- `runAgentTurn` 仍负责本地 intent 判断、工具路由和 fallback。
+- 前端只填写接口基地址，例如 `https://api.huizhi.ink/v1`；运行时请求会自动补成 `/chat/completions`。
+
+后续接入 streaming 或正式部署时，可继续保留当前 `runAgentTurn` 作为工具路由和 fallback。
 
 ### Lightweight Agent Runtime
 
 负责判断用户意图、选择工具、保存当前 solve 上下文、组织回答。第一版轻量自研，不直接引入 LangGraph/Mastra 这类重型 agent 框架。
 
-当前 runtime 是规则原型，不包含 LLM：
+当前 runtime 仍是规则原型，LLM 只负责语言组织，不接管工具决策：
 
 - `solve-import`：识别 scramble、timedMoves、segmentedSolution，调用 `createSolveReview`。
 - `algorithm-query`：识别 F2L/OLL/PLL 公式查询，调用 `searchAlgorithms`。
 - `local-followup`：基于当前 `currentSolveReview` 返回指定分段的状态、阶段分析和建议。
 - `chat`：未命中特定工具时交给普通聊天模型处理。
+- 非错误型工具结果：把 `toolResult`、`response-composer` 输出和当前上下文一起交给模型润色。
 
 当前 solve 导入支持常见复制字段别名：
 
@@ -77,7 +84,8 @@ Cubing Domain Tools
 - `toolCalls`：本轮调用的工具及参数摘要。
 - `toolResult`：结构化工具输出。
 - `contextPatch`：需要合并到会话上下文的状态。
-- `response`：由 `response-composer` 生成的中文 fallback 摘要。
+- `response`：最终对用户展示的回答，优先使用 LLM 组织后的文本，失败时退回本地 fallback。
+- `fallbackResponse`：由 `response-composer` 生成的中文 fallback 摘要。
 
 ### Cubing Domain Tools
 

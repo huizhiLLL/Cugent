@@ -19,6 +19,8 @@ import {
   traceCubeState
 } from "../src/cubing-tools/index.js";
 import { buildPromptMessages, composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
+import { defaultLlmSettings, sanitizeLlmSettings } from "../src/web/llm-settings.js";
+import { extractChatCompletionText, joinChatCompletionsUrl } from "../src/agent-runtime/index.js";
 
 test("parseTimedMoves parses cstimer style review field", () => {
   const moves = parseTimedMoves(`["U'@0 R@125 L2@389","333"]`);
@@ -648,6 +650,49 @@ test("buildPromptMessages includes tool result and fallback response", () => {
   assert.match(messages[1].content[0].text, /local-followup/);
   assert.match(messages[1].content[0].text, /segment-inspection/);
   assert.match(messages[1].content[0].text, /fallback/);
+});
+
+test("sanitizeLlmSettings trims baseUrl and keeps explicit values", () => {
+  const settings = sanitizeLlmSettings({
+    enabled: true,
+    baseUrl: "https://api.huizhi.ink/v1///",
+    apiKey: "sk-test",
+    model: "gpt-4o-mini"
+  });
+
+  assert.equal(settings.enabled, true);
+  assert.equal(settings.baseUrl, "https://api.huizhi.ink/v1");
+  assert.equal(settings.apiKey, "sk-test");
+  assert.equal(settings.model, "gpt-4o-mini");
+});
+
+test("sanitizeLlmSettings falls back to defaults", () => {
+  const settings = sanitizeLlmSettings({});
+
+  assert.equal(settings.enabled, true);
+  assert.equal(settings.baseUrl, defaultLlmSettings.baseUrl);
+  assert.equal(settings.model, defaultLlmSettings.model);
+});
+
+test("joinChatCompletionsUrl appends chat completions path", () => {
+  assert.equal(
+    joinChatCompletionsUrl("https://api.huizhi.ink/v1/"),
+    "https://api.huizhi.ink/v1/chat/completions"
+  );
+});
+
+test("extractChatCompletionText reads standard compatible response", () => {
+  const text = extractChatCompletionText({
+    choices: [
+      {
+        message: {
+          content: "你好，这里是回答"
+        }
+      }
+    ]
+  });
+
+  assert.equal(text, "你好，这里是回答");
 });
 
 test("composeResponse includes recognized PLL case in solve-review evidence", async () => {
