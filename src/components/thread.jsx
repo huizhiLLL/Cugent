@@ -40,6 +40,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+const EMPTY_TOOL_CALLS = [];
+
 export const Thread = ({ onOpenSmartCube, onDeleteMessage }) => {
   return (
     <ThreadPrimitive.Root
@@ -192,7 +194,7 @@ const MessageError = () => {
 
 const AssistantMessage = ({ onDeleteMessage }) => {
   const cubeResponse = useAuiState((s) => s.message.metadata.custom?.cubeResponse);
-  const toolCalls = useAuiState((s) => s.message.metadata.custom?.toolCalls ?? []);
+  const toolCalls = useAuiState((s) => s.message.metadata.custom?.toolCalls ?? EMPTY_TOOL_CALLS);
   const messageStatus = useAuiState((s) => s.message.status);
 
   return (
@@ -249,10 +251,14 @@ const AssistantMessage = ({ onDeleteMessage }) => {
 };
 
 function shouldRenderCubeToolCall(response, toolCalls) {
+  const hasRealToolResponse = response && [
+    "solve-review",
+    "algorithm-search",
+    "segment-inspection"
+  ].includes(response.kind);
+
   return Boolean(
-    (response
-      && response.kind !== "chat-fallback"
-      && response.kind !== "error")
+    hasRealToolResponse
     || (Array.isArray(toolCalls) && toolCalls.length > 0)
   );
 }

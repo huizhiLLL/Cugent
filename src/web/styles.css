@@ -589,6 +589,33 @@ code {
   background: #f8fbfc;
 }
 
+.aui-md-playback-inline {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.twisty-preview-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.twisty-preview-inline-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.twisty-preview-inline-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .composer {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

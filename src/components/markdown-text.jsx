@@ -116,11 +116,13 @@ const defaultComponents = memoizeMarkdownComponents({
   a: ({ className, ...props }) => (
     isPlaybackUrl(props.href)
       ? (
-        <TwistyPreview
-          playback={props.href}
-          title={extractNodeText(props.children) || "公式预览"}
-          compact
-        />
+        <span className="aui-md-playback-inline">
+          <TwistyPreview
+            playback={props.href}
+            title={extractNodeText(props.children) || "公式预览"}
+            compact
+          />
+        </span>
       )
       : (
         <a

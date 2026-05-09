@@ -40,6 +40,27 @@ export function TwistyPreview({ playback, alg, setup = "", title = "预览", com
     }
   }
 
+  if (compact) {
+    return (
+      <span className="twisty-preview-inline">
+        <span className="twisty-preview-inline-toolbar" title={title} aria-label={title}>
+          <Eye />
+          <button type="button" onClick={play} title="播放转动">
+            <Play />
+          </button>
+        </span>
+        <twisty-player
+          ref={playerRef}
+          puzzle="3x3x3"
+          background="none"
+          hint-facelets="none"
+          control-panel="none"
+        />
+        <code className="formula-line">{parsed.alg}</code>
+      </span>
+    );
+  }
+
   return (
     <div className={`twisty-preview ${compact ? "compact" : ""}`}>
       <div className="twisty-toolbar">
