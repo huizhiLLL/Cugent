@@ -384,7 +384,7 @@ h3 {
 
 .response-details {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .response-details-block {
@@ -403,34 +403,33 @@ h3 {
 
 .tool-timeline {
   display: grid;
-  gap: 10px;
-  padding-left: 2px;
+  gap: 12px;
+  padding-left: 0;
 }
 
 .tool-timeline-item {
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
 .tool-timeline-marker {
-  width: 10px;
-  height: 10px;
-  margin-top: 14px;
+  width: 8px;
+  height: 8px;
+  margin-top: 8px;
   border-radius: 999px;
-  background: color-mix(in oklch, var(--accent-dark) 70%, white);
-  box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent-dark) 12%, transparent);
+  background: color-mix(in oklch, var(--accent-dark) 72%, white);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent-dark) 10%, transparent);
 }
 
 .tool-timeline-card {
   display: grid;
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid color-mix(in oklch, var(--line) 88%, var(--accent-dark));
-  border-radius: 14px;
-  background: color-mix(in oklch, white 92%, var(--accent-dark));
-  box-shadow: 0 8px 20px -16px rgba(45, 70, 68, 0.25);
+  gap: 6px;
+  padding: 2px 0 10px;
+  border-bottom: 1px solid color-mix(in oklch, var(--line) 86%, transparent);
+  background: transparent;
+  box-shadow: none;
 }
 
 .response-details-candidates {
@@ -457,6 +456,30 @@ h3 {
 .llm-status-fallback,
 .llm-status-cancelled {
   color: var(--warn);
+}
+
+.aui-tool-fallback-root {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.aui-tool-fallback-trigger {
+  padding: 0 0 8px;
+  color: var(--text-muted);
+}
+
+.aui-tool-fallback-trigger-label-wrapper b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.aui-tool-fallback-content > div {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in oklch, var(--line) 82%, transparent);
 }
 
 .aui-assistant-message-shell,
@@ -549,17 +572,17 @@ h3 {
 
 .mini-section {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .highlight,
 .candidate {
   display: grid;
-  gap: 4px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(246, 248, 250, 0.84);
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .tool-call-head {
@@ -571,8 +594,8 @@ h3 {
 
 .highlight span {
   color: var(--text-muted);
-  font-family: var(--font-serif);
-  font-size: 0.8rem;
+  font-family: var(--font-sans, var(--font-serif));
+  font-size: 0.78rem;
 }
 
 code {
@@ -598,30 +621,18 @@ code {
 
 .tool-call-summary {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .tool-call-summary p {
   margin: 0;
   color: #494741;
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.tool-call-raw {
-  display: grid;
-  gap: 8px;
-}
-
-.tool-call-raw summary {
-  cursor: pointer;
-  color: var(--text-muted);
   font-size: 0.8rem;
-  user-select: none;
+  line-height: 1.5;
 }
 
 .tool-call-summary {
-  padding-top: 2px;
+  padding-top: 1px;
 }
 
 .playback-code {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ToolFallback } from "@/components/tool-fallback";
 import { TwistyPreview } from "@/components/playback-preview";
 import "cubing/twisty";
@@ -66,8 +66,24 @@ export function CubeResponseDetails({ response, toolCalls = [] }) {
 }
 
 export function CubeResponseToolCall({ response, toolCalls = [], status, toolName = "分析结果详情" }) {
+  const isRunning = status?.type === "running";
+  const [open, setOpen] = useState(isRunning);
+
+  useEffect(() => {
+    if (isRunning) {
+      setOpen(true);
+      return;
+    }
+
+    setOpen(false);
+  }, [isRunning]);
+
   return (
-    <ToolFallback.Root defaultOpen className="cube-tool-call fade-in slide-in-from-bottom-1 animate-in duration-200">
+    <ToolFallback.Root
+      open={open}
+      onOpenChange={setOpen}
+      className="cube-tool-call fade-in slide-in-from-bottom-1 animate-in duration-200"
+    >
       <ToolFallback.Trigger
         toolName={toolName}
         status={status ?? { type: "complete", reason: "stop" }}

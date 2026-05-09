@@ -5,3 +5,4 @@ dist/
 ref/
 .env
 *.log
+tmp/
