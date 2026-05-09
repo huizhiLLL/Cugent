@@ -59,6 +59,13 @@ function buildPauseSuggestions(review) {
     .filter((segment) => segment.pauses.length > 0)
     .map((segment) => {
       const longestPause = Math.max(...segment.pauses.map((move) => move.deltaMs));
+      const primaryWindow = segment.pauseWindows.find((window) => window.deltaMs === longestPause) ?? segment.pauseWindows[0];
+      const windowEvidence = primaryWindow
+        ? `停顿窗口：${formatMoveWindow(primaryWindow.previousMoves, primaryWindow.move, primaryWindow.nextMoves)}`
+        : null;
+      const stateEvidence = primaryWindow?.stateSummary
+        ? formatPauseStateSummary(primaryWindow.stateSummary)
+        : null;
       return {
         type: "pause",
         priority: longestPause >= 800 ? "high" : "medium",
@@ -70,7 +77,9 @@ function buildPauseSuggestions(review) {
         },
         evidence: [
           `${segment.label} 有 ${segment.pauses.length} 个超过 ${review.summary.pauseThresholdMs}ms 的停顿`,
-          `最长停顿 ${longestPause}ms`
+          `最长停顿 ${longestPause}ms`,
+          ...(windowEvidence ? [windowEvidence] : []),
+          ...(stateEvidence ? [stateEvidence] : [])
         ],
         action: "优先回看最长停顿前后的 cube state 和下一步选择。"
       };
@@ -166,4 +175,39 @@ function searchStageAlgorithms(query) {
     tags: query.tags.filter((tag) => tag !== "no-rotation"),
     limit: 3
   });
+}
+
+function formatMoveWindow(previousMoves, currentMove, nextMoves) {
+  const before = previousMoves.join(" ");
+  const after = nextMoves.join(" ");
+
+  if (before && after) {
+    return `${before} [${currentMove}] ${after}`;
+  }
+  if (before) {
+    return `${before} [${currentMove}]`;
+  }
+  if (after) {
+    return `[${currentMove}] ${after}`;
+  }
+  return `[${currentMove}]`;
+}
+
+function formatPauseStateSummary(stateSummary) {
+  const parts = [];
+
+  if (stateSummary.caseLabel) {
+    parts.push(`识别 case：${stateSummary.caseLabel}`);
+  }
+
+  if (stateSummary.goalProgress) {
+    const metrics = Object.entries(stateSummary.goalProgress)
+      .map(([key, value]) => `${key}=${value}`)
+      .join("，");
+    if (metrics) {
+      parts.push(`状态摘要：${metrics}`);
+    }
+  }
+
+  return parts.join("；");
 }

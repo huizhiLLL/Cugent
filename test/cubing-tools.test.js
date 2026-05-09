@@ -192,6 +192,36 @@ test("inferCf4opSegments ignores progress rebounds after earlier breakthroughs",
   );
 });
 
+test("inferCf4opSegments drops zero-move noise segments during post process", () => {
+  const moves = ["R", "U", "R'"].map((move, index) => ({
+    index,
+    move,
+    timestampMs: index * 100,
+    deltaMs: index === 0 ? 0 : 100,
+    segmentId: null
+  }));
+  const stateTrace = {
+    final: { isSolved: true },
+    afterScramble: { cf4opProgress: 7 },
+    timeline: [
+      { cf4opProgress: 6 },
+      { cf4opProgress: 5 },
+      { cf4opProgress: 0 }
+    ]
+  };
+
+  const inferred = inferCf4opSegments({ moves, stateTrace });
+
+  assert.deepEqual(
+    inferred.segments.map((segment) => ({ label: segment.label, moveCount: segment.moveCount })),
+    [
+      { label: "Cross", moveCount: 1 },
+      { label: "F2L 1", moveCount: 1 },
+      { label: "F2L 2", moveCount: 1 }
+    ]
+  );
+});
+
 test("searchAlgorithms filters by set, caseId and tags", () => {
   const result = searchAlgorithms({ set: "OLL", caseId: "27", tags: ["right-hand"] });
 
@@ -311,6 +341,23 @@ U' R' // F2L 1
   assert.ok(suggestions.some((suggestion) => suggestion.type === "stage-goal"));
   assert.ok(suggestions.some((suggestion) => suggestion.type === "pause"));
   assert.ok(suggestions.some((suggestion) => suggestion.type === "algorithm-candidates"));
+});
+
+test("generateCoachSuggestions includes pause window evidence", async () => {
+  const review = await createSolveReview({
+    scramble: "R U R' U'",
+    timedMoves: "U@0 R@100 U'@900 R'@1100",
+    segmentedSolution: `
+U R // Cross
+U' R' // F2L 1
+`
+  });
+
+  const pauseSuggestion = review.coachSuggestions.suggestions.find((suggestion) => suggestion.type === "pause");
+
+  assert.ok(pauseSuggestion);
+  assert.ok(pauseSuggestion.evidence.some((line) => /停顿窗口：/.test(line)));
+  assert.ok(pauseSuggestion.evidence.some((line) => /状态摘要：/.test(line)));
 });
 
 test("generateCoachSuggestions uses recognized PLL caseId in algorithm candidates", async () => {

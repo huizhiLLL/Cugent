@@ -131,6 +131,7 @@ function assignSegments(moves, parsedSegments, pauseThresholdMs) {
       durationMs,
       tps: calculateTps(segmentMoves.length, durationMs),
       pauses: segmentMoves.filter((move) => move.deltaMs >= pauseThresholdMs),
+      pauseWindows: buildPauseWindows(segmentMoves, pauseThresholdMs),
       playback: buildSegmentPlayback(segment)
     };
   });
@@ -149,9 +150,11 @@ async function attachSegmentStates(segments, stateTrace) {
       }
     };
     const recognition = await recognizeSegmentCase(segmentWithState);
+    const pauseWindows = buildPauseWindowsWithState(segmentWithState, recognition);
 
     return {
       ...segmentWithState,
+      pauseWindows,
       recognition
     };
   }));
@@ -227,6 +230,113 @@ function buildSegmentPlayback(segment) {
     bbcode: buildPlaybackBBCode({ alg, label: segment.label })
   };
 }
+
+function buildPauseWindows(segmentMoves, pauseThresholdMs) {
+  return segmentMoves
+    .filter((move) => move.deltaMs >= pauseThresholdMs)
+    .map((move) => {
+      const originalIndex = segmentMoves.findIndex((segmentMove) => segmentMove.index === move.index);
+      return {
+        moveIndex: move.index,
+        deltaMs: move.deltaMs,
+        move: move.move,
+        previousMoves: segmentMoves.slice(Math.max(0, originalIndex - 2), originalIndex).map((segmentMove) => segmentMove.move),
+        nextMoves: segmentMoves.slice(originalIndex + 1, originalIndex + 3).map((segmentMove) => segmentMove.move)
+      };
+    });
+}
+
+function buildPauseWindowsWithState(segment, recognition) {
+  return segment.pauseWindows.map((window) => ({
+    ...window,
+    stateSummary: summarizePauseWindowState(segment, recognition)
+  }));
+}
+
+function summarizePauseWindowState(segment, recognition) {
+  const stageLabel = segment.label.trim();
+  const normalizedLabel = stageLabel.toLowerCase();
+  const beforePattern = segment.state.before.patternData;
+  const summary = {
+    stageLabel,
+    beforeSolved: segment.state.before.isSolved,
+    afterSolved: segment.state.after.isSolved
+  };
+
+  if (normalizedLabel === "oll") {
+    summary.goalProgress = summarizeOrientationProgress(beforePattern);
+    if (recognition?.oll?.matched) {
+      summary.caseLabel = `${recognition.oll.caseId} (${recognition.oll.name})`;
+    }
+    return summary;
+  }
+
+  if (normalizedLabel === "pll") {
+    summary.goalProgress = summarizePermutationProgress(beforePattern);
+    if (recognition?.pll?.matched) {
+      summary.caseLabel = `${recognition.pll.caseId} (${recognition.pll.name})`;
+    }
+    return summary;
+  }
+
+  if (normalizedLabel.includes("f2l")) {
+    summary.goalProgress = summarizeF2lProgress(beforePattern);
+    return summary;
+  }
+
+  if (normalizedLabel === "cross") {
+    summary.goalProgress = summarizeCrossProgress(beforePattern);
+    return summary;
+  }
+
+  summary.goalProgress = {
+    beforeStateHash: segment.state.before.stateHash,
+    afterStateHash: segment.state.after.stateHash
+  };
+  return summary;
+}
+
+function summarizeCrossProgress(patternData) {
+  const edges = patternData.EDGES;
+  const solvedCrossEdges = [4, 5, 6, 7].filter((index) => edges.pieces[index] === index && edges.orientation[index] === 0).length;
+  return {
+    solvedCrossEdges: `${solvedCrossEdges}/4`
+  };
+}
+
+function summarizeF2lProgress(patternData) {
+  const corners = patternData.CORNERS;
+  const edges = patternData.EDGES;
+  const solvedCorners = [4, 5, 6, 7].filter((index) => corners.pieces[index] === index && corners.orientation[index] === 0).length;
+  const solvedMiddleEdges = [8, 9, 10, 11].filter((index) => edges.pieces[index] === index && edges.orientation[index] === 0).length;
+  return {
+    solvedDLayerCorners: `${solvedCorners}/4`,
+    solvedMiddleEdges: `${solvedMiddleEdges}/4`
+  };
+}
+
+function summarizeOrientationProgress(patternData) {
+  const edges = patternData.EDGES;
+  const corners = patternData.CORNERS;
+  const orientedEdges = [0, 1, 2, 3].filter((index) => edges.orientation[index] === 0).length;
+  const orientedCorners = [0, 1, 2, 3].filter((index) => corners.orientation[index] === 0).length;
+  return {
+    orientedULayerEdges: `${orientedEdges}/4`,
+    orientedULayerCorners: `${orientedCorners}/4`
+  };
+}
+
+function summarizePermutationProgress(patternData) {
+  const edges = patternData.EDGES;
+  const corners = patternData.CORNERS;
+  const solvedTopEdges = [0, 1, 2, 3].filter((index) => edges.pieces[index] === index && edges.orientation[index] === 0).length;
+  const solvedTopCorners = [0, 1, 2, 3].filter((index) => corners.pieces[index] === index && corners.orientation[index] === 0).length;
+  return {
+    solvedULayerEdges: `${solvedTopEdges}/4`,
+    solvedULayerCorners: `${solvedTopCorners}/4`
+  };
+}
+
 
 async function recognizeSegmentCase(segment) {
   const normalizedLabel = segment.label.trim().toLowerCase();

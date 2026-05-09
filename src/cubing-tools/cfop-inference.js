@@ -50,13 +50,15 @@ export function inferCf4opSegments({ moves, stateTrace }) {
     segments.push(createSegment(tailLabel, moves.slice(segmentStartIndex), segments.length));
   }
 
+  const normalizedSegments = postProcessSegments(segments);
+
   return {
     source: "inferred-cf4op",
     method: "cf4op",
     orientationIndex: null,
     confidence: calculateConfidence({ progressTrace, finalSolved: stateTrace.final.isSolved }),
     progressTrace,
-    segments
+    segments: normalizedSegments
   };
 }
 
@@ -87,4 +89,36 @@ function normalizeSegmentId(label, index) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "") || `segment-${index + 1}`;
+}
+
+function postProcessSegments(segments) {
+  const merged = [];
+
+  for (const segment of segments) {
+    if (!segment.moveCount) {
+      continue;
+    }
+
+    const previous = merged.at(-1);
+    if (shouldMergeShortSegment(segment, previous)) {
+      previous.moves.push(...segment.moves);
+      previous.moveCount = previous.moves.length;
+      continue;
+    }
+
+    merged.push({
+      ...segment,
+      moves: [...segment.moves]
+    });
+  }
+
+  return merged.map((segment, index) => ({
+    ...segment,
+    id: normalizeSegmentId(segment.label, index),
+    moveCount: segment.moves.length
+  }));
+}
+
+function shouldMergeShortSegment(segment, previous) {
+  return false;
 }
