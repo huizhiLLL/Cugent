@@ -50,7 +50,7 @@ Cubing Domain Tools
 - solve 的结构化分析详情不再直接混在 assistant 正文里，而是以单独的工具态展开块呈现；LLM 正文只负责自然语言整理结果。
 - 移动端保留同一套单栏 chat 体验。
 
-当前客户端的功能图标统一使用 `lucide-react`。品牌与站点图标只使用 `cubeagent-logo.png` 这类独立品牌资产，不混入功能按钮图标体系。通用功能图标的默认尺寸、描边和按钮容器由 `src/web/styles.css` 与 `TooltipIconButton` 统一控制，局部组件只在确有层级差异时覆盖尺寸。
+当前客户端的功能图标统一使用 `lucide-react`。品牌与站点图标只使用 `cubeagent-logo.svg` 这类独立品牌资产，不混入功能按钮图标体系。通用功能图标的默认尺寸、描边和按钮容器由 `src/web/styles.css` 与 `TooltipIconButton` 统一控制，局部组件只在确有层级差异时覆盖尺寸。
 
 当前前端边界：
 

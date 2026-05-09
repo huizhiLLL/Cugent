@@ -1,7 +1,7 @@
 <h4 align="right">简体中文</h4>
 
 <div align="center">
-  <img src=".github/assets/cubeagent-logo.png" alt="CubeAgent logo" width="128" height="128" />
+  <img src=".github/assets/cubeagent-logo.svg" alt="CubeAgent logo" width="128" height="128" />
 
   <h1>CubeAgent</h1>
 
