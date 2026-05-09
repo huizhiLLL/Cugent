@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { invertAlg } from "../cubing-tools/index.js";
 import { runAgentTurn } from "../agent-runtime/index.js";
+import { buildEditedConversation, resolveEditedUserMessageIndex } from "./chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, loadChatState, saveChatState } from "./chat-storage.js";
 import { defaultLlmSettings, loadLlmSettings, saveLlmSettings, sanitizeLlmSettings } from "./llm-settings.js";
 import { XIcon } from "lucide-react";
@@ -420,21 +421,22 @@ ${smartInput.segmentedSolution}`.trim();
     const conversation = chatState.conversations.find((item) => item.id === conversationId);
     if (!conversation) return;
 
-    const targetIndex = conversation.messages.findIndex((item) => item.id === message.parentId);
+    const targetIndex = resolveEditedUserMessageIndex(conversation.messages, message);
     if (targetIndex === -1) return;
 
     const text = extractMessageText(message);
     const baseContext = getContextBeforeIndex(conversation.messages, targetIndex);
-    const targetId = conversation.messages[targetIndex].id;
+    const nextConversation = buildEditedConversation(conversation, message, text, {
+      createUserMessage: createMessage,
+      deriveConversationTitle
+    });
+    if (!nextConversation) return;
 
     updateConversationById(conversationId, (conversationItem) => ({
       ...conversationItem,
-      title: targetIndex === 0 ? deriveConversationTitle(text) : conversationItem.title,
+      title: nextConversation.title,
       context: baseContext,
-      messages: [
-        ...conversationItem.messages.slice(0, targetIndex),
-        createMessage("user", text, { id: targetId })
-      ],
+      messages: nextConversation.messages,
       updatedAt: new Date().toISOString()
     }));
 

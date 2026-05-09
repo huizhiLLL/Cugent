@@ -19,6 +19,7 @@ import {
   traceCubeState
 } from "../src/cubing-tools/index.js";
 import { buildChatCompletionMessages, buildPromptMessages, composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
+import { buildEditedConversation, resolveEditedUserMessageIndex } from "../src/web/chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, sanitizeChatState } from "../src/web/chat-storage.js";
 import { defaultLlmSettings, sanitizeLlmSettings } from "../src/web/llm-settings.js";
 import { extractChatCompletionText, joinChatCompletionsUrl, LlmClientError } from "../src/agent-runtime/index.js";
@@ -30,6 +31,54 @@ test("parseTimedMoves parses cstimer style review field", () => {
   assert.deepEqual(moves.map((move) => move.move), ["U'", "R", "L2"]);
   assert.equal(moves[1].deltaMs, 125);
   assert.equal(moves[2].deltaMs, 264);
+});
+
+test("resolveEditedUserMessageIndex prefers sourceId to keep earlier assistant replies", () => {
+  const messages = [
+    { id: "u1", role: "user", text: "第一条" },
+    { id: "a1", role: "assistant", text: "第一条回复" },
+    { id: "u2", role: "user", text: "第二条" },
+    { id: "a2", role: "assistant", text: "第二条回复" }
+  ];
+
+  const index = resolveEditedUserMessageIndex(messages, {
+    parentId: "a1",
+    sourceId: "u2"
+  });
+
+  assert.equal(index, 2);
+});
+
+test("buildEditedConversation preserves prior assistant message when editing latest user turn", () => {
+  const conversation = {
+    id: "conv-1",
+    title: "第一条",
+    messages: [
+      { id: "u1", role: "user", text: "第一条" },
+      { id: "a1", role: "assistant", text: "第一条回复" },
+      { id: "u2", role: "user", text: "第二条" },
+      { id: "a2", role: "assistant", text: "第二条回复" }
+    ]
+  };
+
+  const nextConversation = buildEditedConversation(
+    conversation,
+    { parentId: "a1", sourceId: "u2" },
+    "第二条-编辑",
+    {
+      createUserMessage: (role, text, extra = {}) => ({ role, text, ...extra }),
+      deriveConversationTitle
+    }
+  );
+
+  assert.deepEqual(
+    nextConversation.messages.map((item) => `${item.role}:${item.id}:${item.text}`),
+    [
+      "user:u1:第一条",
+      "assistant:a1:第一条回复",
+      "user:u2:第二条-编辑"
+    ]
+  );
 });
 
 test("parseTimedMoves rejects decreasing timestamps", () => {
