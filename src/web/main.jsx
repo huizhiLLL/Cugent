@@ -24,17 +24,15 @@ import { defaultLlmSettings, loadLlmSettings, saveLlmSettings, sanitizeLlmSettin
 import { XIcon } from "lucide-react";
 import "./styles.css";
 
-const scramble = "B' R' U2 L2 F U2 L2 B2 F' D2 F R2 B D R U2 L F2 R' U";
-const reviewMoves = "U'@0 F'@136 U'@265 F'@448 F'@504 U'@729 F@1475 D@1582 F'@1792 D@2166 R'@2233 D'@2294 R@2367 R@2423 D'@2483 R'@2572 D@2621 R@2674 D'@2720 R'@3083 R@3360 D'@3409 R'@3475 L@3628 D@3739 D@3788 L'@3850 D@4356 L'@4444 D@4505 L@4563 D'@5008 R@5112 D'@5170 R'@5237 D@5294 R@5343 D'@5383 R'@5474 D@5537 D@5590 R@5641 D'@5694 R'@5759 D@6236 R@6327 D@6434 R'@6506 D'@6614 L@6669 R'@6803 B@6852 R@6913 B'@6958 L'@7049 R@7544 D'@7605 R'@7685 D'@7778 R@7896 D@8146 R@8232 U@8283 R'@8380 D'@8430 R@8495 U'@8544 R'@8664 D@8737 D@8775 R'@8818 D'@8888 D'@8916";
-const sampleSmartInput = {
-  scramble,
-  timedMoves: reviewMoves,
+const emptySmartInput = {
+  scramble: "",
+  timedMoves: "",
   segmentedSolution: ""
 };
 
 function App() {
   const [chatState, setChatState] = useState(() => loadChatState());
-  const [smartInput, setSmartInput] = useState(sampleSmartInput);
+  const [smartInput, setSmartInput] = useState(emptySmartInput);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -352,7 +350,7 @@ function App() {
       currentConversationId: conversation.id,
       conversations: [conversation, ...previous.conversations]
     }));
-    setSmartInput(sampleSmartInput);
+    setSmartInput(emptySmartInput);
     setActionDialogOpen(false);
     setSmartDialogOpen(false);
     setSettingsDialogOpen(false);
@@ -746,13 +744,12 @@ ${smartInput.segmentedSolution}`.trim();
         <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
           <DialogContent className="action-dialog-content sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>添加内容</DialogTitle>
-              <DialogDescription>从这里导入结构化复盘内容。</DialogDescription>
+              <DialogTitle>添加</DialogTitle>
             </DialogHeader>
             <div className="action-list">
               <Button type="button" variant="outline" className="action-list-item" onClick={openSmartCubeDialog}>
                 <Sparkles data-icon="inline-start" />
-                <span>智能魔方</span>
+                <span>智能魔方数据</span>
               </Button>
             </div>
           </DialogContent>
@@ -840,9 +837,7 @@ ${smartInput.segmentedSolution}`.trim();
         <Dialog open={smartDialogOpen} onOpenChange={setSmartDialogOpen}>
           <DialogContent className="smart-dialog-content sm:max-w-xl">
             <DialogHeader>
-              <p className="eyebrow">Cube Input</p>
               <DialogTitle>智能魔方</DialogTitle>
-              <DialogDescription>填写复盘初始信息，提交后会作为一条结构化消息进入对话。</DialogDescription>
             </DialogHeader>
             <form
               className="smart-fields"
@@ -860,7 +855,7 @@ ${smartInput.segmentedSolution}`.trim();
                 />
               </label>
               <label>
-                <span>带时间戳的回顾</span>
+                <span>回顾</span>
                 <Textarea
                   value={smartInput.timedMoves}
                   onChange={(event) => updateSmartInput("timedMoves", event.target.value)}

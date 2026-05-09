@@ -7,7 +7,7 @@ const DEFAULT_OP_RECOMMENDATION_GAP = 3;
 export function generateCoachSuggestions(review, {
   slowTpsThreshold = DEFAULT_SLOW_TPS,
   opRecommendationGap = DEFAULT_OP_RECOMMENDATION_GAP,
-  algorithmTags = ["right-hand", "no-rotation"]
+  algorithmTags = []
 } = {}) {
   const suggestions = [
     ...buildValidationSuggestions(review),
