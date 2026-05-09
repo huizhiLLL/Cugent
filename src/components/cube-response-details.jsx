@@ -10,8 +10,10 @@ export function CubeResponseDetails({ response, toolCalls = [] }) {
         <div className="mini-section response-details-block response-details-tool-calls">
           {toolCalls.map((toolCall, index) => (
             <div className="highlight" key={`${toolCall.name}-${index}`}>
-              <strong>{`${index + 1}. ${toolCall.name}`}</strong>
-              <span>{formatToolCallStatus(toolCall.status)}</span>
+              <div className="tool-call-head">
+                <strong>{formatToolCallName(toolCall.name)}</strong>
+                <span>{formatToolCallStatus(toolCall.status)}</span>
+              </div>
               <div className="tool-call-summary">
                 {formatToolCallSummary(toolCall).map((line) => (
                   <p key={line}>{line}</p>
@@ -84,12 +86,27 @@ export function CubeResponseToolCall({ response, toolCalls = [], status, toolNam
 function formatToolCallStatus(status) {
   switch (status) {
     case "error":
-      return "error";
+      return "调用失败";
     case "running":
-      return "running";
+      return "进行中";
     case "completed":
     default:
-      return "completed";
+      return "已完成";
+  }
+}
+
+function formatToolCallName(name) {
+  switch (name) {
+    case "create_solve_review":
+      return "复盘分析";
+    case "inspect_solve_segment":
+      return "分段查看";
+    case "search_algorithms":
+      return "公式检索";
+    case "build_playback_link":
+      return "动画链接";
+    default:
+      return name;
   }
 }
 
@@ -99,39 +116,39 @@ function formatToolCallSummary(toolCall) {
 
   if (toolCall.name === "create_solve_review") {
     return [
-      `scramble：${truncateValue(args.scramble ?? "")}`,
-      `timedMoves 长度：${args.timedMovesLength ?? String(args.timedMoves ?? "").length ?? 0}`,
-      result.summary ? `结果：${result.summary.totalMoves} 步，${result.summary.totalDurationMs}ms，TPS ${result.summary.totalTps}` : "结果：已生成 solve review"
+      `打乱：${truncateValue(args.scramble ?? "")}`,
+      `回顾长度：${args.timedMovesLength ?? String(args.timedMoves ?? "").length ?? 0}`,
+      result.summary ? `已完成：${result.summary.totalMoves} 步，${result.summary.totalDurationMs}ms，TPS ${result.summary.totalTps}` : "已生成复盘结果"
     ];
   }
 
   if (toolCall.name === "inspect_solve_segment") {
     return [
-      `目标分段：${args.segmentLabel ?? args.segmentId ?? "未指定"}`,
-      result.segment?.label ? `命中分段：${result.segment.label}` : "结果：已读取局部分段",
-      result.stage?.goal?.evidence ? `阶段目标：${result.stage.goal.evidence}` : "阶段目标：无"
+      `想看：${args.segmentLabel ?? args.segmentId ?? "未指定"}`,
+      result.segment?.label ? `命中：${result.segment.label}` : "已读取分段信息",
+      result.stage?.goal?.evidence ? `阶段判断：${result.stage.goal.evidence}` : "阶段判断：无"
     ];
   }
 
   if (toolCall.name === "search_algorithms") {
     return [
       `查询：${[args.set, args.caseId].filter(Boolean).join(" / ") || "未指定"}`,
-      `tags：${Array.isArray(args.tags) && args.tags.length ? args.tags.join(", ") : "无"}`,
-      typeof result.total === "number" ? `命中 ${result.total} 条候选` : "结果：已完成公式检索"
+      `偏好：${Array.isArray(args.tags) && args.tags.length ? args.tags.join("，") : "无"}`,
+      typeof result.total === "number" ? `找到 ${result.total} 条候选` : "已完成公式检索"
     ];
   }
 
   if (toolCall.name === "build_playback_link") {
     return [
-      `alg：${truncateValue(args.alg ?? "")}`,
-      args.setup ? `setup：${truncateValue(args.setup)}` : "setup：无",
-      result.playback?.bbcode ? "结果：已生成播放链接" : "结果：无"
+      `公式：${truncateValue(args.alg ?? "")}`,
+      args.setup ? `起手：${truncateValue(args.setup)}` : "起手：无",
+      result.playback?.bbcode ? "已生成播放链接" : "暂无链接"
     ];
   }
 
   return [
-    `参数：${Object.keys(args).length ? Object.keys(args).join(", ") : "无"}`,
-    result.type ? `结果类型：${result.type}` : "结果：已完成"
+    `参数：${Object.keys(args).length ? Object.keys(args).join("，") : "无"}`,
+    result.type ? `结果：${result.type}` : "已完成"
   ];
 }
 

@@ -971,6 +971,44 @@ test("buildPromptMessages adds strict markdown playback link instruction when ca
 
   assert.match(messages[0].content[0].text, /标准 Markdown 链接格式/);
   assert.match(messages[0].content[0].text, /必须原样使用工具结果里给出的 playback\.url/);
+  assert.match(messages[0].content[0].text, /不要写“点击链接查看动画”/);
+});
+
+test("buildPromptMessages forbids unsupported praise and filler phrasing", () => {
+  const messages = buildPromptMessages({
+    message: "帮我看一下这次 PLL",
+    context: {},
+    turn: {
+      intent: { type: "local-followup" },
+      toolCalls: [],
+      toolResult: {
+        type: "segment-inspection",
+        segment: {
+          id: "pll",
+          label: "PLL",
+          moveCount: 14,
+          durationMs: 1800,
+          tps: 7.78,
+          pauses: []
+        },
+        stage: {
+          goal: {
+            completed: true,
+            evidence: "Cube is solved after PLL"
+          }
+        },
+        suggestions: []
+      }
+    },
+    fallbackResponse: {
+      kind: "segment-inspection",
+      text: "PLL 已分析。"
+    }
+  });
+
+  assert.match(messages[0].content[0].text, /不要写空话、套话、安慰性表述/);
+  assert.match(messages[0].content[0].text, /这次复原没有问题/);
+  assert.match(messages[0].content[0].text, /这个 PLL 做得很快/);
 });
 
 test("buildPromptMessages skips playback link instruction when no candidate links exist", () => {

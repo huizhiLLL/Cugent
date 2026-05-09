@@ -159,6 +159,37 @@ function App() {
               updatedAt: new Date().toISOString()
             }));
           },
+          onAgentEvent: (agentEvent) => {
+            updateConversationById(conversationId, (conversationItem) => ({
+              ...conversationItem,
+              messages: conversationItem.messages.map((item) => {
+                if (item.id !== assistantMessageId) {
+                  return item;
+                }
+
+                return {
+                  ...item,
+                  text: agentEvent.text || item.text || "正在判断是否需要调用工具…",
+                  response: {
+                    ...(item.response ?? { kind: "streaming", evidence: [], nextActions: [] }),
+                    toolCalls: agentEvent.toolCalls ?? item.response?.toolCalls ?? [],
+                    llm: {
+                      enabled: true,
+                      status: "running",
+                      source: "openai-compatible",
+                      model: llmSettings.model,
+                      streaming: true
+                    }
+                  },
+                  toolCalls: agentEvent.toolCalls ?? item.toolCalls ?? [],
+                  status: {
+                    type: "running"
+                  }
+                };
+              }),
+              updatedAt: new Date().toISOString()
+            }));
+          },
           signal: abortController.signal,
           onTextDelta: (nextText, llmMeta) => {
             updateConversationById(conversationId, (conversationItem) => ({
@@ -1004,10 +1035,10 @@ createRoot(document.getElementById("root")).render(<App />);
 
 function getPendingAssistantText(turn) {
   if (turn.intent?.type === "chat") {
-    return "正在整理回复…";
+    return "正在思考中…";
   }
 
-  return "正在基于分析结果整理更易理解的说明…";
+  return "正在分析中…";
 }
 
 function getContextBeforeIndex(messages, index) {

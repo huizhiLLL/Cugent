@@ -7,7 +7,14 @@ import { composeResponse } from "./response-composer.js";
 export async function runAgentTurn(message, context = {}, options = {}) {
   if (shouldUseLlmAgentLoop(message, context, options)) {
     try {
-      const loopTurn = await runLlmAgentLoop({ message, context, options });
+      const loopTurn = await runLlmAgentLoop({
+        message,
+        context,
+        options: {
+          ...options,
+          onAgentEvent: options.onAgentEvent
+        }
+      });
       return withPreparedResponse(loopTurn);
     } catch (error) {
       // 如果 agent loop 失败，继续退回当前本地规则链路。

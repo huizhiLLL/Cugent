@@ -1,5 +1,5 @@
 import { executeAgentToolCall, getAgentToolSchemas } from "./tool-registry.js";
-import { extractChatCompletionText, joinChatCompletionsUrl, LlmClientError } from "./llm-client.js";
+import { joinChatCompletionsUrl, LlmClientError } from "./llm-client.js";
 
 const DEFAULT_TIMEOUT_MS = 30000;
 const MAX_TOOL_CALL_ROUNDS = 4;
@@ -19,13 +19,20 @@ export async function runLlmAgentLoop({ message, context, options = {} }) {
   let usage = null;
   let responseId = null;
   let responseModel = context.llmSettings.model;
+  options.onAgentEvent?.({
+    phase: "thinking",
+    toolCalls: [],
+    text: "我先看看要不要调用工具。"
+  });
 
   for (let round = 0; round < MAX_TOOL_CALL_ROUNDS; round += 1) {
     const result = await requestAgentLoopCompletion({
       llmSettings: context.llmSettings,
       messages,
       tools,
-      signal: options.signal
+      signal: options.signal,
+      onTextDelta: options.onTextDelta,
+      onAgentEvent: options.onAgentEvent
     });
 
     responseId = result?.id ?? responseId;
@@ -36,9 +43,28 @@ export async function runLlmAgentLoop({ message, context, options = {} }) {
     const toolCalls = Array.isArray(choiceMessage?.tool_calls) ? choiceMessage.tool_calls : [];
 
     if (!toolCalls.length) {
-      finalText = extractChatCompletionText(result) || String(choiceMessage?.content ?? "").trim();
+      options.onAgentEvent?.({
+        phase: "finalizing",
+        toolCalls: executedToolCalls,
+        text: "结果已经齐了，正在整理回答。"
+      });
+      finalText = String(choiceMessage?.content ?? "").trim();
       break;
     }
+
+    options.onAgentEvent?.({
+      phase: "tool_calling",
+      toolCalls: [
+        ...executedToolCalls,
+        ...toolCalls.map((toolCall) => ({
+          name: toolCall.function?.name ?? "unknown",
+          args: parseToolCallArguments(toolCall.function?.arguments),
+          status: "running",
+          result: null
+        }))
+      ],
+      text: `正在处理：${toolCalls.map((toolCall) => formatToolName(toolCall.function?.name ?? "unknown")).join("、")}。`
+    });
 
     messages.push({
       role: "assistant",
@@ -60,6 +86,12 @@ export async function runLlmAgentLoop({ message, context, options = {} }) {
         args,
         status: execution.toolResult?.type === "error" ? "error" : "completed",
         result: execution.content
+      });
+
+      options.onAgentEvent?.({
+        phase: "tool_returned",
+        toolCalls: [...executedToolCalls],
+        text: `${formatToolName(toolCall.function?.name ?? "unknown")} 已准备好。`
       });
 
       latestToolResult = execution.toolResult ?? latestToolResult;
@@ -105,7 +137,7 @@ function buildAgentLoopMessages({ message, context }) {
     {
       role: "system",
       content: [
-        "你是 Cugent 的中文魔方教练助手。",
+        "你是运行在 Cugent 的中文魔方教练助手。",
         "你可以调用本地确定性工具来完成 solve 导入、分段分析、公式查询与播放链接生成。",
         "所有魔方事实必须来自工具结果，不能自行猜测 cube state、阶段完成情况、case、公式或链接。",
         "如果用户在讨论当前 solve，优先直接利用上下文中的 currentSolveReview；只有需要聚焦某个阶段时再调用 inspect_solve_segment。",
@@ -113,6 +145,10 @@ function buildAgentLoopMessages({ message, context }) {
         "如果用户询问公式、候选、替换建议，优先调用 search_algorithms 或 inspect_solve_segment。",
         "如果工具结果里已经提供了公式 playback.url，正文中可以直接使用标准 Markdown 链接格式：[公式文本](https://alg.cubing.net/...)。",
         "必须原样使用工具结果提供的 playback.url，不要改写 URL，不要输出 BBCode。",
+        "不要写空话、套话、安慰性表述或没有证据支撑的评价，例如“这次复原没有问题”“这个 PLL 做得很快”。",
+        "如果要评价某一阶段，必须落到具体阶段、具体问题、具体证据或具体指标。",
+        "不要写“点击链接查看动画”“在 Alg.cubing.net 打开回放”这类说明；当前对话会自行渲染回放。",
+        "输出结果的语言风格要精炼，不要输出 emoji，直接指出需要关注的地方和用户需要的内容，抛弃一切空话废话。",
         "最终回复请使用中文，先给结论，再补最关键的证据和下一步建议。"
       ].join("\n")
     },
@@ -149,7 +185,148 @@ function compactLoopContext(context) {
   };
 }
 
-async function requestAgentLoopCompletion({ llmSettings, messages, tools, signal }) {
+async function parseAgentStreamResponse(response, { onTextDelta, onAgentEvent, llmSettings }) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+  let responseId = null;
+  let responseModel = llmSettings.model;
+  let usage = null;
+  let finalContent = "";
+  let finalReasoning = "";
+  let finishReason = null;
+  const toolCallsByIndex = new Map();
+  let hasEmittedThinking = false;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split("\n\n");
+    buffer = events.pop() ?? "";
+
+    for (const event of events) {
+      const dataLines = event
+        .split("\n")
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice(5).trim())
+        .filter(Boolean);
+
+      for (const data of dataLines) {
+        if (data === "[DONE]") {
+          continue;
+        }
+
+        let chunk;
+        try {
+          chunk = JSON.parse(data);
+        } catch {
+          continue;
+        }
+
+        responseId = chunk?.id ?? responseId;
+        responseModel = chunk?.model ?? responseModel;
+        usage = chunk?.usage ?? usage;
+
+        const choice = Array.isArray(chunk?.choices) ? chunk.choices[0] : null;
+        const delta = choice?.delta ?? {};
+        finishReason = choice?.finish_reason ?? finishReason;
+
+        if (typeof delta.reasoning_content === "string" && delta.reasoning_content) {
+          finalReasoning += delta.reasoning_content;
+          if (!hasEmittedThinking) {
+            hasEmittedThinking = true;
+            onAgentEvent?.({
+              phase: "thinking",
+              toolCalls: [],
+              text: "正在思考…"
+            });
+          }
+        }
+
+        if (typeof delta.content === "string" && delta.content) {
+          finalContent += delta.content;
+          onTextDelta?.(finalContent, {
+            id: responseId,
+            model: responseModel,
+            usage
+          });
+          onAgentEvent?.({
+            phase: "answering",
+            toolCalls: [...toolCallsByIndex.values()],
+            text: finalContent
+          });
+        }
+
+        const streamedToolCalls = Array.isArray(delta.tool_calls) ? delta.tool_calls : [];
+        for (const streamedToolCall of streamedToolCalls) {
+          const index = streamedToolCall.index ?? 0;
+          const existing = toolCallsByIndex.get(index) ?? {
+            index,
+            id: streamedToolCall.id ?? null,
+            type: streamedToolCall.type ?? "function",
+            function: {
+              name: streamedToolCall.function?.name ?? "",
+              arguments: ""
+            }
+          };
+
+          existing.id = streamedToolCall.id ?? existing.id;
+          existing.type = streamedToolCall.type ?? existing.type;
+          existing.function.name = streamedToolCall.function?.name ?? existing.function.name;
+          existing.function.arguments += streamedToolCall.function?.arguments ?? "";
+          toolCallsByIndex.set(index, existing);
+        }
+
+        if (streamedToolCalls.length > 0) {
+          onAgentEvent?.({
+            phase: "tool_calling",
+            toolCalls: [...toolCallsByIndex.values()].map((toolCall) => ({
+              name: toolCall.function?.name ?? "unknown",
+              args: parseToolCallArguments(toolCall.function?.arguments),
+              status: "running",
+              result: null
+            })),
+            text: `正在调用 ${[...toolCallsByIndex.values()].map((toolCall) => toolCall.function?.name ?? "unknown").join("、")}…`
+          });
+        }
+      }
+    }
+  }
+
+  const toolCalls = [...toolCallsByIndex.values()]
+    .sort((a, b) => a.index - b.index)
+    .map((toolCall) => ({
+      ...toolCall,
+      function: {
+        ...toolCall.function,
+        arguments: toolCall.function.arguments ?? ""
+      }
+    }));
+
+  return {
+    id: responseId,
+    model: responseModel,
+    usage,
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: "assistant",
+          content: finalContent,
+          reasoning_content: finalReasoning,
+          tool_calls: toolCalls
+        },
+        finish_reason: finishReason ?? (toolCalls.length ? "tool_calls" : "stop")
+      }
+    ]
+  };
+}
+
+async function requestAgentLoopCompletion({ llmSettings, messages, tools, signal, onTextDelta, onAgentEvent }) {
   const response = await fetchWithTimeout(joinChatCompletionsUrl(llmSettings.baseUrl), {
     method: "POST",
     headers: {
@@ -158,18 +335,39 @@ async function requestAgentLoopCompletion({ llmSettings, messages, tools, signal
     },
     body: JSON.stringify({
       model: llmSettings.model,
-      stream: false,
+      stream: true,
       messages,
       tools,
       tool_choice: "auto"
     })
   }, DEFAULT_TIMEOUT_MS, signal);
-
   if (!response.ok) {
     throw await createHttpError(response);
   }
 
-  return response.json();
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/event-stream")) {
+    const result = await response.json();
+    const message = result?.choices?.[0]?.message ?? {};
+    return {
+      id: result?.id ?? null,
+      model: result?.model ?? llmSettings.model,
+      usage: result?.usage ?? null,
+      choices: [
+        {
+          index: 0,
+          message,
+          finish_reason: result?.choices?.[0]?.finish_reason ?? "stop"
+        }
+      ]
+    };
+  }
+
+  if (!response.body) {
+    throw new LlmClientError("LLM_STREAM_MISSING", "接口未返回可读取的流。");
+  }
+
+  return await parseAgentStreamResponse(response, { onTextDelta, onAgentEvent, llmSettings });
 }
 
 async function executeAgentToolSafely({ toolCall, args, latestContext }) {
@@ -205,6 +403,21 @@ function parseToolCallArguments(rawArguments) {
     return JSON.parse(rawArguments);
   } catch {
     return {};
+  }
+}
+
+function formatToolName(name) {
+  switch (name) {
+    case "create_solve_review":
+      return "复盘分析";
+    case "inspect_solve_segment":
+      return "分段查看";
+    case "search_algorithms":
+      return "公式检索";
+    case "build_playback_link":
+      return "动画链接";
+    default:
+      return name;
   }
 }
 

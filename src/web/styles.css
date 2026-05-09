@@ -530,6 +530,13 @@ h3 {
   background: rgba(246, 248, 250, 0.84);
 }
 
+.tool-call-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .highlight span {
   color: var(--text-muted);
   font-family: var(--font-serif);
@@ -579,6 +586,10 @@ code {
   color: var(--text-muted);
   font-size: 0.8rem;
   user-select: none;
+}
+
+.tool-call-summary {
+  padding-top: 2px;
 }
 
 .playback-code {
