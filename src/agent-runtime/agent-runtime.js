@@ -149,7 +149,7 @@ function isLikelyToolDrivenTurn(message, context) {
   return Boolean(
     context.currentSolveReview
     || shouldInspectSelectedSegment(message, context)
-    || /scramble|timedMoves|segmentedSolution|OLL|PLL|Cross|F2L|公式|候选|复盘|分析/i.test(rawMessage)
+    || /scramble|timedMoves|segmentedSolution|OLL|PLL|Cross|F2L|公式|推荐|复盘|分析/i.test(rawMessage)
     || BARE_PLL_CASE_PATTERN.test(rawMessage)
   );
 }

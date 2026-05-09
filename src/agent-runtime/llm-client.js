@@ -145,7 +145,7 @@ export function buildPromptMessages({ message, context, turn, fallbackResponse }
           text: [
             "你是运行在 Cugent 的中文魔方教练助手。",
             "你的职责是把本地工具已经得到的确定性结果，整理成精炼、直接、可执行的中文回复。",
-            "不要编造魔方状态、阶段完成情况、公式候选、耗时、TPS、停顿等事实。",
+            "不要编造魔方状态、阶段完成情况、推荐公式、耗时、TPS、停顿等事实。",
             "如果工具结果里没有明确证据，就直接说当前工具没有给出该信息。",
             "不要写空话、套话、安慰性表述或没有证据支撑的评价，例如“这次复原没有问题”“这个 PLL 做得很快”。",
             "如果要评价某一阶段，必须落到具体阶段、具体问题、具体证据或具体指标。",
@@ -199,7 +199,7 @@ function buildPromptProfile(turn) {
       };
     case "algorithm-query":
       return {
-        systemInstruction: "当前任务是解释公式候选。优先回答该用哪条，再补充候选差异，例如步数、转体、是否符合当前偏好。没有必要时不要把所有候选逐条展开。",
+        systemInstruction: "当前任务是解释推荐公式。优先回答该用哪条，再补充推荐之间的差异，例如步数、转体、是否符合当前偏好。没有必要时不要把所有推荐逐条展开。",
         replyStyle: "像教练推荐公式，先给推荐结论，再给最短必要对比。"
       };
     case "local-followup":
@@ -222,11 +222,11 @@ function buildPlaybackLinkInstruction(turn) {
   }
 
   return [
-    "如果工具结果里提供了候选公式的 playback 链接，你可以在正文里引用 1 到 2 个最值得对比的候选。",
+    "如果工具结果里提供了推荐公式的 playback 链接，你可以在正文里引用 1 到 2 个最值得对比的推荐。",
     "引用时必须使用标准 Markdown 链接格式：[公式文本](https://alg.cubing.net/...)。",
     "必须原样使用工具结果里给出的 playback.url，不要改写 URL，不要输出 BBCode，不要自己拼接参数。",
     "不要写“点击链接查看动画”“在 Alg.cubing.net 打开回放”这类说明；当前对话会自行渲染回放。",
-    "如果没有明确要推荐的候选，就不要输出任何公式链接。"
+    "如果没有明确要推荐的公式，就不要输出任何公式链接。"
   ].join("\n");
 }
 
@@ -293,12 +293,12 @@ function hasPlaybackLinkCandidates(turn) {
     return true;
   }
 
-  const candidates = turn.toolResult?.result?.results;
-  return Array.isArray(candidates) && candidates.some((candidate) => Boolean(candidate?.playback?.url));
+  const recommendedAlgorithms = turn.toolResult?.result?.results;
+  return Array.isArray(recommendedAlgorithms) && recommendedAlgorithms.some((candidate) => Boolean(candidate?.playback?.url));
 }
 
 function hasSuggestionPlaybackLinks(suggestion) {
-  return Array.isArray(suggestion?.candidates) && suggestion.candidates.some((candidate) => Boolean(candidate?.playback?.url));
+  return Array.isArray(suggestion?.recommendedAlgorithms) && suggestion.recommendedAlgorithms.some((candidate) => Boolean(candidate?.playback?.url));
 }
 
 function compactContext(context) {

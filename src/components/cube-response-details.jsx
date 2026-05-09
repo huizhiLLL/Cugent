@@ -41,14 +41,14 @@ export function CubeResponseDetails({ response, toolCalls = [] }) {
             <div className="highlight" key={item.id}>
               <strong>{item.title}</strong>
               <span>{item.priority}</span>
-              {item.candidates?.map((candidate) => <code key={candidate.id}>{candidate.alg}</code>)}
+              {item.recommendedAlgorithms?.map((candidate) => <code key={candidate.id}>{candidate.alg}</code>)}
             </div>
           ))}
         </div>
       )}
-      {response.candidates?.length > 0 && (
+      {response.recommendedAlgorithms?.length > 0 && (
         <div className="mini-section response-details-block response-details-candidates">
-          {response.candidates.map((candidate) => (
+          {response.recommendedAlgorithms.map((candidate) => (
             <div className="candidate" key={candidate.id}>
               <strong>{candidate.name}</strong>
               <code>{candidate.alg}</code>
@@ -159,7 +159,7 @@ function formatToolCallSummary(toolCall) {
     return [
       `查询：${[args.set, args.caseId].filter(Boolean).join(" / ") || "未指定"}`,
       `偏好：${Array.isArray(args.tags) && args.tags.length ? args.tags.join("，") : "无"}`,
-      typeof result.total === "number" ? `找到 ${result.total} 条候选` : "已完成公式检索"
+      typeof result.total === "number" ? `找到 ${result.total} 条推荐公式` : "已完成公式检索"
     ];
   }
 

@@ -333,7 +333,7 @@ test("createSolveReview chooses a stable orientation trace for real no-segment s
 });
 
 test("searchAlgorithms filters by set, caseId and tags", () => {
-  const result = searchAlgorithms({ set: "OLL", caseId: "27", tags: ["right-hand"] });
+  const result = searchAlgorithms({ set: "OLL", caseId: "27", tags: ["no-rotation"] });
 
   assert.equal(result.total, 1);
   assert.equal(result.results[0].id, "oll-27-01");
@@ -450,7 +450,7 @@ U' R' // F2L 1
 
   assert.ok(suggestions.some((suggestion) => suggestion.type === "stage-goal"));
   assert.ok(suggestions.some((suggestion) => suggestion.type === "pause"));
-  assert.ok(!suggestions.some((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "f2l"));
+  assert.ok(!suggestions.some((suggestion) => suggestion.type === "algorithm-recommendations" && suggestion.target?.stageType === "f2l"));
 });
 
 test("generateCoachSuggestions includes pause window evidence", async () => {
@@ -505,12 +505,12 @@ test("generateCoachSuggestions recommends recognized PLL algorithms when actual 
     }
   };
 
-  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "pll");
+  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-recommendations" && suggestion.target?.stageType === "pll");
 
   assert.ok(pllSuggestion);
-  assert.equal(pllSuggestion.candidates.length, 1);
-  assert.equal(pllSuggestion.candidates[0].caseId, "T");
-  assert.match(pllSuggestion.candidates[0].playback.bbcode, /setup=x2_R_U/);
+  assert.equal(pllSuggestion.recommendedAlgorithms.length, 1);
+  assert.equal(pllSuggestion.recommendedAlgorithms[0].caseId, "T");
+  assert.match(pllSuggestion.recommendedAlgorithms[0].playback.bbcode, /setup=x2_R_U/);
   assert.ok(pllSuggestion.evidence.some((line) => /当前实际使用约 18 步/.test(line)));
 });
 
@@ -548,11 +548,11 @@ test("generateCoachSuggestions relaxes no-rotation filter for recognized PLL cas
     }
   };
 
-  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "pll");
+  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-recommendations" && suggestion.target?.stageType === "pll");
 
   assert.ok(pllSuggestion);
-  assert.equal(pllSuggestion.candidates.length, 1);
-  assert.equal(pllSuggestion.candidates[0].caseId, "Aa");
+  assert.equal(pllSuggestion.recommendedAlgorithms.length, 1);
+  assert.equal(pllSuggestion.recommendedAlgorithms[0].caseId, "Aa");
 });
 
 test("generateCoachSuggestions uses recognized OLL caseId in algorithm candidates", () => {
@@ -589,11 +589,11 @@ test("generateCoachSuggestions uses recognized OLL caseId in algorithm candidate
     }
   };
 
-  const ollSuggestion = generateCoachSuggestions(review, { opRecommendationGap: 1 }).suggestions.find((suggestion) => suggestion.type === "algorithm-candidates" && suggestion.target?.stageType === "oll");
+  const ollSuggestion = generateCoachSuggestions(review, { opRecommendationGap: 1 }).suggestions.find((suggestion) => suggestion.type === "algorithm-recommendations" && suggestion.target?.stageType === "oll");
 
   assert.ok(ollSuggestion);
-  assert.equal(ollSuggestion.candidates.length, 1);
-  assert.equal(ollSuggestion.candidates[0].caseId, "27");
+  assert.equal(ollSuggestion.recommendedAlgorithms.length, 1);
+  assert.equal(ollSuggestion.recommendedAlgorithms[0].caseId, "27");
 });
 
 test("generateCoachSuggestions skips OLL/PLL algorithm candidates when move gap is not large enough", () => {
@@ -630,7 +630,7 @@ test("generateCoachSuggestions skips OLL/PLL algorithm candidates when move gap 
     }
   };
 
-  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-candidates");
+  const pllSuggestion = generateCoachSuggestions(review).suggestions.find((suggestion) => suggestion.type === "algorithm-recommendations");
 
   assert.equal(pllSuggestion, undefined);
 });
@@ -755,13 +755,13 @@ U' R' // F2L 1
 });
 
 test("runAgentTurn handles algorithm queries", async () => {
-  const turn = await runAgentTurn("给我一个右手 no-rotation 的 OLL 27 公式");
+  const turn = await runAgentTurn("给我一个 no-rotation 的 OLL 27 公式");
 
   assert.equal(turn.intent.type, "algorithm-query");
   assert.equal(turn.toolResult.type, "algorithm-search");
   assert.equal(turn.toolResult.result.total, 1);
   assert.equal(turn.response.kind, "algorithm-search");
-  assert.equal(turn.response.candidates.length, 1);
+  assert.equal(turn.response.recommendedAlgorithms.length, 1);
 });
 
 test("runAgentTurn handles bare PLL case algorithm queries", async () => {
@@ -944,11 +944,11 @@ test("buildPromptMessages uses intent-specific prompt profile", () => {
     },
     fallbackResponse: {
       kind: "algorithm-search",
-      text: "本地公式库命中 1 条候选。"
+      text: "找到 1 条推荐公式。"
     }
   });
 
-  assert.match(messages[0].content[0].text, /解释公式候选/);
+  assert.match(messages[0].content[0].text, /解释推荐公式/);
   assert.match(messages[1].content[0].text, /像教练推荐公式/);
 });
 
@@ -965,8 +965,8 @@ test("buildPromptMessages adds strict markdown playback link instruction when ca
           coachSuggestions: {
             suggestions: [
               {
-                type: "algorithm-candidates",
-                candidates: [
+                type: "algorithm-recommendations",
+                recommendedAlgorithms: [
                   {
                     id: "pll-t-1",
                     alg: "R U R' U'",
@@ -983,7 +983,7 @@ test("buildPromptMessages adds strict markdown playback link instruction when ca
     },
     fallbackResponse: {
       kind: "solve-review",
-      text: "本地有候选公式。"
+      text: "当前有推荐公式。"
     }
   });
 
@@ -1198,5 +1198,5 @@ U' R' // F2L 1
 
   assert.equal(response.kind, "solve-review");
   assert.ok(response.highlights.every((item) => !/明显停顿/.test(item.title)));
-  assert.ok(response.highlights.every((item) => !(item.title.includes("候选公式") && item.title.includes("F2L"))));
+  assert.ok(response.highlights.every((item) => !(item.title.includes("推荐公式") && item.title.includes("F2L"))));
 });

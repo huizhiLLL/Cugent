@@ -71,14 +71,14 @@ function composeAlgorithmSearchResponse(result, toolCalls) {
   if (!result.total) {
     return {
       kind: "algorithm-search",
-      text: "本地公式库没有命中符合条件的候选。",
+      text: "没有找到符合条件的推荐公式。",
       evidence: [formatQuery(result.query)],
-      candidates: [],
-      nextActions: ["可以放宽 tags 条件，或补充本地公式库。"]
+      recommendedAlgorithms: [],
+      nextActions: ["可以放宽 tags 条件，或补充更多公式数据。"]
     };
   }
 
-  const candidates = result.results.map((candidate) => ({
+  const recommendedAlgorithms = result.results.map((candidate) => ({
     id: candidate.id,
     name: candidate.name,
     alg: candidate.alg,
@@ -89,9 +89,9 @@ function composeAlgorithmSearchResponse(result, toolCalls) {
 
   return {
     kind: "algorithm-search",
-    text: `本地公式库命中 ${result.total} 条候选。`,
+    text: `找到 ${result.total} 条推荐公式。`,
     evidence: [formatQuery(result.query)],
-    candidates,
+    recommendedAlgorithms,
     toolCalls: normalizeToolCalls(toolCalls),
     nextActions: ["后续可以结合真实 case 识别和你的手法偏好再排序。"]
   };
@@ -121,7 +121,7 @@ function composeSegmentInspectionResponse({ segment, stage, suggestions }, toolC
     toolCalls: normalizeToolCalls(toolCalls),
     playback: segment.playback?.bbcode ?? null,
     nextActions: [
-      "可以继续要求对比候选公式。",
+      "可以继续要求对比推荐公式。",
       "也可以打开这段的播放链接逐步看状态变化。"
     ]
   };
@@ -134,7 +134,7 @@ function formatSuggestion(suggestion) {
     title: suggestion.title,
     evidence: suggestion.evidence,
     action: suggestion.action,
-    candidates: suggestion.candidates?.map((candidate) => ({
+    recommendedAlgorithms: suggestion.recommendedAlgorithms?.map((candidate) => ({
       id: candidate.id,
       name: candidate.name,
       alg: candidate.alg,
@@ -149,7 +149,7 @@ function shouldShowSolveReviewHighlight(suggestion) {
     return false;
   }
 
-  if (suggestion.type === "algorithm-candidates") {
+  if (suggestion.type === "algorithm-recommendations") {
     return suggestion.target?.stageType === "oll" || suggestion.target?.stageType === "pll";
   }
 

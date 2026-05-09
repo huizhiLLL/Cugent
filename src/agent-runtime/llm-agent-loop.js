@@ -145,7 +145,7 @@ function buildAgentLoopMessages({ message, context }) {
         "所有魔方事实必须来自工具结果，不能自行猜测 cube state、阶段完成情况、case、公式或链接。",
         "如果用户在讨论当前 solve，优先直接利用上下文中的 currentSolveReview；只有需要聚焦某个阶段时再调用 inspect_solve_segment。",
         "如果用户提供了 scramble 与 timedMoves，优先调用 create_solve_review。",
-        "如果用户询问公式、候选、替换建议，优先调用 search_algorithms 或 inspect_solve_segment。",
+        "如果用户询问公式、推荐、替换建议，优先调用 search_algorithms 或 inspect_solve_segment。",
         "如果工具结果里已经提供了公式 playback.url，正文中可以直接使用标准 Markdown 链接格式：[公式文本](https://alg.cubing.net/...)。",
         "必须原样使用工具结果提供的 playback.url，不要改写 URL，不要输出 BBCode。",
         "不要写空话、套话、安慰性表述或没有证据支撑的评价，例如“这次复原没有问题”“这个 PLL 做得很快”。",

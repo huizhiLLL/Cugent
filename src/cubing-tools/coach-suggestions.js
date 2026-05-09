@@ -22,7 +22,7 @@ export function generateCoachSuggestions(review, {
     assumptions: [
       "建议基于确定性工具输出生成，LLM 只负责解释和排序话术。",
       "当前只对已识别的 OLL / PLL 做公式推荐，F2L 暂不做 case 识别和公式推荐。",
-      "当前公式建议只来自本地小型样例库。"
+      "当前公式建议只来自现有样例数据。"
     ],
     suggestions: suggestions.map((suggestion, index) => ({
       id: `suggestion-${index + 1}`,
@@ -146,20 +146,20 @@ function buildAlgorithmSuggestions(review, algorithmTags, opRecommendationGap) {
       }));
 
     return [{
-      type: "algorithm-candidates",
+      type: "algorithm-recommendations",
       priority: "medium",
-      title: `${stage.label} 可参考候选公式`,
+      title: `${stage.label} 推荐公式`,
       target: {
         segmentId: stage.segmentId,
         stageType: stage.stageType
       },
       evidence: [
         `当前实际使用约 ${actualEffectiveMoveCount} 步，已按相邻同轴合并与抵消规则归并`,
-        `库内首选候选约 ${recommendedEffectiveMoveCount} 步，少了 ${moveGap} 步`,
-        `本地公式库命中 ${candidates.total} 条候选`
+        `推荐公式约 ${recommendedEffectiveMoveCount} 步，少了 ${moveGap} 步`,
+        `共找到 ${candidates.total} 条可用推荐`
       ],
-      action: "可以先对比当前公式与候选公式的步数和转动结构，再结合手法偏好决定是否替换。",
-      candidates: candidatesWithPlayback
+      action: "可以先对比当前公式与推荐公式的步数和转动结构，再结合手法偏好决定是否替换。",
+      recommendedAlgorithms: candidatesWithPlayback
     }];
   });
 }

@@ -39,7 +39,7 @@ const TOOL_SCHEMAS = [
     type: "function",
     function: {
       name: "search_algorithms",
-      description: "查询本地公式库，适用于 OLL / PLL 公式推荐或用户直接查询公式。",
+      description: "查询现有公式数据，适用于 OLL / PLL 公式推荐或用户直接查询公式。",
       parameters: {
         type: "object",
         additionalProperties: false,
@@ -51,7 +51,7 @@ const TOOL_SCHEMAS = [
             description: "过滤标签，例如 right-hand、no-rotation。",
             items: { type: "string" }
           },
-          limit: { type: "number", description: "最多返回多少条候选。" }
+          limit: { type: "number", description: "最多返回多少条推荐公式。" }
         }
       }
     }
