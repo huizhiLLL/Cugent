@@ -675,6 +675,14 @@ U' R' // F2L 1
   assert.match(intent.params.segmentedSolution, /F2L 1/);
 });
 
+test("detectIntent recognizes bare PLL case names as algorithm queries", () => {
+  const intent = detectIntent("Aa 怎么做");
+
+  assert.equal(intent.type, "algorithm-query");
+  assert.equal(intent.params.set, "PLL");
+  assert.equal(intent.params.caseId, "Aa");
+});
+
 test("runAgentTurn imports solve and answers local followup", async () => {
   const scramble = "R U R' U'";
   const solution = invertAlg(scramble);
@@ -754,6 +762,16 @@ test("runAgentTurn handles algorithm queries", async () => {
   assert.equal(turn.toolResult.result.total, 1);
   assert.equal(turn.response.kind, "algorithm-search");
   assert.equal(turn.response.candidates.length, 1);
+});
+
+test("runAgentTurn handles bare PLL case algorithm queries", async () => {
+  const turn = await runAgentTurn("Aa 怎么做");
+
+  assert.equal(turn.intent.type, "algorithm-query");
+  assert.equal(turn.toolResult.type, "algorithm-search");
+  assert.equal(turn.toolCalls[0]?.name, "searchAlgorithms");
+  assert.equal(turn.toolCalls[0]?.args?.set, "PLL");
+  assert.equal(turn.toolCalls[0]?.args?.caseId, "Aa");
 });
 
 test("runAgentTurn can enhance chat response with llm response enhancer", async () => {

@@ -3,6 +3,7 @@ const SEGMENT_PATTERN = /\/\/\s*(Cross|F2L|OLL|PLL)/i;
 const SCRAMBLE_PATTERN = /^[ \t]*(?:scramble|打乱)[ \t]*[:：][ \t]*(.*)$/im;
 const TIMED_MOVES_PATTERN = /^[ \t]*(?:timedMoves|timed moves|moves|review|复盘)[ \t]*[:：][ \t]*([\s\S]*?)(?=^[ \t]*(?:(?:segmentedSolution|segmented solution|segments|solution|scramble|打乱)[ \t]*[:：])|\s*$)/im;
 const SEGMENTED_SOLUTION_PATTERN = /^[ \t]*(?:segmentedSolution|segmented solution|segments|solution|分段)[ \t]*[:：][ \t]*([\s\S]*)$/im;
+const PLL_CASE_PATTERN = /\b(Aa|Ab|Ua|Ub|Z|H|T|F|E|N|V|Y|Na|Nb|Ga|Gb|Gc|Gd|Ja|Jb|Ra|Rb)\b/i;
 
 export function detectIntent(message) {
   const text = String(message ?? "");
@@ -59,8 +60,11 @@ function extractSolveImportParams(text) {
 }
 
 function extractAlgorithmQuery(text) {
-  const set = text.match(/\b(F2L|OLL|PLL)\b/i)?.[1]?.toUpperCase();
-  if (!set) {
+  const explicitSet = text.match(/\b(F2L|OLL|PLL)\b/i)?.[1]?.toUpperCase();
+  const barePllCase = text.match(PLL_CASE_PATTERN)?.[1];
+  const hasAlgorithmCue = Boolean(explicitSet || barePllCase);
+
+  if (!hasAlgorithmCue) {
     return null;
   }
 
@@ -80,8 +84,8 @@ function extractAlgorithmQuery(text) {
   }
 
   return {
-    set,
-    caseId,
+    set: explicitSet ?? "PLL",
+    caseId: caseId ?? barePllCase ?? null,
     tags
   };
 }
