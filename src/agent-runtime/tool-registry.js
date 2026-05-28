@@ -1,96 +1,108 @@
+import { tool } from "ai";
+import { z } from "zod";
 import { buildPlaybackBBCode, createSolveReview, searchAlgorithms } from "../cubing-tools/index.js";
 
-const TOOL_SCHEMAS = [
+const createSolveReviewInputSchema = z.object({
+  puzzle: z.string().optional().describe("默认使用 333。"),
+  source: z.string().optional().describe("输入来源，例如 chat。"),
+  scramble: z.string().describe("本次 solve 的 scramble。"),
+  timedMoves: z.string().describe("带时间戳的转动序列，例如 U@0 R@120。"),
+  segmentedSolution: z.string().optional().describe("可选的分段文本，每行形如 R U R' // F2L 1。")
+});
+
+const inspectSolveSegmentInputSchema = z.object({
+  segmentId: z.string().optional().describe("分段 id，例如 f2l-1。"),
+  segmentLabel: z.string().optional().describe("分段标签，例如 F2L 1、OLL、PLL。")
+});
+
+const searchAlgorithmsInputSchema = z.object({
+  set: z.string().optional().describe("公式集，例如 OLL、PLL。"),
+  caseId: z.string().optional().describe("case 编号，例如 27、T、Aa。"),
+  tags: z.array(z.string()).optional().describe("过滤标签，例如 right-hand、no-rotation。"),
+  limit: z.number().optional().describe("最多返回多少条推荐公式。")
+});
+
+const buildPlaybackLinkInputSchema = z.object({
+  setup: z.string().optional().describe("setup 公式，可为空。"),
+  alg: z.string().describe("要回放的公式。"),
+  label: z.string().optional().describe("展示标签。")
+});
+
+const AGENT_TOOL_DEFINITIONS = [
   {
-    type: "function",
-    function: {
-      name: "create_solve_review",
-      description: "导入一次 3x3 solve，基于 scramble、timedMoves 和可选分段文本生成完整复盘结果。",
-      parameters: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          puzzle: { type: "string", description: "默认使用 333。" },
-          source: { type: "string", description: "输入来源，例如 chat。" },
-          scramble: { type: "string", description: "本次 solve 的 scramble。" },
-          timedMoves: { type: "string", description: "带时间戳的转动序列，例如 U@0 R@120。" },
-          segmentedSolution: { type: "string", description: "可选的分段文本，每行形如 R U R' // F2L 1。" }
-        },
-        required: ["scramble", "timedMoves"]
-      }
-    }
+    name: "create_solve_review",
+    description: "导入一次 3x3 solve，基于 scramble、timedMoves 和可选分段文本生成完整复盘结果。",
+    inputSchema: createSolveReviewInputSchema,
+    execute: executeCreateSolveReview
   },
   {
-    type: "function",
-    function: {
-      name: "inspect_solve_segment",
-      description: "读取当前 solve 中某个阶段分段的局部分析，用于回答 Cross / F2L / OLL / PLL 的追问。",
-      parameters: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          segmentId: { type: "string", description: "分段 id，例如 f2l-1。" },
-          segmentLabel: { type: "string", description: "分段标签，例如 F2L 1、OLL、PLL。" }
-        }
-      }
-    }
+    name: "inspect_solve_segment",
+    description: "读取当前 solve 中某个阶段分段的局部分析，用于回答 Cross / F2L / OLL / PLL 的追问。",
+    inputSchema: inspectSolveSegmentInputSchema,
+    execute: executeInspectSolveSegment
   },
   {
-    type: "function",
-    function: {
-      name: "search_algorithms",
-      description: "查询现有公式数据，适用于 OLL / PLL 公式推荐或用户直接查询公式。",
-      parameters: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          set: { type: "string", description: "公式集，例如 OLL、PLL。" },
-          caseId: { type: "string", description: "case 编号，例如 27、T、Aa。" },
-          tags: {
-            type: "array",
-            description: "过滤标签，例如 right-hand、no-rotation。",
-            items: { type: "string" }
-          },
-          limit: { type: "number", description: "最多返回多少条推荐公式。" }
-        }
-      }
-    }
+    name: "search_algorithms",
+    description: "查询现有公式数据，适用于 OLL / PLL 公式推荐或用户直接查询公式。",
+    inputSchema: searchAlgorithmsInputSchema,
+    execute: executeSearchAlgorithms
   },
   {
-    type: "function",
-    function: {
-      name: "build_playback_link",
-      description: "为给定 setup 和公式生成可直接渲染的 playback 链接。",
-      parameters: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          setup: { type: "string", description: "setup 公式，可为空。" },
-          alg: { type: "string", description: "要回放的公式。" },
-          label: { type: "string", description: "展示标签。" }
-        },
-        required: ["alg"]
-      }
-    }
+    name: "build_playback_link",
+    description: "为给定 setup 和公式生成可直接渲染的 playback 链接。",
+    inputSchema: buildPlaybackLinkInputSchema,
+    execute: executeBuildPlaybackLink
   }
 ];
 
 export function getAgentToolSchemas() {
-  return TOOL_SCHEMAS;
+  return AGENT_TOOL_DEFINITIONS.map((definition) => ({
+    type: "function",
+    function: {
+      name: definition.name,
+      description: definition.description,
+      parameters: z.toJSONSchema(definition.inputSchema)
+    }
+  }));
+}
+
+export function createAiSdkAgentTools({ getContext, updateContext, onProgress } = {}) {
+  return Object.fromEntries(
+    AGENT_TOOL_DEFINITIONS.map((definition) => [
+      definition.name,
+      tool({
+        description: definition.description,
+        inputSchema: definition.inputSchema,
+        execute: async (args) => {
+          const execution = await executeAgentToolDefinitionSafely(definition, args, getContext?.() ?? {}, onProgress);
+          updateContext?.(execution.contextPatch ?? {});
+          return execution;
+        },
+        toModelOutput: ({ output }) => ({
+          type: "json",
+          value: output?.content ?? output
+        })
+      })
+    ])
+  );
 }
 
 export async function executeAgentToolCall({ name, args, context, onProgress }) {
-  switch (name) {
-    case "create_solve_review":
-      return executeCreateSolveReview(args, context, onProgress);
-    case "inspect_solve_segment":
-      return executeInspectSolveSegment(args, context);
-    case "search_algorithms":
-      return executeSearchAlgorithms(args);
-    case "build_playback_link":
-      return executeBuildPlaybackLink(args);
-    default:
-      throw new Error(`未知工具：${name}`);
+  const definition = AGENT_TOOL_DEFINITIONS.find((item) => item.name === name);
+  if (!definition) {
+    throw new Error(`未知工具：${name}`);
+  }
+  return definition.execute(args, context, onProgress);
+}
+
+async function executeAgentToolDefinitionSafely(definition, args, context, onProgress) {
+  try {
+    return await definition.execute(args, context, onProgress);
+  } catch (error) {
+    return buildToolError(
+      "TOOL_EXECUTION_FAILED",
+      String(error?.message ?? error ?? `${definition.name} 执行失败。`)
+    );
   }
 }
 
@@ -130,19 +142,7 @@ async function executeCreateSolveReview(args = {}, context = {}, onProgress) {
 function executeInspectSolveSegment(args = {}, context = {}) {
   const review = context.currentSolveReview;
   if (!review) {
-    return {
-      toolResult: {
-        type: "error",
-        code: "NO_SOLVE_CONTEXT",
-        message: "当前没有已导入的 solve，无法读取分段。"
-      },
-      content: {
-        type: "error",
-        code: "NO_SOLVE_CONTEXT",
-        message: "当前没有已导入的 solve，无法读取分段。"
-      },
-      contextPatch: {}
-    };
+    return buildToolError("NO_SOLVE_CONTEXT", "当前没有已导入的 solve，无法读取分段。");
   }
 
   const segment = args.segmentId
@@ -150,19 +150,7 @@ function executeInspectSolveSegment(args = {}, context = {}) {
     : findSegment(review, args.segmentLabel);
 
   if (!segment) {
-    return {
-      toolResult: {
-        type: "error",
-        code: "SEGMENT_NOT_FOUND",
-        message: `未找到分段：${args.segmentLabel ?? args.segmentId ?? "未指定"}`
-      },
-      content: {
-        type: "error",
-        code: "SEGMENT_NOT_FOUND",
-        message: `未找到分段：${args.segmentLabel ?? args.segmentId ?? "未指定"}`
-      },
-      contextPatch: {}
-    };
+    return buildToolError("SEGMENT_NOT_FOUND", `未找到分段：${args.segmentLabel ?? args.segmentId ?? "未指定"}`);
   }
 
   const stage = review.cfopAnalysis.stages.find((item) => item.segmentId === segment.id);
@@ -221,26 +209,38 @@ function executeBuildPlaybackLink(args = {}) {
     throw new Error("生成 playback 链接时必须提供 alg。");
   }
 
+  const playback = {
+    bbcode: buildPlaybackBBCode({
+      setup: args.setup ?? "",
+      alg,
+      label: args.label
+    })
+  };
+
   return {
     toolResult: {
       type: "playback-link",
-      playback: {
-        bbcode: buildPlaybackBBCode({
-          setup: args.setup ?? "",
-          alg,
-          label: args.label
-        })
-      }
+      playback
     },
     content: {
       type: "playback-link",
-      playback: {
-        bbcode: buildPlaybackBBCode({
-          setup: args.setup ?? "",
-          alg,
-          label: args.label
-        })
-      }
+      playback
+    },
+    contextPatch: {}
+  };
+}
+
+function buildToolError(code, message) {
+  return {
+    toolResult: {
+      type: "error",
+      code,
+      message
+    },
+    content: {
+      type: "error",
+      code,
+      message
     },
     contextPatch: {}
   };

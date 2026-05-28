@@ -38,7 +38,7 @@ Cubing Domain Tools
 
 ### AI Chat Client
 
-负责用户体验、消息流、输入扩展和播放链接展示。当前 Web 客户端基于 React / Vite、assistant-ui 外部状态 runtime 与 shadcn 组件实现；LLM 配置由前端设置面板维护，并直接请求 OpenAI 兼容 `chat/completions`。
+负责用户体验、消息流、输入扩展和播放链接展示。当前 Web 客户端基于 React / Vite、assistant-ui 外部状态 runtime 与 shadcn 组件实现；LLM 配置由前端设置面板维护，运行时通过 AI SDK provider 抽象请求 OpenAI 兼容接口。
 
 当前客户端布局：
 
@@ -57,25 +57,27 @@ Cubing Domain Tools
 - 前端负责消息流、LLM 设置录入与本地保存。
 - 前端负责会话状态持久化、会话管理和消息级交互（复制、编辑、删除、重试）。
 - `runAgentTurn` 仍负责本地 intent 判断、工具路由和 fallback。
-- 前端只填写接口基地址，例如 `https://api.deepseek.com/v1`；运行时请求会自动补成 `/chat/completions`。
-- 前端直接读取 OpenAI 兼容接口的 SSE 流，生成中的 assistant 回复会持续更新。
+- 前端只填写接口基地址，例如 `https://api.deepseek.com/v1`；运行时由 `@ai-sdk/openai-compatible` provider 统一处理请求路径、streaming 和工具调用。
+- 前端只消费 agent runtime 事件和文本增量，不直接解析 provider SSE。
 
 后续接入 streaming 或正式部署时，可继续保留当前 `runAgentTurn` 作为工具路由和 fallback。
 
 ### Lightweight Agent Runtime
 
-负责判断用户意图、选择工具、保存当前 solve 上下文、组织回答。第一版轻量自研，不直接引入 LangGraph/Mastra 这类重型 agent 框架。
+负责判断用户意图、选择工具、保存当前 solve 上下文、组织回答。第一版继续保持轻量，不直接引入 LangGraph/Mastra 这类重型 agent 框架；LLM tool loop、provider 兼容和工具 schema 开始转向 AI SDK / assistant-ui 生态。
 
 当前 runtime 已进入“规则 fallback + 第一版 agent loop”并行阶段：
 
 - 本地规则 fallback 仍保留：`solve-import`、`algorithm-query`、`local-followup` 和普通 `chat`。
-- 当用户消息明显与魔方工具相关且已启用 LLM 时，runtime 会优先尝试基于 OpenAI 兼容 tools 的第一版 agent loop。
+- 当用户消息明显与魔方工具相关且已启用 LLM 时，runtime 会优先尝试基于 AI SDK `streamText + stopWhen` 的 agent loop。
+- provider 兼容层集中在 `src/agent-runtime/llm-provider.js`：当前主路径使用 `@ai-sdk/openai-compatible`，后续接入 OpenAI / Anthropic / Google / OpenRouter 等 provider 时优先扩展这一层，而不是在业务 runtime 中分散判断厂商。
+- 工具协议集中在 `src/agent-runtime/tool-registry.js`：每个工具统一维护 description、Zod input schema、execute 和模型输出映射，并导出 AI SDK tools 给 agent loop 使用。
 - agent loop 当前可调用的核心工具包括：
   - `create_solve_review`
   - `inspect_solve_segment`
   - `search_algorithms`
   - `build_playback_link`
-- 对于带 reasoning / thinking 内容的 OpenAI 兼容接口，runtime 会把上一轮 assistant 返回的 `reasoning_content` 原样带回后续 tool call 轮次，避免 provider 拒绝继续推理。
+- reasoning / thinking 内容交给 AI SDK provider 抽象处理；业务 runtime 不再手写 SSE chunk 拼接和 tool call 轮次协议。
 - 非错误型工具结果：把 `toolResult`、`response-composer` 输出和当前上下文一起交给模型润色。
 - LLM prompt 按 `chat / solve-import / algorithm-query / local-followup` 做第一版分层。
 - assistant 回复最终拆成两层呈现：
@@ -113,7 +115,7 @@ Cubing Domain Tools
 - 语义路由仍偏粗，尚未形成 `intent + subIntent` 的稳定结构。
 - 长会话下的上下文压缩、裁剪和摘要策略尚未建立。
 - 工具调用态已有第一版，但参数摘要、事件流和多工具顺序展示仍不完整。
-- 多模型、多 provider fallback 和能力分级尚未实现。
+- 多模型、多 provider fallback 和能力分级尚未实现；后续应基于 `llm-provider.js` 的 provider profile/capabilities 扩展。
 
 ### Cubing Domain Tools
 

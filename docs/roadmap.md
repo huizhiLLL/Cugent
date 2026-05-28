@@ -38,6 +38,7 @@
 - 支持在 chat 中粘贴 solve 并自动调用工具。已完成。
 - 支持用户继续追问局部阶段、单步、单公式。已完成基础路径。
 - 支持前端配置 OpenAI 兼容接口。已完成“自定义 LLM”设置项。
+- 引入 AI SDK / assistant-ui 生态规范 agent loop 和工具协议。已完成第一步：tool registry 使用 Zod schema + AI SDK tools，LLM tool loop 改为 `streamText + stopWhen`，provider 兼容集中到 `llm-provider.js`。
 - 支持消息级复制、编辑、删除、重试。已完成第一版。
 - 支持会话级新建、重命名、删除、排序。已完成第一版。
 - 支持将分析详情从正文中拆分为工具态展示。已完成第一版。
@@ -48,7 +49,7 @@
 - 建立长会话上下文治理：裁剪、摘要、solve 上下文优先级。
 - 强化 LLM 输出约束，提升“引用工具证据”的稳定性。
 - 完整化工具调用态：参数摘要、结果状态、可能的多工具顺序展示。
-- 评估多模型和 provider fallback 策略。
+- 基于 provider profile/capabilities 扩展多模型、多 provider fallback 和能力分级。
 
 ## Phase 4：播放与可视化
 
