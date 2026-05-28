@@ -23,7 +23,7 @@ import {
 import { buildChatCompletionMessages, buildPromptMessages, composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "../src/web/chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, sanitizeChatState } from "../src/web/chat-storage.js";
-import { defaultLlmSettings, sanitizeLlmSettings } from "../src/web/llm-settings.js";
+import { applyLlmProviderProfile, defaultLlmSettings, sanitizeLlmSettings } from "../src/web/llm-settings.js";
 import { extractChatCompletionText, joinChatCompletionsUrl, LlmClientError } from "../src/agent-runtime/index.js";
 
 test("parseTimedMoves parses cstimer style review field", () => {
@@ -1080,6 +1080,9 @@ test("sanitizeLlmSettings trims baseUrl and keeps explicit values", () => {
   });
 
   assert.equal(settings.enabled, true);
+  assert.equal(settings.providerId, "deepseek");
+  assert.equal(settings.compatibility, "openai-compatible");
+  assert.equal(settings.capabilities.tools, true);
   assert.equal(settings.baseUrl, "https://api.deepseek.com/v1");
   assert.equal(settings.apiKey, "sk-test");
   assert.equal(settings.model, "gpt-4o-mini");
@@ -1091,6 +1094,22 @@ test("sanitizeLlmSettings falls back to defaults", () => {
   assert.equal(settings.enabled, true);
   assert.equal(settings.baseUrl, defaultLlmSettings.baseUrl);
   assert.equal(settings.model, defaultLlmSettings.model);
+});
+
+test("applyLlmProviderProfile updates provider defaults and keeps api key", () => {
+  const settings = applyLlmProviderProfile({
+    apiKey: "sk-keep",
+    baseUrl: "https://api.deepseek.com/v1",
+    model: "deepseek-v4-flash"
+  }, "openrouter");
+
+  assert.equal(settings.providerId, "openrouter");
+  assert.equal(settings.providerLabel, "OpenRouter");
+  assert.equal(settings.compatibility, "openai-compatible");
+  assert.equal(settings.baseUrl, "https://openrouter.ai/api/v1");
+  assert.equal(settings.model, "openai/gpt-4o-mini");
+  assert.equal(settings.apiKey, "sk-keep");
+  assert.equal(settings.capabilities.streaming, true);
 });
 
 test("deriveConversationTitle uses first user message excerpt", () => {

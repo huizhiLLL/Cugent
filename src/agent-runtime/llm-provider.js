@@ -2,28 +2,36 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { LlmClientError } from "./llm-client.js";
 
 const DEFAULT_PROVIDER_ID = "openai-compatible";
+const DEFAULT_CAPABILITIES = {
+  streaming: true,
+  tools: true,
+  usage: true,
+  reasoning: false
+};
 
 export function resolveLlmModel(llmSettings) {
   validateLlmSettings(llmSettings);
 
-  const providerId = normalizeProviderId(llmSettings.provider);
+  const providerId = normalizeProviderId(llmSettings.providerId ?? llmSettings.provider);
+  const capabilities = {
+    ...DEFAULT_CAPABILITIES,
+    ...(llmSettings.capabilities && typeof llmSettings.capabilities === "object" ? llmSettings.capabilities : {})
+  };
   const provider = createOpenAICompatible({
     name: providerId,
     apiKey: String(llmSettings.apiKey).trim(),
     baseURL: normalizeBaseUrl(llmSettings.baseUrl),
-    includeUsage: true
+    includeUsage: capabilities.usage !== false
   });
 
   return {
     model: provider(String(llmSettings.model).trim()),
     provider: {
       id: providerId,
+      label: llmSettings.providerLabel ?? providerId,
       source: "ai-sdk",
-      compatibility: "openai-compatible",
-      capabilities: {
-        streaming: true,
-        tools: true
-      }
+      compatibility: llmSettings.compatibility ?? "openai-compatible",
+      capabilities
     }
   };
 }

@@ -20,7 +20,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { runAgentTurn } from "../agent-runtime/index.js";
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "./chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, loadChatState, saveChatState } from "./chat-storage.js";
-import { defaultLlmSettings, loadLlmSettings, saveLlmSettings, sanitizeLlmSettings } from "./llm-settings.js";
+import {
+  applyLlmProviderProfile,
+  defaultLlmSettings,
+  loadLlmSettings,
+  llmProviderProfiles,
+  saveLlmSettings,
+  sanitizeLlmSettings
+} from "./llm-settings.js";
 import { XIcon } from "lucide-react";
 import "./styles.css";
 
@@ -36,7 +43,7 @@ function App() {
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [activeSettingsSection, setActiveSettingsSection] = useState("custom-llm");
+  const [activeSettingsSection, setActiveSettingsSection] = useState("model");
   const [renameDialogState, setRenameDialogState] = useState({
     open: false,
     conversationId: null,
@@ -142,7 +149,8 @@ function App() {
                     llm: readyTurn.response?.llm ?? {
                       enabled: llmSettings.enabled,
                       status: "running",
-                      source: "openai-compatible",
+                      source: llmSettings.compatibility,
+                      provider: llmSettings.providerId,
                       model: llmSettings.model,
                       streaming: true
                     }
@@ -174,7 +182,8 @@ function App() {
                     llm: {
                       enabled: true,
                       status: "running",
-                      source: "openai-compatible",
+                      source: llmSettings.compatibility,
+                      provider: llmSettings.providerId,
                       model: llmSettings.model,
                       streaming: true
                     }
@@ -205,7 +214,8 @@ function App() {
                     llm: {
                       enabled: true,
                       status: "running",
-                      source: "openai-compatible",
+                      source: llmSettings.compatibility,
+                      provider: llmSettings.providerId,
                       model: llmMeta?.model ?? null,
                       responseId: llmMeta?.id ?? null,
                       usage: llmMeta?.usage ?? null,
@@ -402,6 +412,10 @@ ${smartInput.segmentedSolution}`.trim();
       ...previous,
       [field]: value
     }));
+  }
+
+  function selectLlmProvider(providerId) {
+    setLlmSettingsDraft((previous) => applyLlmProviderProfile(previous, providerId));
   }
 
   function saveCurrentLlmSettings() {
@@ -886,6 +900,10 @@ ${smartInput.segmentedSolution}`.trim();
 
         <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
           <DialogContent className="settings-dialog-content sm:max-w-5xl" showCloseButton={false}>
+            <DialogHeader className="sr-only">
+              <DialogTitle>设置</DialogTitle>
+              <DialogDescription>配置模型服务、接口地址和本地 API Key。</DialogDescription>
+            </DialogHeader>
             <DialogClose asChild>
               <Button variant="ghost" size="icon-sm" className="settings-close-button" aria-label="关闭设置">
                 <XIcon />
@@ -895,15 +913,15 @@ ${smartInput.segmentedSolution}`.trim();
               <aside className="settings-sidebar">
                 <Button
                   type="button"
-                  variant={activeSettingsSection === "custom-llm" ? "secondary" : "ghost"}
+                  variant={activeSettingsSection === "model" ? "secondary" : "ghost"}
                   className="settings-nav-item"
-                  onClick={() => setActiveSettingsSection("custom-llm")}
+                  onClick={() => setActiveSettingsSection("model")}
                 >
-                  <span>自定义 LLM</span>
+                  <span>模型设置</span>
                 </Button>
               </aside>
               <section className="settings-panel">
-                {activeSettingsSection === "custom-llm" ? (
+                {activeSettingsSection === "model" ? (
                   <form
                     className="settings-form"
                     onSubmit={(event) => {
@@ -929,10 +947,33 @@ ${smartInput.segmentedSolution}`.trim();
                         </button>
                       </div>
                     </div>
+                    <div className="settings-row settings-row-field">
+                      <div className="settings-row-heading">
+                        <span className="settings-row-label">模型服务</span>
+                        <span className="settings-row-help">选择后会自动填入兼容地址和默认模型</span>
+                      </div>
+                      <div className="provider-profile-list">
+                        {llmProviderProfiles.map((profile) => (
+                          <button
+                            key={profile.id}
+                            type="button"
+                            className="provider-profile-option"
+                            data-selected={llmSettingsDraft.providerId === profile.id}
+                            onClick={() => selectLlmProvider(profile.id)}
+                          >
+                            <span className="provider-profile-title">{profile.label}</span>
+                            <span className="provider-profile-description">{profile.description}</span>
+                            <span className="provider-profile-meta">
+                              {formatProviderCapabilities(profile.capabilities)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     <label className="settings-row settings-row-field">
                       <div className="settings-row-heading">
                         <span className="settings-row-label">API 地址</span>
-                        <span className="settings-row-help">例如 `https://api.deepseek.com/v1`</span>
+                        <span className="settings-row-help">当前使用 {llmSettingsDraft.providerLabel}</span>
                       </div>
                       <Input
                         className="settings-input"
@@ -957,7 +998,7 @@ ${smartInput.segmentedSolution}`.trim();
                     <label className="settings-row settings-row-field">
                       <div className="settings-row-heading">
                         <span className="settings-row-label">模型名</span>
-                        <span className="settings-row-help">例如 `dedeepseek-v4-flash`</span>
+                        <span className="settings-row-help">例如 `deepseek-v4-flash`</span>
                       </div>
                       <Input
                         className="settings-input"
@@ -1056,4 +1097,12 @@ function getLastAssistantContext(messages) {
   }
 
   return {};
+}
+
+function formatProviderCapabilities(capabilities = {}) {
+  return [
+    capabilities.streaming ? "流式" : null,
+    capabilities.tools ? "工具调用" : null,
+    capabilities.reasoning ? "推理内容" : null
+  ].filter(Boolean).join(" / ");
 }
