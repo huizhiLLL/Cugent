@@ -1190,20 +1190,32 @@ test("sanitizeLlmSettings falls back to defaults", () => {
   assert.equal(settings.model, defaultLlmSettings.model);
 });
 
-test("applyLlmProviderProfile updates provider defaults and keeps api key", () => {
+test("applyLlmProviderProfile updates custom provider defaults and keeps api key", () => {
   const settings = applyLlmProviderProfile({
     apiKey: "sk-keep",
     baseUrl: "https://api.deepseek.com/v1",
     model: "deepseek-v4-flash"
-  }, "openrouter");
+  }, "custom-openai-compatible");
 
-  assert.equal(settings.providerId, "openrouter");
-  assert.equal(settings.providerLabel, "OpenRouter");
+  assert.equal(settings.providerId, "custom-openai-compatible");
+  assert.equal(settings.providerLabel, "自定义兼容接口");
   assert.equal(settings.compatibility, "openai-compatible");
-  assert.equal(settings.baseUrl, "https://openrouter.ai/api/v1");
-  assert.equal(settings.model, "openai/gpt-4o-mini");
+  assert.equal(settings.baseUrl, "https://api.deepseek.com/v1");
+  assert.equal(settings.model, "deepseek-v4-flash");
   assert.equal(settings.apiKey, "sk-keep");
   assert.equal(settings.capabilities.streaming, true);
+});
+
+test("sanitizeLlmSettings migrates removed openrouter profile to default provider", () => {
+  const settings = sanitizeLlmSettings({
+    providerId: "openrouter",
+    apiKey: "sk-keep"
+  });
+
+  assert.equal(settings.providerId, "deepseek");
+  assert.equal(settings.providerLabel, "DeepSeek");
+  assert.equal(settings.baseUrl, defaultLlmSettings.baseUrl);
+  assert.equal(settings.apiKey, "sk-keep");
 });
 
 test("deriveConversationTitle uses first user message excerpt", () => {

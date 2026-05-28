@@ -902,7 +902,7 @@ ${smartInput.segmentedSolution}`.trim();
           <DialogContent className="settings-dialog-content sm:max-w-5xl" showCloseButton={false}>
             <DialogHeader className="sr-only">
               <DialogTitle>设置</DialogTitle>
-              <DialogDescription>配置模型服务、接口地址和本地 API Key。</DialogDescription>
+              <DialogDescription>配置模型服务、API Key 和模型名。</DialogDescription>
             </DialogHeader>
             <DialogClose asChild>
               <Button variant="ghost" size="icon-sm" className="settings-close-button" aria-label="关闭设置">
@@ -950,7 +950,7 @@ ${smartInput.segmentedSolution}`.trim();
                     <div className="settings-row settings-row-field">
                       <div className="settings-row-heading">
                         <span className="settings-row-label">模型服务</span>
-                        <span className="settings-row-help">选择后会自动填入兼容地址和默认模型</span>
+                        <span className="settings-row-help">大多数情况下选择 DeepSeek 即可</span>
                       </div>
                       <div className="provider-profile-list">
                         {llmProviderProfiles.map((profile) => (
@@ -963,25 +963,24 @@ ${smartInput.segmentedSolution}`.trim();
                           >
                             <span className="provider-profile-title">{profile.label}</span>
                             <span className="provider-profile-description">{profile.description}</span>
-                            <span className="provider-profile-meta">
-                              {formatProviderCapabilities(profile.capabilities)}
-                            </span>
                           </button>
                         ))}
                       </div>
                     </div>
-                    <label className="settings-row settings-row-field">
-                      <div className="settings-row-heading">
-                        <span className="settings-row-label">API 地址</span>
-                        <span className="settings-row-help">当前使用 {llmSettingsDraft.providerLabel}</span>
-                      </div>
-                      <Input
-                        className="settings-input"
-                        value={llmSettingsDraft.baseUrl}
-                        onChange={(event) => updateLlmSettings("baseUrl", event.target.value)}
-                        placeholder="https://api.deepseek.com/v1"
-                      />
-                    </label>
+                    {shouldShowApiBaseUrl(llmSettingsDraft) ? (
+                      <label className="settings-row settings-row-field">
+                        <div className="settings-row-heading">
+                          <span className="settings-row-label">API 地址</span>
+                          <span className="settings-row-help">填写 OpenAI 兼容接口地址</span>
+                        </div>
+                        <Input
+                          className="settings-input"
+                          value={llmSettingsDraft.baseUrl}
+                          onChange={(event) => updateLlmSettings("baseUrl", event.target.value)}
+                          placeholder="https://api.example.com/v1"
+                        />
+                      </label>
+                    ) : null}
                     <label className="settings-row settings-row-field">
                       <div className="settings-row-heading">
                         <span className="settings-row-label">API Key</span>
@@ -1099,10 +1098,6 @@ function getLastAssistantContext(messages) {
   return {};
 }
 
-function formatProviderCapabilities(capabilities = {}) {
-  return [
-    capabilities.streaming ? "流式" : null,
-    capabilities.tools ? "工具调用" : null,
-    capabilities.reasoning ? "推理内容" : null
-  ].filter(Boolean).join(" / ");
+function shouldShowApiBaseUrl(settings) {
+  return settings?.providerId === "custom-openai-compatible";
 }

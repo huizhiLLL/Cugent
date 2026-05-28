@@ -57,8 +57,8 @@ Cubing Domain Tools
 - 前端负责消息流、LLM 设置录入与本地保存。
 - 前端负责会话状态持久化、会话管理和消息级交互（复制、编辑、删除、重试）。
 - `runAgentTurn` 仍负责本地 intent 判断、工具路由和 fallback。
-- 前端设置已从单一自定义接口升级为 provider profile：当前内置 DeepSeek、OpenRouter 和自定义 OpenAI 兼容接口。每个 profile 提供默认 base URL、默认模型、兼容类型和 capabilities。
-- 前端仍允许手动调整接口基地址和模型名；运行时由 `@ai-sdk/openai-compatible` provider 统一处理请求路径、streaming 和工具调用。
+- 前端设置已从单一自定义接口升级为 provider profile：当前只内置 DeepSeek 和自定义 OpenAI 兼容接口。每个 profile 提供默认 base URL、默认模型、兼容类型和 capabilities。
+- DeepSeek 使用内置接口地址，前端不展示 API 地址输入；自定义兼容接口允许手动调整接口基地址和模型名。运行时由 `@ai-sdk/openai-compatible` provider 统一处理请求路径、streaming 和工具调用。
 - 前端只消费 agent runtime 事件和文本增量，不直接解析 provider SSE；agent loop 和普通 LLM 润色都统一走 AI SDK provider。
 
 后续接入 streaming 或正式部署时，可继续保留当前 `runAgentTurn` 作为工具路由和 fallback。

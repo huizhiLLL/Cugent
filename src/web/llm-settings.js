@@ -5,7 +5,7 @@ export const llmProviderProfiles = [
   {
     id: "deepseek",
     label: "DeepSeek",
-    description: "OpenAI 兼容接口，适合当前默认中文模型路径。",
+    description: "默认模型服务，只需要填写 API Key。",
     compatibility: "openai-compatible",
     defaultBaseUrl: "https://api.deepseek.com/v1",
     defaultModel: "deepseek-v4-flash",
@@ -17,23 +17,9 @@ export const llmProviderProfiles = [
     }
   },
   {
-    id: "openrouter",
-    label: "OpenRouter",
-    description: "统一转接多模型，适合快速切换不同模型供应方。",
-    compatibility: "openai-compatible",
-    defaultBaseUrl: "https://openrouter.ai/api/v1",
-    defaultModel: "openai/gpt-4o-mini",
-    capabilities: {
-      streaming: true,
-      tools: true,
-      usage: true,
-      reasoning: false
-    }
-  },
-  {
     id: "custom-openai-compatible",
     label: "自定义兼容接口",
-    description: "用于 SiliconFlow、LM Studio 或其他 OpenAI 兼容服务。",
+    description: "已有其他兼容接口时使用。",
     compatibility: "openai-compatible",
     defaultBaseUrl: "https://api.deepseek.com/v1",
     defaultModel: "deepseek-v4-flash",
@@ -109,6 +95,9 @@ export function sanitizeLlmSettings(input) {
 
 export function findLlmProviderProfile(providerId) {
   const normalized = String(providerId ?? "").trim();
+  if (normalized === "openrouter") {
+    return defaultProviderProfile;
+  }
   return llmProviderProfiles.find((profile) => profile.id === normalized) ?? defaultProviderProfile;
 }
 

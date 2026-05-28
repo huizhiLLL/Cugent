@@ -924,7 +924,7 @@ code {
 .settings-layout {
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
-  min-height: min(760px, calc(100vh - 48px));
+  height: min(760px, calc(100vh - 48px));
   background: var(--surface);
 }
 
@@ -952,8 +952,10 @@ code {
 }
 
 .settings-panel {
-  padding: 24px 28px;
-  overflow: auto;
+  min-height: 0;
+  padding: 18px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .settings-form {
@@ -964,13 +966,13 @@ code {
 .settings-row {
   display: grid;
   align-items: start;
-  gap: 16px;
-  padding: 26px 0;
+  gap: 10px;
+  padding: 16px 0;
   border-top: 0;
 }
 
 .settings-row-toggle {
-  padding-bottom: 26px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -982,14 +984,14 @@ code {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  gap: 14px;
 }
 
 .settings-row-heading {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px 12px;
+  gap: 4px 10px;
 }
 
 .settings-row-label {
@@ -1000,8 +1002,8 @@ code {
 
 .settings-row-help {
   color: var(--text-muted);
-  font-size: 0.94rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .settings-input {
@@ -1031,8 +1033,8 @@ code {
 .provider-profile-option {
   display: grid;
   align-content: start;
-  min-height: 132px;
-  padding: 14px;
+  min-height: 92px;
+  padding: 13px 14px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: color-mix(in oklch, var(--surface) 92%, white);
@@ -1075,14 +1077,6 @@ code {
   color: var(--text-muted);
   font-size: 0.84rem;
   line-height: 1.45;
-}
-
-.provider-profile-meta {
-  align-self: end;
-  margin-top: 14px;
-  color: color-mix(in oklch, var(--foreground) 64%, var(--text-muted));
-  font-size: 0.78rem;
-  line-height: 1.4;
 }
 
 .settings-switch {
@@ -1144,7 +1138,7 @@ code {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px;
-  padding-top: 28px;
+  padding-top: 18px;
 }
 
 .conversation-manage-form {
@@ -1440,6 +1434,8 @@ twisty-player {
 
   .settings-layout {
     grid-template-columns: 1fr;
+    height: min(760px, calc(100vh - 48px));
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .settings-sidebar {
@@ -1449,7 +1445,9 @@ twisty-player {
   }
 
   .settings-panel {
-    padding: 18px 18px 20px;
+    min-height: 0;
+    padding: 14px 18px 18px;
+    overflow-y: auto;
   }
 
   .settings-row-head {
