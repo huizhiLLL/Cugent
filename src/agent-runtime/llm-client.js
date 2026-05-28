@@ -1,3 +1,7 @@
+import { generateText, streamText } from "ai";
+import { LlmClientError } from "./llm-error.js";
+import { normalizeLlmError, resolveLlmModel } from "./llm-provider.js";
+
 const DEFAULT_TIMEOUT_MS = 30000;
 
 export async function enhanceAgentTurnResponse({
@@ -8,38 +12,72 @@ export async function enhanceAgentTurnResponse({
   onTextDelta,
   signal
 }) {
-  const llmSettings = context?.llmSettings;
-  validateLlmSettings(llmSettings);
+  try {
+    const { model, provider } = resolveLlmModel(context?.llmSettings);
+    const promptMessages = buildPromptMessages({ message, context, turn, fallbackResponse });
+    const { system, messages } = buildAiSdkPrompt(promptMessages);
+    const shouldStream = provider.capabilities.streaming !== false;
 
-  const endpoint = joinChatCompletionsUrl(llmSettings.baseUrl);
-  const payload = {
-    model: llmSettings.model,
-    stream: true,
-    messages: buildChatCompletionMessages(buildPromptMessages({ message, context, turn, fallbackResponse }))
-  };
+    if (!shouldStream) {
+      const result = await generateText({
+        model,
+        system,
+        messages,
+        abortSignal: signal,
+        timeout: DEFAULT_TIMEOUT_MS
+      });
+      const text = result.text.trim();
+      if (!text) {
+        throw new LlmClientError("LLM_EMPTY_RESPONSE", "LLM 返回内容为空。");
+      }
 
-  let accumulatedText = "";
-  let responseId = null;
-  let responseModel = llmSettings.model;
-  let usage = null;
+      return {
+        ...fallbackResponse,
+        text,
+        llm: buildLlmMeta({
+          provider,
+          modelId: result.response?.modelId,
+          responseId: result.response?.id,
+          usage: result.usage,
+          streaming: false
+        })
+      };
+    }
 
-  const response = await fetchWithTimeout(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${String(llmSettings.apiKey).trim()}`
-    },
-    body: JSON.stringify(payload)
-  }, DEFAULT_TIMEOUT_MS, signal);
+    let accumulatedText = "";
+    let usage = null;
+    let responseId = null;
+    let responseModel = context.llmSettings.model;
+    const result = streamText({
+      model,
+      system,
+      messages,
+      abortSignal: signal,
+      timeout: DEFAULT_TIMEOUT_MS,
+      onChunk: ({ chunk }) => {
+        if (chunk.type !== "text-delta" || !chunk.text) {
+          return;
+        }
+        accumulatedText += chunk.text;
+        onTextDelta?.(accumulatedText, {
+          model: responseModel,
+          id: responseId,
+          usage
+        });
+      },
+      onFinish: (event) => {
+        usage = event.totalUsage ?? event.usage ?? usage;
+        responseId = event.response?.id ?? responseId;
+        responseModel = event.response?.modelId ?? responseModel;
+      }
+    });
 
-  if (!response.ok) {
-    throw await createHttpError(response);
-  }
+    const text = (await result.text).trim();
+    usage = (await result.totalUsage.catch(() => null)) ?? usage;
+    const response = await result.response.catch(() => null);
+    responseId = response?.id ?? responseId;
+    responseModel = response?.modelId ?? responseModel;
 
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("text/event-stream")) {
-    const result = await response.json();
-    const text = extractChatCompletionText(result);
     if (!text) {
       throw new LlmClientError("LLM_EMPTY_RESPONSE", "LLM 返回内容为空。");
     }
@@ -47,89 +85,17 @@ export async function enhanceAgentTurnResponse({
     return {
       ...fallbackResponse,
       text,
-      llm: {
-        enabled: true,
-        status: "complete",
-        source: "openai-compatible",
-        model: result?.model ?? llmSettings.model,
-        responseId: result?.id ?? null,
-        usage: result?.usage ?? null,
-        streaming: false
-      }
+      llm: buildLlmMeta({
+        provider,
+        modelId: responseModel,
+        responseId,
+        usage,
+        streaming: true
+      })
     };
+  } catch (error) {
+    throw normalizeLlmError(error);
   }
-
-  if (!response.body) {
-    throw new LlmClientError("LLM_STREAM_MISSING", "接口未返回可读取的流。");
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-
-    buffer += decoder.decode(value, { stream: true });
-    const events = buffer.split("\n\n");
-    buffer = events.pop() ?? "";
-
-    for (const event of events) {
-      const dataLines = event
-        .split("\n")
-        .filter((line) => line.startsWith("data:"))
-        .map((line) => line.slice(5).trim())
-        .filter(Boolean);
-
-      for (const data of dataLines) {
-        if (data === "[DONE]") {
-          continue;
-        }
-
-        let chunk;
-        try {
-          chunk = JSON.parse(data);
-        } catch {
-          continue;
-        }
-
-        responseId = chunk?.id ?? responseId;
-        responseModel = chunk?.model ?? responseModel;
-        usage = chunk?.usage ?? usage;
-
-        const deltaText = extractDeltaText(chunk);
-        if (deltaText) {
-          accumulatedText += deltaText;
-          onTextDelta?.(accumulatedText, {
-            id: responseId,
-            model: responseModel,
-            usage
-          });
-        }
-      }
-    }
-  }
-
-  if (!accumulatedText.trim()) {
-    throw new LlmClientError("LLM_EMPTY_RESPONSE", "LLM 返回内容为空。");
-  }
-
-  return {
-    ...fallbackResponse,
-    text: accumulatedText.trim(),
-    llm: {
-      enabled: true,
-      status: "complete",
-      source: "openai-compatible",
-      model: responseModel,
-      responseId,
-      usage,
-      streaming: true
-    }
-  };
 }
 
 export function buildPromptMessages({ message, context, turn, fallbackResponse }) {
@@ -188,6 +154,18 @@ export function buildChatCompletionMessages(messages) {
     role: message.role,
     content: flattenMessageContent(message.content)
   }));
+}
+
+function buildAiSdkPrompt(promptMessages) {
+  const normalized = buildChatCompletionMessages(promptMessages);
+  return {
+    system: normalized
+      .filter((message) => message.role === "system")
+      .map((message) => message.content)
+      .filter(Boolean)
+      .join("\n\n"),
+    messages: normalized.filter((message) => message.role !== "system")
+  };
 }
 
 function buildPromptProfile(turn) {
@@ -357,92 +335,18 @@ function flattenMessageContent(content) {
     .join("\n\n");
 }
 
-function validateLlmSettings(llmSettings) {
-  if (!llmSettings || llmSettings.enabled === false) {
-    throw new LlmClientError("LLM_DISABLED", "当前未启用 LLM。");
-  }
-  if (!String(llmSettings.baseUrl ?? "").trim()) {
-    throw new LlmClientError("LLM_BASE_URL_MISSING", "请先填写接口基地址。");
-  }
-  if (!String(llmSettings.apiKey ?? "").trim()) {
-    throw new LlmClientError("LLM_API_KEY_MISSING", "请先填写 API Key。");
-  }
-  if (!String(llmSettings.model ?? "").trim()) {
-    throw new LlmClientError("LLM_MODEL_MISSING", "请先填写模型名。");
-  }
-}
-
-async function fetchWithTimeout(url, options, timeoutMs, signal) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(new DOMException("Timeout", "AbortError")), timeoutMs);
-
-  const abortHandler = () => controller.abort(signal?.reason ?? new DOMException("Aborted", "AbortError"));
-  signal?.addEventListener("abort", abortHandler);
-
-  try {
-    return await fetch(url, {
-      ...options,
-      signal: controller.signal
-    });
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      if (signal?.aborted) {
-        throw new LlmClientError("LLM_ABORTED", "已停止生成。");
-      }
-      throw new LlmClientError("LLM_TIMEOUT", "LLM 请求超时。");
-    }
-
-    if (error instanceof TypeError) {
-      throw new LlmClientError("LLM_NETWORK_OR_CORS", "无法连接到兼容接口，可能是网络失败或浏览器跨域限制。");
-    }
-
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
-    signal?.removeEventListener("abort", abortHandler);
-  }
-}
-
-async function createHttpError(response) {
-  const status = response.status;
-  let detail = null;
-
-  try {
-    detail = await response.json();
-  } catch {
-    detail = null;
-  }
-
-  if (status === 401 || status === 403) {
-    return new LlmClientError("LLM_AUTH_FAILED", "鉴权失败，请检查 API Key 或接口权限。", { status, detail });
-  }
-  if (status === 429) {
-    return new LlmClientError("LLM_RATE_LIMIT", "接口触发限流，请稍后重试。", { status, detail });
-  }
-  if (status >= 500) {
-    return new LlmClientError("LLM_UPSTREAM_ERROR", "模型服务暂时不可用，请稍后再试。", { status, detail });
-  }
-
-  return new LlmClientError("LLM_HTTP_ERROR", `模型接口请求失败（${status}）。`, { status, detail });
-}
-
-function extractDeltaText(chunk) {
-  const choices = Array.isArray(chunk?.choices) ? chunk.choices : [];
-  const choice = choices[0];
-  const delta = choice?.delta;
-
-  if (typeof delta?.content === "string") {
-    return delta.content;
-  }
-
-  if (Array.isArray(delta?.content)) {
-    return delta.content
-      .map((item) => item?.text ?? "")
-      .filter(Boolean)
-      .join("");
-  }
-
-  return "";
+function buildLlmMeta({ provider, modelId, responseId, usage, streaming }) {
+  return {
+    enabled: true,
+    status: "complete",
+    source: provider.compatibility,
+    provider: provider.id,
+    model: modelId ?? null,
+    responseId: responseId ?? null,
+    usage: provider.capabilities.usage === false ? null : usage ?? null,
+    streaming,
+    runtime: provider.source
+  };
 }
 
 export function joinChatCompletionsUrl(baseUrl) {
@@ -473,12 +377,4 @@ export function extractChatCompletionText(result) {
   return "";
 }
 
-export class LlmClientError extends Error {
-  constructor(code, message, extra = {}) {
-    super(message);
-    this.name = "LlmClientError";
-    this.code = code;
-    this.status = extra.status ?? null;
-    this.detail = extra.detail ?? null;
-  }
-}
+export { LlmClientError } from "./llm-error.js";

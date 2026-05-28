@@ -59,7 +59,7 @@ Cubing Domain Tools
 - `runAgentTurn` 仍负责本地 intent 判断、工具路由和 fallback。
 - 前端设置已从单一自定义接口升级为 provider profile：当前内置 DeepSeek、OpenRouter 和自定义 OpenAI 兼容接口。每个 profile 提供默认 base URL、默认模型、兼容类型和 capabilities。
 - 前端仍允许手动调整接口基地址和模型名；运行时由 `@ai-sdk/openai-compatible` provider 统一处理请求路径、streaming 和工具调用。
-- 前端只消费 agent runtime 事件和文本增量，不直接解析 provider SSE。
+- 前端只消费 agent runtime 事件和文本增量，不直接解析 provider SSE；agent loop 和普通 LLM 润色都统一走 AI SDK provider。
 
 后续接入 streaming 或正式部署时，可继续保留当前 `runAgentTurn` 作为工具路由和 fallback。
 
@@ -71,6 +71,8 @@ Cubing Domain Tools
 
 - 本地规则 fallback 仍保留：`solve-import`、`algorithm-query`、`local-followup` 和普通 `chat`。
 - 当用户消息明显与魔方工具相关且已启用 LLM 时，runtime 会优先尝试基于 AI SDK `streamText + stopWhen` 的 agent loop。
+- 如果当前 provider profile 标记 `tools: false`，runtime 会跳过 LLM tool loop，改走本地规则工具链，再用 LLM 做非事实润色。
+- 如果当前 provider profile 标记 `streaming: false`，普通 LLM 润色会走 AI SDK 非流式 `generateText` 分支。
 - provider 兼容层集中在 `src/agent-runtime/llm-provider.js`：当前主路径使用 `@ai-sdk/openai-compatible`，并读取前端保存的 `providerId / compatibility / capabilities`。后续接入 OpenAI / Anthropic / Google 等原生 provider 时优先扩展这一层，而不是在业务 runtime 中分散判断厂商。
 - 工具协议集中在 `src/agent-runtime/tool-registry.js`：每个工具统一维护 description、Zod input schema、execute 和模型输出映射，并导出 AI SDK tools 给 agent loop 使用。
 - agent loop 当前可调用的核心工具包括：
@@ -116,7 +118,7 @@ Cubing Domain Tools
 - 语义路由仍偏粗，尚未形成 `intent + subIntent` 的稳定结构。
 - 长会话下的上下文压缩、裁剪和摘要策略尚未建立。
 - 工具调用态已有第一版，但参数摘要、事件流和多工具顺序展示仍不完整。
-- 多 provider profile 已有第一版，provider fallback、能力降级和按模型能力切换工具策略尚未实现。
+- 多 provider profile 已有第一版，能力降级已覆盖 tools / streaming / usage。provider fallback 当前只有配置结构和错误策略，尚未自动切换，因为不同 provider 往往需要独立 API Key。
 
 ### Cubing Domain Tools
 

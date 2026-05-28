@@ -1,6 +1,6 @@
 import { stepCountIs, streamText } from "ai";
 import { createAiSdkAgentTools } from "./tool-registry.js";
-import { LlmClientError } from "./llm-client.js";
+import { LlmClientError } from "./llm-error.js";
 import { normalizeLlmError, resolveLlmModel } from "./llm-provider.js";
 
 const DEFAULT_TIMEOUT_MS = 30000;

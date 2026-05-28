@@ -7,6 +7,6 @@ export {
   enhanceAgentTurnResponse,
   buildPromptMessages,
   extractChatCompletionText,
-  joinChatCompletionsUrl,
-  LlmClientError
+  joinChatCompletionsUrl
 } from "./llm-client.js";
+export { LlmClientError } from "./llm-error.js";

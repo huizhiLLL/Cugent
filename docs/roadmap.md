@@ -40,6 +40,7 @@
 - 支持前端配置 OpenAI 兼容接口。已完成“自定义 LLM”设置项。
 - 引入 AI SDK / assistant-ui 生态规范 agent loop 和工具协议。已完成第一步：tool registry 使用 Zod schema + AI SDK tools，LLM tool loop 改为 `streamText + stopWhen`，provider 兼容集中到 `llm-provider.js`。
 - 扩展 provider profile/capabilities。已完成第一版：前端设置支持 DeepSeek、OpenRouter、自定义 OpenAI 兼容接口，并保存 provider capabilities 供 runtime 使用。
+- 统一普通 LLM 润色调用。已完成：`enhanceAgentTurnResponse` 从手写 `/chat/completions` 和 SSE 解析迁到 AI SDK，并根据 `streaming / usage` capabilities 降级。
 - 支持消息级复制、编辑、删除、重试。已完成第一版。
 - 支持会话级新建、重命名、删除、排序。已完成第一版。
 - 支持将分析详情从正文中拆分为工具态展示。已完成第一版。
@@ -50,7 +51,7 @@
 - 建立长会话上下文治理：裁剪、摘要、solve 上下文优先级。
 - 强化 LLM 输出约束，提升“引用工具证据”的稳定性。
 - 完整化工具调用态：参数摘要、结果状态、可能的多工具顺序展示。
-- 基于 provider profile/capabilities 扩展 provider fallback、能力降级和按模型能力切换工具策略。
+- 基于 provider profile/capabilities 继续扩展 provider fallback UI、多 API Key 管理和按模型能力切换工具策略。
 
 ## Phase 4：播放与可视化
 

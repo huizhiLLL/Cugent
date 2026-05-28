@@ -136,6 +136,10 @@ function shouldUseLlmAgentLoop(message, context, options) {
     return false;
   }
 
+  if (context.llmSettings.capabilities?.tools === false) {
+    return false;
+  }
+
   return isLikelyToolDrivenTurn(message, context);
 }
 
@@ -160,7 +164,7 @@ function attachLlmFallbackInfo(fallbackResponse, error, turn) {
   const llmMeta = {
     enabled: false,
     status: code === "LLM_ABORTED" ? "cancelled" : "fallback",
-    source: "openai-compatible",
+    source: turn.response?.llm?.source ?? "openai-compatible",
     error: {
       code,
       message

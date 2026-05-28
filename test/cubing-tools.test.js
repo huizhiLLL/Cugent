@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { MockLanguageModelV3 } from "ai/test";
 import { Alg } from "cubing/alg";
 import { KPattern } from "cubing/kpuzzle";
 import { cube3x3x3 } from "cubing/puzzles";
@@ -24,7 +25,7 @@ import { buildChatCompletionMessages, buildPromptMessages, composeResponse, dete
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "../src/web/chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, sanitizeChatState } from "../src/web/chat-storage.js";
 import { applyLlmProviderProfile, defaultLlmSettings, sanitizeLlmSettings } from "../src/web/llm-settings.js";
-import { extractChatCompletionText, joinChatCompletionsUrl, LlmClientError } from "../src/agent-runtime/index.js";
+import { enhanceAgentTurnResponse, extractChatCompletionText, joinChatCompletionsUrl, LlmClientError } from "../src/agent-runtime/index.js";
 
 test("parseTimedMoves parses cstimer style review field", () => {
   const moves = parseTimedMoves(`["U'@0 R@125 L2@389","333"]`);
@@ -858,6 +859,99 @@ test("runAgentTurn exposes fallback turn before llm enhancement", async () => {
   assert.equal(turn.response.text, "LLM:algorithm-search");
 });
 
+test("runAgentTurn skips llm tool loop when provider tools are disabled", async () => {
+  const turn = await runAgentTurn(
+    "给我一个 no-rotation 的 OLL 27 公式",
+    {
+      llmSettings: {
+        enabled: true,
+        providerId: "mock",
+        providerLabel: "Mock",
+        compatibility: "openai-compatible",
+        baseUrl: "https://example.test/v1",
+        apiKey: "sk-test",
+        model: "mock-model",
+        capabilities: {
+          tools: false,
+          streaming: false,
+          usage: false
+        },
+        modelInstance: new MockLanguageModelV3({
+          provider: "mock",
+          modelId: "mock-model",
+          doGenerate: async () => ({
+            content: [{ type: "text", text: "LLM:local-tools" }],
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
+              outputTokens: { total: 1, text: 1, reasoning: undefined }
+            },
+            warnings: []
+          })
+        })
+      }
+    }
+  );
+
+  assert.equal(turn.intent.type, "algorithm-query");
+  assert.equal(turn.toolCalls[0]?.name, "searchAlgorithms");
+  assert.equal(turn.response.text, "LLM:local-tools");
+  assert.equal(turn.response.llm.streaming, false);
+  assert.equal(turn.response.llm.usage, null);
+});
+
+test("enhanceAgentTurnResponse uses non-streaming AI SDK path when streaming is disabled", async () => {
+  const fallbackResponse = {
+    kind: "chat-fallback",
+    text: "fallback",
+    evidence: [],
+    nextActions: []
+  };
+  const response = await enhanceAgentTurnResponse({
+    message: "你好",
+    context: {
+      llmSettings: {
+        enabled: true,
+        providerId: "mock",
+        providerLabel: "Mock",
+        compatibility: "openai-compatible",
+        baseUrl: "https://example.test/v1",
+        apiKey: "sk-test",
+        model: "mock-model",
+        capabilities: {
+          streaming: false,
+          tools: true,
+          usage: false
+        },
+        modelInstance: new MockLanguageModelV3({
+          provider: "mock",
+          modelId: "mock-model",
+          doGenerate: async () => ({
+            content: [{ type: "text", text: "LLM:non-streaming" }],
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
+              outputTokens: { total: 1, text: 1, reasoning: undefined }
+            },
+            warnings: []
+          })
+        })
+      }
+    },
+    turn: {
+      intent: { type: "chat" },
+      toolCalls: [],
+      toolResult: { type: "chat" }
+    },
+    fallbackResponse
+  });
+
+  assert.equal(response.text, "LLM:non-streaming");
+  assert.equal(response.llm.provider, "mock");
+  assert.equal(response.llm.streaming, false);
+  assert.equal(response.llm.usage, null);
+});
+
 test("assistant-ui style reload parentId points to the user message itself", () => {
   const messages = [
     { id: "u1", role: "user", text: "first" },
@@ -1110,6 +1204,18 @@ test("applyLlmProviderProfile updates provider defaults and keeps api key", () =
   assert.equal(settings.model, "openai/gpt-4o-mini");
   assert.equal(settings.apiKey, "sk-keep");
   assert.equal(settings.capabilities.streaming, true);
+});
+
+test("sanitizeLlmSettings keeps valid fallback provider ids only", () => {
+  const settings = sanitizeLlmSettings({
+    fallback: {
+      enabled: true,
+      providerIds: ["openrouter", "missing-provider", ""]
+    }
+  });
+
+  assert.equal(settings.fallback.enabled, true);
+  assert.deepEqual(settings.fallback.providerIds, ["openrouter"]);
 });
 
 test("deriveConversationTitle uses first user message excerpt", () => {

@@ -1,5 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { LlmClientError } from "./llm-client.js";
+import { LlmClientError } from "./llm-error.js";
 
 const DEFAULT_PROVIDER_ID = "openai-compatible";
 const DEFAULT_CAPABILITIES = {
@@ -11,12 +11,23 @@ const DEFAULT_CAPABILITIES = {
 
 export function resolveLlmModel(llmSettings) {
   validateLlmSettings(llmSettings);
+  if (llmSettings.modelInstance) {
+    const providerId = normalizeProviderId(llmSettings.providerId ?? llmSettings.provider);
+    const capabilities = resolveCapabilities(llmSettings);
+    return {
+      model: llmSettings.modelInstance,
+      provider: {
+        id: providerId,
+        label: llmSettings.providerLabel ?? providerId,
+        source: "ai-sdk",
+        compatibility: llmSettings.compatibility ?? "openai-compatible",
+        capabilities
+      }
+    };
+  }
 
   const providerId = normalizeProviderId(llmSettings.providerId ?? llmSettings.provider);
-  const capabilities = {
-    ...DEFAULT_CAPABILITIES,
-    ...(llmSettings.capabilities && typeof llmSettings.capabilities === "object" ? llmSettings.capabilities : {})
-  };
+  const capabilities = resolveCapabilities(llmSettings);
   const provider = createOpenAICompatible({
     name: providerId,
     apiKey: String(llmSettings.apiKey).trim(),
@@ -33,6 +44,13 @@ export function resolveLlmModel(llmSettings) {
       compatibility: llmSettings.compatibility ?? "openai-compatible",
       capabilities
     }
+  };
+}
+
+function resolveCapabilities(llmSettings) {
+  return {
+    ...DEFAULT_CAPABILITIES,
+    ...(llmSettings.capabilities && typeof llmSettings.capabilities === "object" ? llmSettings.capabilities : {})
   };
 }
 
@@ -68,6 +86,18 @@ export function normalizeLlmError(error) {
   }
 
   return new LlmClientError("LLM_UPSTREAM_ERROR", message || "模型调用失败。", { status, detail: error });
+}
+
+export function shouldFallbackProvider(error) {
+  const code = error?.code ?? "LLM_UNKNOWN_ERROR";
+  return [
+    "LLM_RATE_LIMIT",
+    "LLM_UPSTREAM_ERROR",
+    "LLM_NETWORK_OR_CORS",
+    "LLM_TIMEOUT",
+    "LLM_HTTP_ERROR",
+    "LLM_UNKNOWN_ERROR"
+  ].includes(code);
 }
 
 function validateLlmSettings(llmSettings) {
