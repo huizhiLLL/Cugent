@@ -54,10 +54,6 @@ export const defaultLlmSettings = {
   providerLabel: defaultProviderProfile.label,
   compatibility: defaultProviderProfile.compatibility,
   capabilities: defaultProviderProfile.capabilities,
-  fallback: {
-    enabled: false,
-    providerIds: []
-  },
   baseUrl: defaultProviderProfile.defaultBaseUrl,
   apiKey: "",
   model: defaultProviderProfile.defaultModel
@@ -105,23 +101,9 @@ export function sanitizeLlmSettings(input) {
       ...profile.capabilities,
       ...(input?.capabilities && typeof input.capabilities === "object" ? input.capabilities : {})
     },
-    fallback: sanitizeLlmFallback(input?.fallback),
     baseUrl,
     apiKey: String(input?.apiKey || ""),
     model
-  };
-}
-
-function sanitizeLlmFallback(input) {
-  const providerIds = Array.isArray(input?.providerIds)
-    ? input.providerIds
-      .map((providerId) => String(providerId ?? "").trim())
-      .filter((providerId) => providerId && llmProviderProfiles.some((profile) => profile.id === providerId))
-    : [];
-
-  return {
-    enabled: Boolean(input?.enabled),
-    providerIds
   };
 }
 

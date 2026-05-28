@@ -1206,18 +1206,6 @@ test("applyLlmProviderProfile updates provider defaults and keeps api key", () =
   assert.equal(settings.capabilities.streaming, true);
 });
 
-test("sanitizeLlmSettings keeps valid fallback provider ids only", () => {
-  const settings = sanitizeLlmSettings({
-    fallback: {
-      enabled: true,
-      providerIds: ["openrouter", "missing-provider", ""]
-    }
-  });
-
-  assert.equal(settings.fallback.enabled, true);
-  assert.deepEqual(settings.fallback.providerIds, ["openrouter"]);
-});
-
 test("deriveConversationTitle uses first user message excerpt", () => {
   assert.equal(
     deriveConversationTitle("  帮我分析这次 F2L 1 为什么会卡住  "),

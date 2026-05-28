@@ -88,18 +88,6 @@ export function normalizeLlmError(error) {
   return new LlmClientError("LLM_UPSTREAM_ERROR", message || "模型调用失败。", { status, detail: error });
 }
 
-export function shouldFallbackProvider(error) {
-  const code = error?.code ?? "LLM_UNKNOWN_ERROR";
-  return [
-    "LLM_RATE_LIMIT",
-    "LLM_UPSTREAM_ERROR",
-    "LLM_NETWORK_OR_CORS",
-    "LLM_TIMEOUT",
-    "LLM_HTTP_ERROR",
-    "LLM_UNKNOWN_ERROR"
-  ].includes(code);
-}
-
 function validateLlmSettings(llmSettings) {
   if (!llmSettings || llmSettings.enabled === false) {
     throw new LlmClientError("LLM_DISABLED", "当前未启用 LLM。");

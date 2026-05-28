@@ -51,7 +51,7 @@
 - 建立长会话上下文治理：裁剪、摘要、solve 上下文优先级。
 - 强化 LLM 输出约束，提升“引用工具证据”的稳定性。
 - 完整化工具调用态：参数摘要、结果状态、可能的多工具顺序展示。
-- 基于 provider profile/capabilities 继续扩展 provider fallback UI、多 API Key 管理和按模型能力切换工具策略。
+- 基于 provider profile/capabilities 继续扩展按模型能力切换工具策略；不做多 provider 凭据管理或自动切换备用 provider。
 
 ## Phase 4：播放与可视化
 

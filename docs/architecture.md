@@ -118,7 +118,7 @@ Cubing Domain Tools
 - 语义路由仍偏粗，尚未形成 `intent + subIntent` 的稳定结构。
 - 长会话下的上下文压缩、裁剪和摘要策略尚未建立。
 - 工具调用态已有第一版，但参数摘要、事件流和多工具顺序展示仍不完整。
-- 多 provider profile 已有第一版，能力降级已覆盖 tools / streaming / usage。provider fallback 当前只有配置结构和错误策略，尚未自动切换，因为不同 provider 往往需要独立 API Key。
+- provider 配置保持单一当前服务：用户只选择一个模型服务并保存一套本地 API 配置。能力降级已覆盖 tools / streaming / usage；LLM 失败时只退回本地摘要，不自动切换备用 provider。
 
 ### Cubing Domain Tools
 
