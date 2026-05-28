@@ -647,7 +647,7 @@ ${smartInput.segmentedSolution}`.trim();
             >
               <Menu />
             </TooltipIconButton>
-            <span className="sidebar-label brand-title">Cugent</span>
+            <img className="sidebar-label brand-logo" src="/cugent-wordmark.png" alt="Cugent" />
           </div>
           <nav className="sidebar-nav">
             <Button type="button" variant="ghost" className="sidebar-action" onClick={createConversation} title="新建对话">
@@ -705,7 +705,7 @@ ${smartInput.segmentedSolution}`.trim();
             onPointerUp={handleDrawerPointerUp}
           >
             <div className="mobile-drawer-brand">
-              <span className="brand-title">Cugent</span>
+              <img className="brand-logo" src="/cugent-wordmark.png" alt="Cugent" />
             </div>
             <nav className="mobile-drawer-nav">
               <Button type="button" variant="ghost" className="sidebar-action" onClick={createConversation}>
