@@ -1165,7 +1165,7 @@ test("buildChatCompletionMessages flattens prompt parts to plain string content"
   ]);
 });
 
-test("sanitizeLlmSettings trims baseUrl and keeps explicit values", () => {
+test("sanitizeLlmSettings trims baseUrl and locks default provider model", () => {
   const settings = sanitizeLlmSettings({
     enabled: true,
     baseUrl: "https://api.deepseek.com/v1///",
@@ -1178,6 +1178,20 @@ test("sanitizeLlmSettings trims baseUrl and keeps explicit values", () => {
   assert.equal(settings.compatibility, "openai-compatible");
   assert.equal(settings.capabilities.tools, true);
   assert.equal(settings.baseUrl, "https://api.deepseek.com/v1");
+  assert.equal(settings.apiKey, "sk-test");
+  assert.equal(settings.model, defaultLlmSettings.model);
+});
+
+test("sanitizeLlmSettings keeps explicit model for custom compatible provider", () => {
+  const settings = sanitizeLlmSettings({
+    providerId: "custom-openai-compatible",
+    baseUrl: "https://api.example.com/v1///",
+    apiKey: "sk-test",
+    model: "gpt-4o-mini"
+  });
+
+  assert.equal(settings.providerId, "custom-openai-compatible");
+  assert.equal(settings.baseUrl, "https://api.example.com/v1");
   assert.equal(settings.apiKey, "sk-test");
   assert.equal(settings.model, "gpt-4o-mini");
 });

@@ -75,7 +75,9 @@ export function saveLlmSettings(settings) {
 export function sanitizeLlmSettings(input) {
   const profile = findLlmProviderProfile(input?.providerId ?? input?.provider);
   const baseUrl = normalizeBaseUrl(input?.baseUrl || profile.defaultBaseUrl);
-  const model = String(input?.model || profile.defaultModel);
+  const model = profile.id === "custom-openai-compatible"
+    ? String(input?.model || profile.defaultModel)
+    : profile.defaultModel;
 
   return {
     enabled: input?.enabled !== false,

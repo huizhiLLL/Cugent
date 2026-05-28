@@ -39,7 +39,7 @@
 - 支持用户继续追问局部阶段、单步、单公式。已完成基础路径。
 - 支持前端配置 OpenAI 兼容接口。已完成“自定义 LLM”设置项。
 - 引入 AI SDK / assistant-ui 生态规范 agent loop 和工具协议。已完成第一步：tool registry 使用 Zod schema + AI SDK tools，LLM tool loop 改为 `streamText + stopWhen`，provider 兼容集中到 `llm-provider.js`。
-- 扩展 provider profile/capabilities。已完成第一版：前端设置支持 DeepSeek 和自定义 OpenAI 兼容接口，并保存 provider capabilities 供 runtime 使用；DeepSeek 隐藏 API 地址输入。
+- 扩展 provider profile/capabilities。已完成第一版：前端设置支持 DeepSeek 和自定义 OpenAI 兼容接口，并保存 provider capabilities 供 runtime 使用；DeepSeek 隐藏 API 地址和模型名输入。
 - 统一普通 LLM 润色调用。已完成：`enhanceAgentTurnResponse` 从手写 `/chat/completions` 和 SSE 解析迁到 AI SDK，并根据 `streaming / usage` capabilities 降级。
 - 支持消息级复制、编辑、删除、重试。已完成第一版。
 - 支持会话级新建、重命名、删除、排序。已完成第一版。

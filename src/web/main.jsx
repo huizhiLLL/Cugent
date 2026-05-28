@@ -899,10 +899,10 @@ ${smartInput.segmentedSolution}`.trim();
         </Dialog>
 
         <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
-          <DialogContent className="settings-dialog-content sm:max-w-5xl" showCloseButton={false}>
-            <DialogHeader className="sr-only">
-              <DialogTitle>设置</DialogTitle>
-              <DialogDescription>配置模型服务、API Key 和模型名。</DialogDescription>
+            <DialogContent className="settings-dialog-content sm:max-w-5xl" showCloseButton={false}>
+              <DialogHeader className="sr-only">
+                <DialogTitle>设置</DialogTitle>
+              <DialogDescription>配置模型服务和 API Key。</DialogDescription>
             </DialogHeader>
             <DialogClose asChild>
               <Button variant="ghost" size="icon-sm" className="settings-close-button" aria-label="关闭设置">
@@ -994,18 +994,20 @@ ${smartInput.segmentedSolution}`.trim();
                         placeholder="sk-..."
                       />
                     </label>
-                    <label className="settings-row settings-row-field">
-                      <div className="settings-row-heading">
-                        <span className="settings-row-label">模型名</span>
-                        <span className="settings-row-help">例如 `deepseek-v4-flash`</span>
-                      </div>
-                      <Input
-                        className="settings-input"
-                        value={llmSettingsDraft.model}
-                        onChange={(event) => updateLlmSettings("model", event.target.value)}
-                        placeholder="deepseek-v4-flash"
-                      />
-                    </label>
+                    {shouldShowModelName(llmSettingsDraft) ? (
+                      <label className="settings-row settings-row-field">
+                        <div className="settings-row-heading">
+                          <span className="settings-row-label">模型名</span>
+                          <span className="settings-row-help">填写兼容接口中的模型名称</span>
+                        </div>
+                        <Input
+                          className="settings-input"
+                          value={llmSettingsDraft.model}
+                          onChange={(event) => updateLlmSettings("model", event.target.value)}
+                          placeholder="deepseek-v4-flash"
+                        />
+                      </label>
+                    ) : null}
                     <div className="settings-form-actions">
                       <Button type="button" variant="ghost" onClick={resetLlmSettings}>
                         恢复默认
@@ -1099,5 +1101,9 @@ function getLastAssistantContext(messages) {
 }
 
 function shouldShowApiBaseUrl(settings) {
+  return settings?.providerId === "custom-openai-compatible";
+}
+
+function shouldShowModelName(settings) {
   return settings?.providerId === "custom-openai-compatible";
 }
