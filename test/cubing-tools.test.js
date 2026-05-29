@@ -21,7 +21,17 @@ import {
   simplifyAlgMoves,
   traceCubeState
 } from "../src/cubing-tools/index.js";
-import { buildChatCompletionMessages, buildPromptMessages, composeResponse, detectIntent, runAgentTurn } from "../src/agent-runtime/index.js";
+import {
+  applyAgentEventToAssistantMessage,
+  buildChatCompletionMessages,
+  buildPromptMessages,
+  composeResponse,
+  createAgentRuntimeRequest,
+  detectIntent,
+  getAgentToolSchemas,
+  getUserFacingLlmError,
+  runAgentTurn
+} from "../src/agent-runtime/index.js";
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "../src/web/chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, sanitizeChatState } from "../src/web/chat-storage.js";
 import { applyLlmProviderProfile, defaultLlmSettings, sanitizeLlmSettings } from "../src/web/llm-settings.js";
@@ -806,9 +816,10 @@ test("runAgentTurn keeps fallback response when llm enhancer fails", async () =>
 
   assert.equal(turn.intent.type, "chat");
   assert.equal(turn.response.kind, "chat-fallback");
-  assert.match(turn.response.text, /聊天模型接口当前无法从浏览器直接访问/);
+  assert.match(turn.response.text, /暂时连不上模型服务/);
   assert.equal(turn.response.llm.status, "fallback");
   assert.equal(turn.response.llm.error.code, "LLM_NETWORK_OR_CORS");
+  assert.equal(turn.response.llm.error.detail, "跨域失败");
 });
 
 test("runAgentTurn uses llm response enhancer for solve import narration", async () => {
@@ -965,6 +976,38 @@ test("assistant-ui style reload parentId points to the user message itself", () 
 
   assert.equal(userIndex, 0);
   assert.equal(messages[userIndex].role, "user");
+});
+
+test("agent runtime contract builds request context and running message updates", () => {
+  const request = createAgentRuntimeRequest({
+    message: "给我一个 OLL 27 公式",
+    context: { selectedSegmentId: "f2l-1" },
+    llmSettings: defaultLlmSettings
+  });
+
+  assert.equal(request.version, 1);
+  assert.equal(request.message, "给我一个 OLL 27 公式");
+  assert.equal(request.context.selectedSegmentId, "f2l-1");
+  assert.equal(request.context.llmSettings.providerId, "deepseek");
+
+  const message = applyAgentEventToAssistantMessage(
+    {
+      id: "a1",
+      role: "assistant",
+      text: "",
+      response: { kind: "streaming", evidence: [], nextActions: [] }
+    },
+    {
+      text: "正在检索公式…",
+      toolCalls: [{ name: "search_algorithms", status: "running" }]
+    },
+    defaultLlmSettings
+  );
+
+  assert.equal(message.text, "正在检索公式…");
+  assert.equal(message.response.llm.status, "running");
+  assert.equal(message.response.llm.provider, "deepseek");
+  assert.equal(message.toolCalls[0].name, "search_algorithms");
 });
 
 test("composeResponse handles chat fallback", () => {
@@ -1145,6 +1188,28 @@ test("buildPromptMessages skips playback link instruction when no candidate link
   });
 
   assert.match(messages[0].content[0].text, /不需要额外输出链接/);
+});
+
+test("getAgentToolSchemas exposes documented tool contract", () => {
+  const schemas = getAgentToolSchemas();
+  const names = schemas.map((schema) => schema.function.name);
+
+  assert.deepEqual(names, [
+    "create_solve_review",
+    "inspect_solve_segment",
+    "search_algorithms",
+    "build_playback_link"
+  ]);
+  assert.match(schemas[0].function.description, /导入一次 3x3 solve/);
+  assert.ok(schemas[0].function.parameters);
+});
+
+test("getUserFacingLlmError maps provider errors to player-facing copy", () => {
+  const userError = getUserFacingLlmError(new LlmClientError("LLM_AUTH_FAILED", "鉴权失败，请检查 API Key 或接口权限。"));
+
+  assert.equal(userError.code, "LLM_AUTH_FAILED");
+  assert.equal(userError.message, "API Key 可能不正确，或者当前账号没有权限使用这个模型。");
+  assert.equal(userError.detail, "鉴权失败，请检查 API Key 或接口权限。");
 });
 
 test("buildChatCompletionMessages flattens prompt parts to plain string content", () => {

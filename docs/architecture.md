@@ -75,6 +75,7 @@ Cubing Domain Tools
 - 如果当前 provider profile 标记 `streaming: false`，普通 LLM 润色会走 AI SDK 非流式 `generateText` 分支。
 - provider 兼容层集中在 `src/agent-runtime/llm-provider.js`：当前主路径使用 `@ai-sdk/openai-compatible`，并读取前端保存的 `providerId / compatibility / capabilities`。后续接入 OpenAI / Anthropic / Google 等原生 provider 时优先扩展这一层，而不是在业务 runtime 中分散判断厂商。
 - 工具协议集中在 `src/agent-runtime/tool-registry.js`：每个工具统一维护 description、Zod input schema、execute 和模型输出映射，并导出 AI SDK tools 给 agent loop 使用。
+- 工具协议文档见 `docs/agent-tools.md`；工具名、输入 schema、主要输出字段和 `contextPatch` 视为 agent contract，修改时需要同步更新文档和契约测试。
 - agent loop 当前可调用的核心工具包括：
   - `create_solve_review`
   - `inspect_solve_segment`

@@ -17,7 +17,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { runAgentTurn } from "../agent-runtime/index.js";
+import {
+  applyAgentEventToAssistantMessage,
+  applyCancelledTurnToAssistantMessage,
+  applyCompletedTurnToAssistantMessage,
+  applyFailedTurnToAssistantMessage,
+  applyTextDeltaToAssistantMessage,
+  applyTurnReadyToAssistantMessage,
+  createAgentRuntimeRequest,
+  createRunningAssistantResponse,
+  runAgentTurn
+} from "../agent-runtime/index.js";
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "./chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, loadChatState, saveChatState } from "./chat-storage.js";
 import {
@@ -103,16 +113,7 @@ function App() {
         ...conversationItem.messages,
         createMessage("assistant", "", {
           id: assistantMessageId,
-          response: {
-            kind: "streaming",
-            evidence: [],
-            nextActions: [],
-            llm: {
-              enabled: true,
-              status: "running",
-              source: "openai-compatible"
-            }
-          },
+          response: createRunningAssistantResponse(llmSettingsDraft),
           status: {
             type: "running"
           }
@@ -123,15 +124,17 @@ function App() {
 
     try {
       const llmSettings = sanitizeLlmSettings(llmSettingsDraft);
+      const agentRequest = createAgentRuntimeRequest({
+        message: trimmed,
+        context: baseContext,
+        llmSettings
+      });
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
       const turn = await runAgentTurn(
-        trimmed,
-        {
-          ...baseContext,
-          llmSettings
-        },
+        agentRequest.message,
+        agentRequest.context,
         {
           onTurnReady: (readyTurn) => {
             updateConversationById(conversationId, (conversationItem) => ({
@@ -141,26 +144,12 @@ function App() {
                   return item;
                 }
 
-                return {
-                  ...item,
-                  text: item.text || getPendingAssistantText(readyTurn),
-                  response: {
-                    ...readyTurn.response,
-                    llm: readyTurn.response?.llm ?? {
-                      enabled: llmSettings.enabled,
-                      status: "running",
-                      source: llmSettings.compatibility,
-                      provider: llmSettings.providerId,
-                      model: llmSettings.model,
-                      streaming: true
-                    }
-                  },
-                  intent: readyTurn.intent.type,
-                  toolCalls: readyTurn.toolCalls,
-                  status: {
-                    type: "running"
-                  }
-                };
+                return applyTurnReadyToAssistantMessage(
+                  item,
+                  readyTurn,
+                  llmSettings,
+                  getPendingAssistantText(readyTurn)
+                );
               }),
               updatedAt: new Date().toISOString()
             }));
@@ -173,26 +162,7 @@ function App() {
                   return item;
                 }
 
-                return {
-                  ...item,
-                  text: agentEvent.text || item.text || "正在判断是否需要调用工具…",
-                  response: {
-                    ...(item.response ?? { kind: "streaming", evidence: [], nextActions: [] }),
-                    toolCalls: agentEvent.toolCalls?.length ? agentEvent.toolCalls : item.response?.toolCalls ?? [],
-                    llm: {
-                      enabled: true,
-                      status: "running",
-                      source: llmSettings.compatibility,
-                      provider: llmSettings.providerId,
-                      model: llmSettings.model,
-                      streaming: true
-                    }
-                  },
-                  toolCalls: agentEvent.toolCalls?.length ? agentEvent.toolCalls : item.toolCalls ?? [],
-                  status: {
-                    type: "running"
-                  }
-                };
+                return applyAgentEventToAssistantMessage(item, agentEvent, llmSettings);
               }),
               updatedAt: new Date().toISOString()
             }));
@@ -206,26 +176,7 @@ function App() {
                   return item;
                 }
 
-                return {
-                  ...item,
-                  text: nextText,
-                  response: {
-                    ...(item.response ?? { kind: "streaming", evidence: [], nextActions: [] }),
-                    llm: {
-                      enabled: true,
-                      status: "running",
-                      source: llmSettings.compatibility,
-                      provider: llmSettings.providerId,
-                      model: llmMeta?.model ?? null,
-                      responseId: llmMeta?.id ?? null,
-                      usage: llmMeta?.usage ?? null,
-                      streaming: true
-                    }
-                  },
-                  status: {
-                    type: "running"
-                  }
-                };
+                return applyTextDeltaToAssistantMessage(item, nextText, llmMeta, llmSettings);
               }),
               updatedAt: new Date().toISOString()
             }));
@@ -241,26 +192,7 @@ function App() {
               return item;
             }
 
-            return {
-              ...item,
-              text: item.text || "已停止生成。",
-              response: {
-                ...(item.response ?? turn.response),
-                llm: {
-                  ...(turn.response?.llm ?? item.response?.llm ?? {}),
-                  enabled: false,
-                  status: "cancelled",
-                  error: {
-                    code: "LLM_ABORTED",
-                    message: "已停止生成。"
-                  }
-                }
-              },
-              status: {
-                type: "incomplete",
-                reason: "cancelled"
-              }
-            };
+            return applyCancelledTurnToAssistantMessage(item, turn);
           }),
           updatedAt: new Date().toISOString()
         }));
@@ -276,17 +208,7 @@ function App() {
             return item;
           }
 
-          return {
-            ...item,
-            text: turn.response.text,
-            response: turn.response,
-            intent: turn.intent.type,
-            toolCalls: turn.toolCalls,
-            contextSnapshot: nextContext,
-            status: turn.response?.llm?.status === "cancelled"
-              ? { type: "incomplete", reason: "cancelled" }
-              : { type: "complete", reason: "stop" }
-          };
+          return applyCompletedTurnToAssistantMessage(item, turn, nextContext);
         }),
         updatedAt: new Date().toISOString()
       }));
@@ -298,27 +220,7 @@ function App() {
             return item;
           }
 
-          return {
-            ...item,
-            text: `处理失败：${error.message}`,
-            response: {
-              kind: "error",
-              evidence: [],
-              nextActions: [],
-              llm: {
-                enabled: false,
-                status: "fallback",
-                error: {
-                  code: "TURN_FAILED",
-                  message: String(error?.message ?? "未知错误")
-                }
-              }
-            },
-            status: {
-              type: "incomplete",
-              reason: "error"
-            }
-          };
+          return applyFailedTurnToAssistantMessage(item, error);
         }),
         updatedAt: new Date().toISOString()
       }));
