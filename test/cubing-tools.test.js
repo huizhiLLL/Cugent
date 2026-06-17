@@ -30,6 +30,7 @@ import {
   detectIntent,
   getAgentToolSchemas,
   getUserFacingLlmError,
+  normalizeLlmError,
   runAgentTurn
 } from "../src/agent-runtime/index.js";
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "../src/web/chat-editing.js";
@@ -1267,6 +1268,17 @@ test("getUserFacingLlmError maps provider errors to player-facing copy", () => {
   assert.equal(userError.code, "LLM_AUTH_FAILED");
   assert.equal(userError.message, "API Key 可能不正确，或者当前账号没有权限使用这个模型。");
   assert.equal(userError.detail, "鉴权失败，请检查 API Key 或接口权限。");
+});
+
+test("normalizeLlmError classifies non-auth 4xx as client errors", () => {
+  const error = normalizeLlmError({
+    status: 404,
+    message: "model not found"
+  });
+
+  assert.equal(error.code, "LLM_CLIENT_ERROR");
+  assert.equal(error.status, 404);
+  assert.match(getUserFacingLlmError(error).message, /模型请求被服务拒绝/);
 });
 
 test("buildChatCompletionMessages flattens prompt parts to plain string content", () => {

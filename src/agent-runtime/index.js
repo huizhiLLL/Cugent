@@ -21,4 +21,5 @@ export {
   joinChatCompletionsUrl
 } from "./llm-client.js";
 export { LlmClientError } from "./llm-error.js";
+export { normalizeLlmError } from "./llm-provider.js";
 export { buildChatLlmFallbackText, getUserFacingLlmError } from "./llm-error-presenter.js";

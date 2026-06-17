@@ -5,6 +5,7 @@ const USER_ERROR_MESSAGES = {
   LLM_MODEL_MISSING: "模型服务还没有配置完整。",
   LLM_AUTH_FAILED: "API Key 可能不正确，或者当前账号没有权限使用这个模型。",
   LLM_RATE_LIMIT: "模型服务现在有点忙，可以稍后再试。",
+  LLM_CLIENT_ERROR: "模型请求被服务拒绝，请检查模型名、接口地址或请求参数。",
   LLM_UPSTREAM_ERROR: "模型服务暂时不可用，可以稍后再试。",
   LLM_NETWORK_OR_CORS: "暂时连不上模型服务，请检查网络或当前服务是否允许网页访问。",
   LLM_TIMEOUT: "模型响应超时了，可以稍后重试。",

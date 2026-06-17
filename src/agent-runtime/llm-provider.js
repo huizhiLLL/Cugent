@@ -75,6 +75,9 @@ export function normalizeLlmError(error) {
   if (status === 429) {
     return new LlmClientError("LLM_RATE_LIMIT", "接口触发限流，请稍后重试。", { status, detail: error });
   }
+  if (status >= 400 && status < 500) {
+    return new LlmClientError("LLM_CLIENT_ERROR", "模型请求被拒绝，请检查模型名、接口地址或请求参数。", { status, detail: error });
+  }
   if (status >= 500) {
     return new LlmClientError("LLM_UPSTREAM_ERROR", "模型服务暂时不可用，请稍后再试。", { status, detail: error });
   }
