@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
-import { Menu, MessageSquarePlus, Pencil, Settings2, Sparkles, Trash2 } from "lucide-react";
+import { Menu, MessageSquarePlus, Settings2, Sparkles } from "lucide-react";
+import { ConversationList } from "@/components/conversation-list";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Thread } from "@/components/thread";
 import { Button } from "@/components/ui/button";
@@ -592,29 +593,14 @@ ${smartInput.segmentedSolution}`.trim();
               <MessageSquarePlus data-icon="inline-start" />
               <span className="sidebar-label">新建对话</span>
             </Button>
-            <div className="conversation-history" aria-label="对话历史">
-              {sortedConversations.map((conversation) => (
-                <div className="history-row" key={conversation.id}>
-                  <Button
-                    type="button"
-                    variant={conversation.id === chatState.currentConversationId ? "secondary" : "ghost"}
-                    className="history-item"
-                    title={conversation.title}
-                    onClick={() => openConversation(conversation.id)}
-                  >
-                    <span className="sidebar-label history-item-label">{conversation.title}</span>
-                  </Button>
-                  <div className="history-item-tools">
-                    <TooltipIconButton tooltip="重命名会话" variant="ghost" size="icon" className="history-tool-button" onClick={() => renameConversation(conversation.id)}>
-                      <Pencil />
-                    </TooltipIconButton>
-                    <TooltipIconButton tooltip="删除会话" variant="ghost" size="icon" className="history-tool-button" onClick={() => deleteConversation(conversation.id)}>
-                      <Trash2 />
-                    </TooltipIconButton>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ConversationList
+              conversations={sortedConversations}
+              currentConversationId={chatState.currentConversationId}
+              labelClassName="sidebar-label history-item-label"
+              onOpenConversation={openConversation}
+              onRenameConversation={renameConversation}
+              onDeleteConversation={deleteConversation}
+            />
           </nav>
           <div className="sidebar-footer">
             <TooltipIconButton
@@ -650,29 +636,13 @@ ${smartInput.segmentedSolution}`.trim();
                 <MessageSquarePlus data-icon="inline-start" />
                 <span>新建对话</span>
               </Button>
-              <div className="conversation-history" aria-label="对话历史">
-                {sortedConversations.map((conversation) => (
-                  <div className="history-row" key={conversation.id}>
-                    <Button
-                      type="button"
-                      variant={conversation.id === chatState.currentConversationId ? "secondary" : "ghost"}
-                      className="history-item"
-                      title={conversation.title}
-                      onClick={() => openConversation(conversation.id)}
-                    >
-                      <span className="history-item-label">{conversation.title}</span>
-                    </Button>
-                    <div className="history-item-tools">
-                      <TooltipIconButton tooltip="重命名会话" variant="ghost" size="icon" className="history-tool-button" onClick={() => renameConversation(conversation.id)}>
-                        <Pencil />
-                      </TooltipIconButton>
-                      <TooltipIconButton tooltip="删除会话" variant="ghost" size="icon" className="history-tool-button" onClick={() => deleteConversation(conversation.id)}>
-                        <Trash2 />
-                      </TooltipIconButton>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ConversationList
+                conversations={sortedConversations}
+                currentConversationId={chatState.currentConversationId}
+                onOpenConversation={openConversation}
+                onRenameConversation={renameConversation}
+                onDeleteConversation={deleteConversation}
+              />
             </nav>
             <div className="mobile-drawer-footer">
               <TooltipIconButton
