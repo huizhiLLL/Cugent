@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
 import { Menu, MessageSquarePlus, Pencil, Settings2, Sparkles, Trash2 } from "lucide-react";
@@ -29,7 +29,7 @@ import {
   runAgentTurn
 } from "../agent-runtime/index.js";
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "./chat-editing.js";
-import { createEmptyConversation, deriveConversationTitle, loadChatState, saveChatState } from "./chat-storage.js";
+import { createEmptyConversation, deriveConversationTitle, loadChatState } from "./chat-storage.js";
 import {
   applyLlmProviderProfile,
   defaultLlmSettings,
@@ -38,6 +38,7 @@ import {
   saveLlmSettings,
   sanitizeLlmSettings
 } from "./llm-settings.js";
+import { usePersistChatState } from "./use-persist-chat-state.js";
 import { XIcon } from "lucide-react";
 import "./styles.css";
 
@@ -78,9 +79,7 @@ function App() {
   const messages = currentConversation?.messages ?? [];
   const context = currentConversation?.context ?? {};
 
-  useEffect(() => {
-    saveChatState(chatState);
-  }, [chatState]);
+  const flushChatState = usePersistChatState(chatState);
 
   async function submitMessage(nextInput, { appendUser = true, conversationIdOverride, contextOverride } = {}) {
     const trimmed = nextInput.trim();
@@ -196,6 +195,7 @@ function App() {
           }),
           updatedAt: new Date().toISOString()
         }));
+        flushChatState();
         return;
       }
 
@@ -212,6 +212,7 @@ function App() {
         }),
         updatedAt: new Date().toISOString()
       }));
+      flushChatState();
     } catch (error) {
       updateConversationById(conversationId, (conversationItem) => ({
         ...conversationItem,
@@ -224,6 +225,7 @@ function App() {
         }),
         updatedAt: new Date().toISOString()
       }));
+      flushChatState();
     } finally {
       abortControllerRef.current = null;
       setBusy(false);
