@@ -255,8 +255,7 @@ button {
 }
 
 .sidebar-action:active,
-.mobile-menu-button:active,
-.composer button:active {
+.mobile-menu-button:active {
   transform: scale(0.95);
 }
 
@@ -324,15 +323,6 @@ button {
   letter-spacing: 0;
 }
 
-.eyebrow {
-  margin: 0 0 2px;
-  color: var(--text-muted);
-  font-family: var(--font-serif);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
 h1,
 h2,
 h3,
@@ -357,54 +347,6 @@ h3 {
   margin-bottom: 10px;
   font-size: 0.98rem;
   font-weight: 600;
-}
-
-.message-list {
-  overflow: auto;
-  padding: 56px 48px 22px;
-}
-
-.message {
-  display: flex;
-  margin-bottom: 24px;
-}
-
-.message.user {
-  justify-content: end;
-}
-
-.message.user .bubble {
-  max-width: 620px;
-  background: #eef4f5;
-}
-
-.bubble {
-  min-width: 0;
-  padding: 15px 16px;
-  border-radius: 14px;
-  background: transparent;
-}
-
-.message.assistant .bubble {
-  max-width: 780px;
-}
-
-.bubble p {
-  margin-bottom: 10px;
-  white-space: pre-wrap;
-  font-size: 1.03rem;
-}
-
-.intent {
-  display: inline-flex;
-  margin-bottom: 10px;
-  padding: 2px 8px;
-  border-radius: 7px;
-  color: var(--accent-dark);
-  background: #eaf4f3;
-  font-family: var(--font-serif);
-  font-size: 0.72rem;
-  font-weight: 700;
 }
 
 .response-details {
@@ -463,24 +405,6 @@ h3 {
 
 .response-details-playback {
   animation-delay: 130ms;
-}
-
-.llm-status {
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--text-muted);
-  background: #f8fbfc;
-  font-size: 0.8rem;
-}
-
-.llm-status-running {
-  color: var(--accent-dark);
-}
-
-.llm-status-fallback,
-.llm-status-cancelled {
-  color: var(--warn);
 }
 
 .aui-tool-fallback-root {
@@ -630,20 +554,6 @@ code {
   font-size: 0.82rem;
 }
 
-.tool-call-json {
-  margin: 0;
-  padding: 9px 10px;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-raised);
-  color: color-mix(in oklch, var(--foreground) 76%, var(--accent-dark));
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  line-height: 1.45;
-  white-space: pre-wrap;
-}
-
 .tool-call-summary {
   display: grid;
   gap: 3px;
@@ -722,54 +632,6 @@ code {
   min-height: 280px;
 }
 
-.composer {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
-  max-width: 860px;
-  width: calc(100% - 96px);
-  margin: 0 auto 24px;
-  padding: 12px;
-  border: 1px solid var(--line-strong);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: var(--shadow-input);
-}
-
-.composer textarea {
-  width: 100%;
-  min-height: 42px;
-  max-height: 180px;
-  resize: none;
-  overflow-y: auto;
-  padding: 8px 12px;
-  border: 0;
-  outline: none;
-  color: var(--ink);
-  background: transparent;
-  line-height: 1.55;
-}
-
-.attach-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: end;
-  width: 42px;
-  height: 42px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  color: #51606d;
-  background: var(--surface-soft);
-  cursor: pointer;
-  transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
-}
-
-.attach-button:hover {
-  border-color: rgba(63, 117, 114, 0.32);
-  background: #eef7f6;
-}
-
 .smart-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -786,19 +648,6 @@ code {
   font-family: var(--font-serif);
   font-size: 0.76rem;
   font-weight: 650;
-}
-
-.toggle-field {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.toggle-field input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent-dark);
 }
 
 .smart-fields input,
@@ -823,92 +672,13 @@ code {
 }
 
 .smart-fields input:focus,
-.smart-fields textarea:focus,
-.composer textarea:focus {
+.smart-fields textarea:focus {
   border-color: rgba(63, 117, 114, 0.38);
-}
-
-.composer textarea::placeholder {
-  color: var(--placeholder);
 }
 
 .smart-fields input::placeholder,
 .smart-fields textarea::placeholder {
   color: var(--placeholder);
-}
-
-.composer button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  align-self: end;
-  min-width: 92px;
-  height: 42px;
-  border: 0;
-  border-radius: 14px;
-  color: var(--on-accent);
-  background: var(--accent-dark);
-  cursor: pointer;
-  transition: transform 120ms ease, background-color 120ms ease, opacity 120ms ease;
-}
-
-.composer button:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(23, 32, 42, 0.18);
-  backdrop-filter: blur(10px);
-}
-
-.smart-dialog {
-  width: min(620px, 100%);
-  max-height: min(760px, calc(100vh - 48px));
-  overflow: auto;
-  padding: 18px;
-  border: 1px solid var(--line-strong);
-  border-radius: 18px;
-  background: var(--surface);
-  box-shadow: 0 24px 80px rgba(29, 43, 58, 0.16);
-}
-
-.smart-dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.smart-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 2px;
-}
-
-.smart-dialog-actions button {
-  min-width: 82px;
-  height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  color: #51606d;
-  background: var(--surface-soft);
-  cursor: pointer;
-}
-
-.smart-dialog-actions button[type="submit"] {
-  border-color: transparent;
-  color: var(--on-accent);
-  background: var(--accent-dark);
 }
 
 .smart-dialog-content {
@@ -1469,34 +1239,6 @@ twisty-player {
     grid-template-rows: minmax(520px, auto);
   }
 
-  .message-list {
-    padding: 24px 16px 10px;
-    overflow: visible;
-  }
-
-  .message.user .bubble {
-    max-width: 100%;
-  }
-
-  .composer {
-    grid-template-columns: auto 1fr;
-    width: calc(100% - 32px);
-  }
-
-  .composer button[type="submit"] {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-
-  .modal-backdrop {
-    align-items: end;
-    padding: 12px;
-  }
-
-  .smart-dialog {
-    max-height: calc(100vh - 24px);
-    border-radius: 16px;
-  }
 }
 
 @theme inline {
