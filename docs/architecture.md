@@ -32,7 +32,7 @@ Cubing Domain Tools
   |-- buildPlaybackUrl
 ```
 
-当前仓库先实现 `Cubing Domain Tools` 和轻量 `Agent Runtime` 的最小 PoC。
+当前仓库已实现 `Cubing Domain Tools`、轻量 `Agent Runtime` 和第一版 React AI Chat 客户端闭环。
 
 ## 关键边界
 
@@ -47,6 +47,7 @@ Cubing Domain Tools
 - 移动端顶部栏：品牌名左侧提供菜单按钮，点按或从屏幕左侧边缘右滑可打开对话历史抽屉；抽屉支持左滑隐藏。
 - 主 chat 工作区：assistant-ui `Thread` 承载消息流和输入框。空会话时显示居中的简单问候与输入框；首条消息发出后切换为常规消息流和底部输入框。输入框保持普通聊天形态，`+` 扩展打开添加内容面板，其中只保留“智能魔方”结构化导入入口。
 - 会话历史已切到真实状态：对话标题、消息和 solve 上下文保存在浏览器本地存储中，支持切换与恢复。
+- 会话状态持久化通过 `usePersistChatState` 延迟写入，并在取消、失败、完成等关键路径 flush，降低流式回复期间的同步存储压力。
 - solve 的结构化分析详情不再直接混在 assistant 正文里，而是以单独的工具态展开块呈现；LLM 正文只负责自然语言整理结果。
 - 移动端保留同一套单栏 chat 体验。
 
@@ -56,6 +57,8 @@ Cubing Domain Tools
 
 - 前端负责消息流、LLM 设置录入与本地保存。
 - 前端负责会话状态持久化、会话管理和消息级交互（复制、编辑、删除、重试）。
+- 前端流式文本增量先保存在独立 `streamingMessage` state 中，避免每个 token 都重写完整会话树；最终 turn 完成后再写回消息。
+- `ConversationList`、`Sidebar`、`MobileHistoryDrawer` 已抽为纯展示组件；顶层 `main.jsx` 仍负责运行时编排、弹窗状态和提交/取消流程。
 - `runAgentTurn` 仍负责本地 intent 判断、工具路由和 fallback。
 - 前端设置已从单一自定义接口升级为 provider profile：当前只内置 DeepSeek 和自定义 OpenAI 兼容接口。每个 profile 提供默认 base URL、默认模型、兼容类型和 capabilities。
 - DeepSeek 使用内置接口地址和默认模型 `deepseek-v4-flash`，前端不展示 API 地址和模型名输入；自定义兼容接口允许手动调整接口基地址和模型名。运行时由 `@ai-sdk/openai-compatible` provider 统一处理请求路径、streaming 和工具调用。
@@ -72,16 +75,17 @@ Cubing Domain Tools
 - 本地规则 fallback 仍保留：`solve-import`、`algorithm-query`、`local-followup` 和普通 `chat`。
 - 当用户消息明显与魔方工具相关且已启用 LLM 时，runtime 会优先尝试基于 AI SDK `streamText + stopWhen` 的 agent loop。
 - 如果当前 provider profile 标记 `tools: false`，runtime 会跳过 LLM tool loop，改走本地规则工具链，再用 LLM 做非事实润色。
-- 如果当前 provider profile 标记 `streaming: false`，普通 LLM 润色会走 AI SDK 非流式 `generateText` 分支。
+- 如果当前 provider profile 标记 `streaming: false`，普通 LLM 润色会走 AI SDK 非流式 `generateText` 分支；agent tool loop 当前仍依赖 streaming，后续需要按 capabilities 做更细降级。
 - provider 兼容层集中在 `src/agent-runtime/llm-provider.js`：当前主路径使用 `@ai-sdk/openai-compatible`，并读取前端保存的 `providerId / compatibility / capabilities`。后续接入 OpenAI / Anthropic / Google 等原生 provider 时优先扩展这一层，而不是在业务 runtime 中分散判断厂商。
 - 工具协议集中在 `src/agent-runtime/tool-registry.js`：每个工具统一维护 description、Zod input schema、execute 和模型输出映射，并导出 AI SDK tools 给 agent loop 使用。
 - 工具协议文档见 `docs/agent-tools.md`；工具名、输入 schema、主要输出字段和 `contextPatch` 视为 agent contract，修改时需要同步更新文档和契约测试。
-- agent loop 当前可调用的核心工具包括：
+- agent loop 和本地 fallback 复用同一份 tool registry。当前可调用的核心工具包括：
   - `create_solve_review`
   - `inspect_solve_segment`
   - `search_algorithms`
   - `build_playback_link`
 - reasoning / thinking 内容交给 AI SDK provider 抽象处理；业务 runtime 不再手写 SSE chunk 拼接和 tool call 轮次协议。
+- LLM 输出中的 Markdown 播放链接会做后置清理，只允许 `alg.cubing.net` 目标保留为可点击动画链接。
 - 非错误型工具结果：把 `toolResult`、`response-composer` 输出和当前上下文一起交给模型润色。
 - LLM prompt 按 `chat / solve-import / algorithm-query / local-followup` 做第一版分层。
 - assistant 回复最终拆成两层呈现：
@@ -116,9 +120,10 @@ Cubing Domain Tools
 
 当前 AI 相关主要缺口：
 
-- 语义路由仍偏粗，尚未形成 `intent + subIntent` 的稳定结构。
-- 长会话下的上下文压缩、裁剪和摘要策略尚未建立。
-- 工具调用态已有第一版，但参数摘要、事件流和多工具顺序展示仍不完整。
+- 语义路由仍偏粗，尚未形成 `intent + subIntent` 的稳定结构。单字母 PLL 误判已收紧，但算法查询、替换建议和局部追问还没有更细 subIntent。
+- 长会话下的历史窗口、上下文压缩、裁剪和摘要策略尚未建立；agent loop 当前只注入当前 solve 的压缩上下文和当前用户消息。
+- 工具调用态已有第一版，但参数摘要、状态字段、错误判定和多工具顺序展示仍不完整。
+- agent runtime 仍有两条 LLM 路径：工具型 turn 尝试 agent loop，其他 turn 走本地规则结果加 LLM 润色。后续需要进一步收敛职责边界。
 - provider 配置保持单一当前服务：用户只选择一个模型服务并保存一套本地 API 配置。能力降级已覆盖 tools / streaming / usage；LLM 失败时只退回本地摘要，不自动切换备用 provider。
 
 ### Cubing Domain Tools
@@ -242,9 +247,25 @@ PoC 阶段需要的流程是：
 - `data/algorithms/*.json`：本地公式库快照。
 - `src/cubing-tools/index.js`：工具导出入口。
 - `src/agent-runtime/intent-detector.js`：轻量意图识别。
-- `src/agent-runtime/agent-runtime.js`：工具路由与上下文 patch。
+- `src/agent-runtime/agent-runtime.js`：agent turn 入口、工具路由、本地 fallback 与上下文 patch。
+- `src/agent-runtime/agent-contract.js`：assistant-ui 消息与 agent turn 的适配契约。
+- `src/agent-runtime/llm-agent-loop.js`：AI SDK `streamText` 工具循环。
+- `src/agent-runtime/llm-client.js`：普通 LLM 润色路径。
+- `src/agent-runtime/llm-provider.js`：OpenAI 兼容 provider 解析与能力配置。
+- `src/agent-runtime/llm-error*.js`：LLM 错误分类与用户可见错误文案。
+- `src/agent-runtime/tool-registry.js`：Zod 工具 schema、AI SDK tools 暴露与本地 fallback 工具执行入口。
 - `src/agent-runtime/response-composer.js`：结构化结果到中文 fallback 回复。
-- `src/web/main.jsx`：最小 Web 客户端入口。
-- `src/web/styles.css`：Web 客户端样式。
+- `src/components/thread.jsx`：assistant-ui Thread、消息、输入框和消息操作。
+- `src/components/conversation-list.jsx`：会话历史列表。
+- `src/components/sidebar.jsx`：桌面端侧边栏。
+- `src/components/mobile-history-drawer.jsx`：移动端历史抽屉。
+- `src/components/cube-response-details.jsx`：结构化复盘详情工具态展示。
+- `src/components/playback-preview.jsx`：本地 `twisty-player` 播放预览。
+- `src/web/main.jsx`：Web 客户端顶层编排、弹窗与运行时桥接。
+- `src/web/chat-storage.js`：会话状态本地存储与清洗。
+- `src/web/use-persist-chat-state.js`：会话状态延迟持久化。
+- `src/web/chat-editing.js`：编辑消息时的会话重建逻辑。
+- `src/web/llm-settings.js`：LLM provider profile 与本地设置。
+- `src/web/styles.css`：Web 客户端全局样式与主题 token。
 - `scripts/agent-poc.js`：agent runtime 演示脚本。
 - `scripts/poc.js`：内置样例验证脚本。

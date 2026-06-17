@@ -8,6 +8,7 @@
 - `runAgentTurn` 负责判断是否进入 LLM agent loop；不能进入时走本地规则 fallback。
 - LLM agent loop 只能通过 registry 中的工具获取魔方事实，不允许自行编造阶段、case、公式、TPS、停顿或播放链接。
 - 工具执行结果会返回 `toolResult`、面向模型的压缩 `content`，以及需要写回会话的 `contextPatch`。
+- 本地规则 fallback 与 LLM agent loop 共用同一份 registry，避免工具输入、输出和上下文写回策略分叉。
 
 ## 返回结构
 
@@ -24,6 +25,8 @@
 - `toolResult`：runtime 内部使用的结构化结果，可供 fallback composer 和最终 turn 使用。
 - `content`：传给模型的压缩结果，避免把过大的 solve 对象完整塞进 prompt。
 - `contextPatch`：需要合并进会话上下文的增量，例如 `currentSolveReview`、`selectedSegmentId`。
+
+当前工具返回还没有统一的顶层 `status` 字段；调用方需要根据 `toolResult.type === "error"` 判断业务错误。后续若补 `status: "ok" | "error"`，需要同步本文档、runtime 适配和契约测试。
 
 工具错误统一返回：
 
@@ -119,6 +122,7 @@
 - `toolResult.result`: 完整搜索结果
 - `content.results`: 推荐公式摘要，包含 id、名称、case、公式、指标和 playback
 - `contextPatch.lastAlgorithmQuery`: 实际查询条件
+- `contextPatch.lastIntent`: 当前未写入，后续若 algorithm query 需要更强上下文续问，可补充并配套测试。
 
 ### `build_playback_link`
 
@@ -146,6 +150,6 @@
 
 ## 版本与维护
 
-- 工具名、输入字段和主要输出字段视为 agent contract 的一部分，修改时需要同步更新本文档和相关测试。
+- 工具名、输入字段、主要输出字段和 `contextPatch` 字段视为 agent contract 的一部分，修改时需要同步更新本文档和相关测试。
 - 新增工具时优先补 Zod schema、压缩 `content`、上下文写回策略和一条契约测试。
 - 面向用户的回复不直接展示工具协议字段；这些字段只服务 runtime、测试和开发态排查。
