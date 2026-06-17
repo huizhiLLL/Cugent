@@ -36,9 +36,10 @@ export async function enhanceAgentTurnResponse({
         throw new LlmClientError("LLM_EMPTY_RESPONSE", "LLM 返回内容为空。");
       }
 
+      const safeText = sanitizePlaybackMarkdownLinks(text);
       return {
         ...fallbackResponse,
-        text,
+        text: safeText,
         llm: buildLlmMeta({
           provider,
           modelId: result.response?.modelId,
@@ -87,9 +88,10 @@ export async function enhanceAgentTurnResponse({
       throw new LlmClientError("LLM_EMPTY_RESPONSE", "LLM 返回内容为空。");
     }
 
+    const safeText = sanitizePlaybackMarkdownLinks(text);
     return {
       ...fallbackResponse,
-      text,
+      text: safeText,
       llm: buildLlmMeta({
         provider,
         modelId: responseModel,
@@ -101,6 +103,23 @@ export async function enhanceAgentTurnResponse({
   } catch (error) {
     throw normalizeLlmError(error);
   }
+}
+
+export function sanitizePlaybackMarkdownLinks(text) {
+  return String(text ?? "").replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (match, label, rawUrl) => {
+    let url;
+    try {
+      url = new URL(rawUrl);
+    } catch {
+      return label;
+    }
+
+    if (url.hostname !== "alg.cubing.net") {
+      return label;
+    }
+
+    return match;
+  });
 }
 
 export function buildPromptMessages({ message, context, turn, fallbackResponse }) {

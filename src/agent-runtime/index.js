@@ -18,7 +18,8 @@ export {
   enhanceAgentTurnResponse,
   buildPromptMessages,
   extractChatCompletionText,
-  joinChatCompletionsUrl
+  joinChatCompletionsUrl,
+  sanitizePlaybackMarkdownLinks
 } from "./llm-client.js";
 export { LlmClientError } from "./llm-error.js";
 export { normalizeLlmError } from "./llm-provider.js";

@@ -36,7 +36,7 @@ import {
 import { buildEditedConversation, resolveEditedUserMessageIndex } from "../src/web/chat-editing.js";
 import { createEmptyConversation, deriveConversationTitle, sanitizeChatState } from "../src/web/chat-storage.js";
 import { applyLlmProviderProfile, defaultLlmSettings, sanitizeLlmSettings } from "../src/web/llm-settings.js";
-import { enhanceAgentTurnResponse, extractChatCompletionText, joinChatCompletionsUrl, LlmClientError } from "../src/agent-runtime/index.js";
+import { enhanceAgentTurnResponse, extractChatCompletionText, joinChatCompletionsUrl, LlmClientError, sanitizePlaybackMarkdownLinks } from "../src/agent-runtime/index.js";
 
 test("parseTimedMoves parses cstimer style review field", () => {
   const moves = parseTimedMoves(`["U'@0 R@125 L2@389","333"]`);
@@ -1019,6 +1019,16 @@ test("enhanceAgentTurnResponse uses non-streaming AI SDK path when streaming is 
   assert.equal(response.llm.provider, "mock");
   assert.equal(response.llm.streaming, false);
   assert.equal(response.llm.usage, null);
+});
+
+test("sanitizePlaybackMarkdownLinks strips non alg.cubing.net markdown urls", () => {
+  const text = sanitizePlaybackMarkdownLinks(
+    "推荐 [T perm](https://alg.cubing.net/?alg=R_U&view=playback)，不要点 [错链](https://example.com/?alg=R_U)。"
+  );
+
+  assert.match(text, /\[T perm\]\(https:\/\/alg\.cubing\.net\/\?alg=R_U&view=playback\)/);
+  assert.match(text, /不要点 错链。/);
+  assert.ok(!text.includes("example.com"));
 });
 
 test("assistant-ui style reload parentId points to the user message itself", () => {
