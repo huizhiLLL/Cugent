@@ -19,6 +19,7 @@
   --surface: #ffffff;
   --surface-soft: color-mix(in oklch, var(--muted) 72%, var(--background));
   --surface-hover: color-mix(in oklch, var(--muted) 88%, var(--background));
+  --surface-raised: color-mix(in oklch, var(--muted) 36%, var(--background));
   --sidebar: oklch(0.985 0 0);
   --ink: #17202a;
   --text-muted: #6b7580;
@@ -27,6 +28,8 @@
   --line-strong: color-mix(in oklch, var(--border) 100%, var(--foreground) 6%);
   --accent: oklch(0.97 0 0);
   --accent-dark: #113231;
+  --on-accent: var(--primary-foreground);
+  --placeholder: color-mix(in oklch, var(--muted-foreground) 70%, var(--background));
   --good: #4f7d66;
   --warn: #a8743a;
   --icon-size: 1rem;
@@ -589,7 +592,7 @@ h3 {
 .response-details ul {
   margin: 0;
   padding-left: 20px;
-  color: #494741;
+  color: var(--muted-foreground);
 }
 
 .mini-section {
@@ -622,7 +625,7 @@ h3 {
 
 code {
   overflow-wrap: anywhere;
-  color: #315f5c;
+  color: color-mix(in oklch, var(--foreground) 76%, var(--accent-dark));
   font-family: var(--font-mono);
   font-size: 0.82rem;
 }
@@ -633,8 +636,8 @@ code {
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f8fbfc;
-  color: #315f5c;
+  background: var(--surface-raised);
+  color: color-mix(in oklch, var(--foreground) 76%, var(--accent-dark));
   font-family: var(--font-mono);
   font-size: 0.78rem;
   line-height: 1.45;
@@ -648,7 +651,7 @@ code {
 
 .tool-call-summary p {
   margin: 0;
-  color: #494741;
+  color: var(--muted-foreground);
   font-size: 0.8rem;
   line-height: 1.5;
 }
@@ -662,7 +665,7 @@ code {
   padding: 9px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f8fbfc;
+  background: var(--surface-raised);
 }
 
 .aui-md-playback-inline {
@@ -680,7 +683,7 @@ code {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #f8fbfc;
+  background: var(--surface-raised);
 }
 
 .twisty-preview-inline-toolbar {
@@ -805,7 +808,7 @@ code {
   border-radius: 10px;
   outline: none;
   color: var(--ink);
-  background: #fbfcfd;
+  background: var(--surface-raised);
 }
 
 .smart-fields input {
@@ -826,12 +829,12 @@ code {
 }
 
 .composer textarea::placeholder {
-  color: #9a968d;
+  color: var(--placeholder);
 }
 
 .smart-fields input::placeholder,
 .smart-fields textarea::placeholder {
-  color: #9a968d;
+  color: var(--placeholder);
 }
 
 .composer button {
@@ -844,7 +847,7 @@ code {
   height: 42px;
   border: 0;
   border-radius: 14px;
-  color: #fffdfa;
+  color: var(--on-accent);
   background: var(--accent-dark);
   cursor: pointer;
   transition: transform 120ms ease, background-color 120ms ease, opacity 120ms ease;
@@ -904,7 +907,7 @@ code {
 
 .smart-dialog-actions button[type="submit"] {
   border-color: transparent;
-  color: #fffdfa;
+  color: var(--on-accent);
   background: var(--accent-dark);
 }
 
@@ -1121,7 +1124,7 @@ code {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #fffdfa;
+  background: var(--on-accent);
   box-shadow:
     0 2px 8px rgba(17, 24, 39, 0.18),
     0 1px 2px rgba(17, 24, 39, 0.1);
@@ -1169,18 +1172,18 @@ code {
 }
 
 .aui-edit-composer-send {
-  color: #fffdfa;
+  color: var(--on-accent);
   background: var(--accent-dark);
   box-shadow: 0 8px 18px color-mix(in oklch, var(--accent-dark) 18%, transparent);
 }
 
 .aui-edit-composer-send:hover {
-  color: #fffdfa;
+  color: var(--on-accent);
   background: color-mix(in oklch, var(--accent-dark) 88%, black);
 }
 
 .aui-edit-composer-send:disabled {
-  color: #fffdfa;
+  color: var(--on-accent);
   background: color-mix(in oklch, var(--accent-dark) 72%, white);
 }
 
@@ -1190,7 +1193,7 @@ code {
 }
 
 .dialog-primary-button {
-  color: #fffdfa;
+  color: var(--on-accent);
   background: var(--accent-dark);
 }
 
@@ -1199,7 +1202,7 @@ code {
 }
 
 .dialog-primary-button:disabled {
-  color: #fffdfa;
+  color: var(--on-accent);
   background: color-mix(in oklch, var(--accent-dark) 72%, white);
   opacity: 1;
 }
@@ -1227,7 +1230,7 @@ code {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #f8fbfc;
+  background: var(--surface-raised);
 }
 
 .twisty-preview.compact {
@@ -1284,7 +1287,7 @@ twisty-player {
 .formula-line {
   display: block;
   padding-top: 2px;
-  color: #456564;
+  color: color-mix(in oklch, var(--muted-foreground) 72%, var(--accent-dark));
   background: transparent;
   text-align: center;
 }
