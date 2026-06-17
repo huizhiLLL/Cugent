@@ -1,10 +1,9 @@
 import React, { useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui/react";
-import { MessageSquarePlus, Settings2, Sparkles } from "lucide-react";
-import { ConversationList } from "@/components/conversation-list";
+import { Sparkles } from "lucide-react";
+import { MobileHistoryDrawer } from "@/components/mobile-history-drawer";
 import { Sidebar } from "@/components/sidebar";
-import { TooltipIconButton } from "@/components/tooltip-icon-button";
 import { Thread } from "@/components/thread";
 import { Button } from "@/components/ui/button";
 import {
@@ -587,48 +586,19 @@ ${smartInput.segmentedSolution}`.trim();
           onOpenSettings={() => setSettingsDialogOpen(true)}
         />
 
-        <div
-          className="mobile-history-backdrop"
-          data-open={mobileHistoryOpen}
-          aria-hidden={!mobileHistoryOpen}
-          onClick={closeMobileHistory}
-        >
-          <aside
-            className="mobile-history-drawer"
-            aria-label="移动端对话历史"
-            aria-hidden={!mobileHistoryOpen}
-            onClick={(event) => event.stopPropagation()}
-            onPointerDown={handleDrawerPointerDown}
-            onPointerUp={handleDrawerPointerUp}
-          >
-            <div className="mobile-drawer-brand">
-              <img className="brand-logo" src="/cugent-wordmark.png" alt="Cugent" />
-            </div>
-            <nav className="mobile-drawer-nav">
-              <Button type="button" variant="ghost" className="sidebar-action" onClick={createConversation}>
-                <MessageSquarePlus data-icon="inline-start" />
-                <span>新建对话</span>
-              </Button>
-              <ConversationList
-                conversations={sortedConversations}
-                currentConversationId={chatState.currentConversationId}
-                onOpenConversation={openConversation}
-                onRenameConversation={renameConversation}
-                onDeleteConversation={deleteConversation}
-              />
-            </nav>
-            <div className="mobile-drawer-footer">
-              <TooltipIconButton
-                type="button"
-                className="sidebar-settings-button"
-                aria-label="打开设置"
-                onClick={() => setSettingsDialogOpen(true)}
-              >
-                <Settings2 />
-              </TooltipIconButton>
-            </div>
-          </aside>
-        </div>
+        <MobileHistoryDrawer
+          open={mobileHistoryOpen}
+          conversations={sortedConversations}
+          currentConversationId={chatState.currentConversationId}
+          onClose={closeMobileHistory}
+          onDrawerPointerDown={handleDrawerPointerDown}
+          onDrawerPointerUp={handleDrawerPointerUp}
+          onCreateConversation={createConversation}
+          onOpenConversation={openConversation}
+          onRenameConversation={renameConversation}
+          onDeleteConversation={deleteConversation}
+          onOpenSettings={() => setSettingsDialogOpen(true)}
+        />
 
         <section className="chat-pane" aria-label="Chat">
           <AssistantRuntimeProvider runtime={runtime}>
