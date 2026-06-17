@@ -911,6 +911,50 @@ test("runAgentTurn skips llm tool loop when provider tools are disabled", async 
   assert.equal(turn.response.llm.usage, null);
 });
 
+test("runAgentTurn returns cancelled turn when llm agent loop is aborted", async () => {
+  const abortController = new AbortController();
+  abortController.abort();
+  const events = [];
+  const turn = await runAgentTurn(
+    "给我一个 no-rotation 的 OLL 27 公式",
+    {
+      llmSettings: {
+        enabled: true,
+        providerId: "mock",
+        providerLabel: "Mock",
+        compatibility: "openai-compatible",
+        baseUrl: "https://example.test/v1",
+        apiKey: "sk-test",
+        model: "mock-model",
+        capabilities: {
+          tools: true,
+          streaming: true,
+          usage: false
+        },
+        modelInstance: new MockLanguageModelV3({
+          provider: "mock",
+          modelId: "mock-model",
+          doStream: async () => ({
+            stream: new ReadableStream(),
+            warnings: []
+          })
+        })
+      }
+    },
+    {
+      signal: abortController.signal,
+      onAgentEvent: (event) => events.push(event)
+    }
+  );
+
+  assert.equal(turn.intent.type, "chat");
+  assert.equal(turn.toolCalls.length, 0);
+  assert.equal(turn.response.llm.status, "cancelled");
+  assert.equal(turn.response.llm.error.code, "LLM_ABORTED");
+  assert.equal(turn.response.text, "已停止生成。");
+  assert.ok(!events.some((event) => event.type === "loop-error"));
+});
+
 test("enhanceAgentTurnResponse uses non-streaming AI SDK path when streaming is disabled", async () => {
   const fallbackResponse = {
     kind: "chat-fallback",

@@ -20,7 +20,19 @@ export async function runAgentTurn(message, context = {}, options = {}) {
       });
       return withPreparedResponse(loopTurn);
     } catch (error) {
-      // 如果 agent loop 失败，继续退回当前本地规则链路。
+      if (error?.code === "LLM_ABORTED") {
+        return buildAbortedTurn(error);
+      }
+
+      if (!isConfigError(error?.code)) {
+        console.warn("[agent-loop] fallback due to", error?.code, error?.message);
+        options.onAgentEvent?.({
+          type: "loop-error",
+          phase: "fallback",
+          code: error?.code ?? "LLM_UNKNOWN_ERROR",
+          text: "AI 工具链路暂时不可用，已切回本地分析。"
+        });
+      }
     }
   }
 
@@ -78,6 +90,43 @@ function withPreparedResponse(turn) {
   };
 }
 
+function buildAbortedTurn(error) {
+  const userError = getUserFacingLlmError(error);
+  const response = {
+    kind: "chat-fallback",
+    text: userError.message,
+    evidence: [],
+    nextActions: [],
+    llm: {
+      enabled: false,
+      status: "cancelled",
+      source: "openai-compatible",
+      error: {
+        code: "LLM_ABORTED",
+        message: userError.message,
+        detail: userError.detail
+      }
+    }
+  };
+
+  return {
+    intent: {
+      type: "chat",
+      confidence: 0,
+      params: {}
+    },
+    toolCalls: [],
+    toolResult: {
+      type: "chat",
+      needsModelResponse: false,
+      message: userError.message
+    },
+    contextPatch: {},
+    response,
+    fallbackResponse: response
+  };
+}
+
 async function withResponse(turn, { message, context, options }) {
   const fallbackResponse = composeResponse(turn);
   options.onTurnReady?.({
@@ -126,6 +175,13 @@ async function maybeEnhanceResponse({ message, context, turn, fallbackResponse, 
 
 function shouldUseLlmResponse(turn) {
   return turn.toolResult?.type !== "error";
+}
+
+function isConfigError(code) {
+  return code === "LLM_DISABLED"
+    || code === "LLM_BASE_URL_MISSING"
+    || code === "LLM_API_KEY_MISSING"
+    || code === "LLM_MODEL_MISSING";
 }
 
 function shouldUseLlmAgentLoop(message, context, options) {

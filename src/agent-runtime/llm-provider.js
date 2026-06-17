@@ -59,6 +59,11 @@ export function normalizeLlmError(error) {
     return error;
   }
 
+  const causedError = findLlmClientErrorCause(error);
+  if (causedError) {
+    return causedError;
+  }
+
   if (error?.name === "AbortError") {
     return new LlmClientError("LLM_ABORTED", "已停止生成。");
   }
@@ -86,6 +91,24 @@ export function normalizeLlmError(error) {
   }
 
   return new LlmClientError("LLM_UPSTREAM_ERROR", message || "模型调用失败。", { status, detail: error });
+}
+
+function findLlmClientErrorCause(error) {
+  const seen = new Set();
+  let current = error;
+
+  while (current && typeof current === "object" && !seen.has(current)) {
+    seen.add(current);
+    if (current instanceof LlmClientError) {
+      return current;
+    }
+    if (current.code === "LLM_ABORTED") {
+      return new LlmClientError("LLM_ABORTED", "已停止生成。", { detail: current });
+    }
+    current = current.cause;
+  }
+
+  return null;
 }
 
 function validateLlmSettings(llmSettings) {

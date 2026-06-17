@@ -9,6 +9,10 @@ const MAX_TOOL_CALL_ROUNDS = 4;
 
 export async function runLlmAgentLoop({ message, context, options = {} }) {
   try {
+    if (options.signal?.aborted) {
+      throw new LlmClientError("LLM_ABORTED", "已停止生成。");
+    }
+
     const { model, provider } = resolveLlmModel(context?.llmSettings);
     const executedToolCalls = [];
     let latestContext = { ...(context ?? {}) };
