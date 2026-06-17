@@ -1,9 +1,9 @@
-import { createSolveReview, searchAlgorithms } from "../cubing-tools/index.js";
 import { detectIntent } from "./intent-detector.js";
 import { runLlmAgentLoop } from "./llm-agent-loop.js";
 import { enhanceAgentTurnResponse } from "./llm-client.js";
 import { buildChatLlmFallbackText, getUserFacingLlmError } from "./llm-error-presenter.js";
 import { composeResponse } from "./response-composer.js";
+import { executeAgentToolCall } from "./tool-registry.js";
 
 const BARE_PLL_CASE_PATTERN = /\b(Aa|Ab|Ua|Ub|Z|H|T|F|E|N|V|Y|Na|Nb|Ga|Gb|Gc|Gd|Ja|Jb|Ra|Rb)\b/i;
 
@@ -55,12 +55,12 @@ export async function runAgentTurn(message, context = {}, options = {}) {
   }
 
   if (intent.type === "algorithm-query") {
-    turn = runAlgorithmQuery(intent, context);
+    turn = await runAlgorithmQuery(intent, context);
     return withResponse(turn, { message, context, options });
   }
 
   if (intent.type === "local-followup") {
-    turn = runLocalFollowup(intent, context);
+    turn = await runLocalFollowup(intent, context);
     return withResponse(turn, { message, context, options });
   }
 
@@ -251,33 +251,18 @@ function attachLlmFallbackInfo(fallbackResponse, error, turn) {
 }
 
 async function runSolveImport(intent, context) {
-  if (!intent.params.scramble) {
-    return {
-      intent,
-      toolCalls: [],
-      toolResult: {
-        type: "error",
-        code: "MISSING_SCRAMBLE",
-        message: "导入 solve 需要提供 scramble。",
-        details: [
-          {
-            label: "缺少字段",
-            value: "scramble"
-          }
-        ]
-      },
-      contextPatch: {
-        lastImportError: {
-          code: "MISSING_SCRAMBLE",
-          message: "导入 solve 需要提供 scramble。"
-        }
-      }
-    };
-  }
-
-  let review;
   try {
-    review = await createSolveReview(intent.params);
+    const execution = await executeAgentToolCall({
+      name: "create_solve_review",
+      args: intent.params,
+      context
+    });
+    return buildToolTurn({
+      intent,
+      name: "create_solve_review",
+      args: sanitizeSolveArgs(intent.params),
+      execution
+    });
   } catch (error) {
     const importError = formatSolveImportError(error);
     return {
@@ -303,133 +288,57 @@ async function runSolveImport(intent, context) {
       }
     };
   }
+}
 
+async function runAlgorithmQuery(intent, context) {
+  const execution = await executeAgentToolCall({
+    name: "search_algorithms",
+    args: intent.params,
+    context
+  });
+  return buildToolTurn({
+    intent,
+    name: "search_algorithms",
+    args: intent.params,
+    execution
+  });
+}
+
+async function runLocalFollowup(intent, context) {
+  const execution = await executeAgentToolCall({
+    name: "inspect_solve_segment",
+    args: {
+      segmentId: intent.params.selectedSegmentId,
+      segmentLabel: intent.params.segmentLabel
+    },
+    context
+  });
+  return buildToolTurn({
+    intent,
+    name: "inspect_solve_segment",
+    args: {
+      segmentId: intent.params.selectedSegmentId,
+      segmentLabel: intent.params.segmentLabel
+    },
+    execution
+  });
+}
+
+function buildToolTurn({ intent, name, args, execution }) {
+  const isError = execution.toolResult?.type === "error";
   return {
     intent,
     toolCalls: [
       {
-        name: "createSolveReview",
-        args: sanitizeSolveArgs(intent.params),
-        status: "completed",
-        result: {
-          type: "solve-review",
-          summary: review.summary,
-          validation: review.validation,
-          segmentation: review.segmentation
-        }
+        name,
+        args,
+        status: isError ? "error" : "completed",
+        result: execution.content ?? execution.toolResult
       }
     ],
-    toolResult: {
-      type: "solve-review",
-      review
-    },
-    contextPatch: {
-      currentSolveReview: review,
-      lastImportError: null,
-      selectedSegmentId: null,
-      lastIntent: intent.type,
-      previousContextKeys: Object.keys(context)
-    }
+    toolResult: execution.toolResult,
+    contextPatch: execution.contextPatch ?? {}
   };
-}
-
-function runAlgorithmQuery(intent) {
-  const result = searchAlgorithms(intent.params);
-
-  return {
-    intent,
-    toolCalls: [
-      {
-        name: "searchAlgorithms",
-        args: intent.params,
-        status: "completed",
-        result: {
-          type: "algorithm-search",
-          total: result.total,
-          query: result.query
-        }
-      }
-    ],
-    toolResult: {
-      type: "algorithm-search",
-      result
-    },
-    contextPatch: {
-      lastAlgorithmQuery: intent.params
-    }
-  };
-}
-
-function runLocalFollowup(intent, context) {
-  const review = context.currentSolveReview;
-  if (!review) {
-    return {
-      intent,
-      toolCalls: [],
-      toolResult: {
-        type: "error",
-        code: "NO_SOLVE_CONTEXT",
-        message: "当前没有已导入的 solve，无法回答局部追问。"
-      },
-      contextPatch: {}
-    };
-  }
-
-  const segment = intent.params.selectedSegmentId
-    ? review.segments.find((item) => item.id === intent.params.selectedSegmentId)
-    : findSegment(review, intent.params.segmentLabel);
-  if (!segment) {
-    return {
-      intent,
-      toolCalls: [],
-      toolResult: {
-        type: "error",
-        code: "SEGMENT_NOT_FOUND",
-        message: `未找到分段：${intent.params.segmentLabel ?? intent.params.selectedSegmentId ?? "未指定"}`
-      },
-      contextPatch: {}
-    };
-  }
-
-  const stage = review.cfopAnalysis.stages.find((item) => item.segmentId === segment.id);
-  const suggestions = review.coachSuggestions.suggestions.filter((suggestion) => suggestion.target?.segmentId === segment.id);
-
-  return {
-    intent,
-    toolCalls: [
-      {
-        name: "readSolveContext",
-        args: {
-          segmentLabel: segment.label
-        },
-        status: "completed",
-        result: {
-          type: "segment-inspection",
-          segmentId: segment.id,
-          label: segment.label,
-          goal: stage?.goal ?? null
-        }
-      }
-    ],
-    toolResult: {
-      type: "segment-inspection",
-      segment,
-      stage,
-      suggestions
-    },
-    contextPatch: {
-      selectedSegmentId: segment.id,
-      lastIntent: intent.type
-    }
-  };
-}
-
-function findSegment(review, label) {
-  if (!label) {
-    return null;
-  }
-  const normalizedLabel = label.toLowerCase().replace(/\s+/g, " ").trim();
-  return review.segments.find((segment) => segment.label.toLowerCase().replace(/\s+/g, " ").trim() === normalizedLabel);
 }
 
 function shouldInspectSelectedSegment(message, context) {
@@ -449,6 +358,19 @@ function formatSolveImportError(error) {
       message: "没有识别到 timedMoves。",
       details: [
         { label: "需要格式", value: "timedMoves: U@0 R@120 ..." }
+      ]
+    };
+  }
+
+  if (/导入 solve 需要提供 scramble/.test(message)) {
+    return {
+      code: "MISSING_SCRAMBLE",
+      message: "导入 solve 需要提供 scramble。",
+      details: [
+        {
+          label: "缺少字段",
+          value: "scramble"
+        }
       ]
     };
   }

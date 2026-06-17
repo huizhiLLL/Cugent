@@ -707,6 +707,7 @@ U' R' // F2L 1
 
   assert.equal(solveTurn.intent.type, "solve-import");
   assert.equal(solveTurn.toolResult.type, "solve-review");
+  assert.equal(solveTurn.contextPatch.lastIntent, "solve-import");
   assert.equal(solveTurn.response.kind, "solve-review");
   assert.match(solveTurn.response.text, /已经导入/);
 
@@ -715,6 +716,7 @@ U' R' // F2L 1
   assert.equal(followupTurn.intent.type, "local-followup");
   assert.equal(followupTurn.toolResult.type, "segment-inspection");
   assert.equal(followupTurn.toolResult.segment.label, "F2L 1");
+  assert.equal(followupTurn.contextPatch.lastIntent, "local-followup");
   assert.equal(followupTurn.response.kind, "segment-inspection");
 });
 
@@ -780,7 +782,7 @@ test("runAgentTurn handles bare PLL case algorithm queries", async () => {
 
   assert.equal(turn.intent.type, "algorithm-query");
   assert.equal(turn.toolResult.type, "algorithm-search");
-  assert.equal(turn.toolCalls[0]?.name, "searchAlgorithms");
+  assert.equal(turn.toolCalls[0]?.name, "search_algorithms");
   assert.equal(turn.toolCalls[0]?.args?.set, "PLL");
   assert.equal(turn.toolCalls[0]?.args?.caseId, "Aa");
 });
@@ -905,7 +907,7 @@ test("runAgentTurn skips llm tool loop when provider tools are disabled", async 
   );
 
   assert.equal(turn.intent.type, "algorithm-query");
-  assert.equal(turn.toolCalls[0]?.name, "searchAlgorithms");
+  assert.equal(turn.toolCalls[0]?.name, "search_algorithms");
   assert.equal(turn.response.text, "LLM:local-tools");
   assert.equal(turn.response.llm.streaming, false);
   assert.equal(turn.response.llm.usage, null);
