@@ -66,6 +66,7 @@ function App() {
     title: ""
   });
   const [busy, setBusy] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState(null);
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const pointerStartRef = useRef(null);
   const [llmSettingsDraft, setLlmSettingsDraft] = useState(() => loadLlmSettings());
@@ -76,7 +77,23 @@ function App() {
     () => [...chatState.conversations].sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()),
     [chatState.conversations]
   );
-  const messages = currentConversation?.messages ?? [];
+  const storedMessages = currentConversation?.messages ?? [];
+  const messages = useMemo(() => {
+    if (!streamingMessage || streamingMessage.conversationId !== currentConversation?.id) {
+      return storedMessages;
+    }
+
+    return storedMessages.map((message) => (
+      message.id === streamingMessage.messageId
+        ? applyTextDeltaToAssistantMessage(
+          message,
+          streamingMessage.text,
+          streamingMessage.llmMeta,
+          streamingMessage.llmSettings
+        )
+        : message
+    ));
+  }, [currentConversation?.id, storedMessages, streamingMessage]);
   const context = currentConversation?.context ?? {};
 
   const flushChatState = usePersistChatState(chatState);
@@ -92,6 +109,7 @@ function App() {
     const baseContext = contextOverride ?? conversation?.context ?? {};
 
     setBusy(true);
+    setStreamingMessage(null);
     cancelRequestedRef.current = false;
     if (appendUser) {
       updateConversationById(conversationId, (conversationItem) => {
@@ -106,6 +124,13 @@ function App() {
     }
 
     const assistantMessageId = crypto.randomUUID();
+    setStreamingMessage({
+      conversationId,
+      messageId: assistantMessageId,
+      text: "",
+      llmMeta: null,
+      llmSettings: llmSettingsDraft
+    });
     updateConversationById(conversationId, (conversationItem) => ({
       ...conversationItem,
       messages: [
@@ -154,6 +179,10 @@ function App() {
             }));
           },
           onAgentEvent: (agentEvent) => {
+            if (agentEvent.phase === "answering") {
+              return;
+            }
+
             updateConversationById(conversationId, (conversationItem) => ({
               ...conversationItem,
               messages: conversationItem.messages.map((item) => {
@@ -168,17 +197,13 @@ function App() {
           },
           signal: abortController.signal,
           onTextDelta: (nextText, llmMeta) => {
-            updateConversationById(conversationId, (conversationItem) => ({
-              ...conversationItem,
-              messages: conversationItem.messages.map((item) => {
-                if (item.id !== assistantMessageId) {
-                  return item;
-                }
-
-                return applyTextDeltaToAssistantMessage(item, nextText, llmMeta, llmSettings);
-              }),
-              updatedAt: new Date().toISOString()
-            }));
+            setStreamingMessage({
+              conversationId,
+              messageId: assistantMessageId,
+              text: nextText,
+              llmMeta,
+              llmSettings
+            });
           }
         }
       );
@@ -195,6 +220,7 @@ function App() {
           }),
           updatedAt: new Date().toISOString()
         }));
+        setStreamingMessage(null);
         flushChatState();
         return;
       }
@@ -212,6 +238,7 @@ function App() {
         }),
         updatedAt: new Date().toISOString()
       }));
+      setStreamingMessage(null);
       flushChatState();
     } catch (error) {
       updateConversationById(conversationId, (conversationItem) => ({
@@ -225,6 +252,7 @@ function App() {
         }),
         updatedAt: new Date().toISOString()
       }));
+      setStreamingMessage(null);
       flushChatState();
     } finally {
       abortControllerRef.current = null;
@@ -264,6 +292,7 @@ function App() {
       currentConversationId: conversation.id,
       conversations: [conversation, ...previous.conversations]
     }));
+    setStreamingMessage(null);
     setSmartInput(emptySmartInput);
     setActionDialogOpen(false);
     setSmartDialogOpen(false);
@@ -360,6 +389,7 @@ ${smartInput.segmentedSolution}`.trim();
     });
     if (!nextConversation) return;
 
+    setStreamingMessage(null);
     updateConversationById(conversationId, (conversationItem) => ({
       ...conversationItem,
       title: nextConversation.title,
@@ -387,6 +417,7 @@ ${smartInput.segmentedSolution}`.trim();
     if (!userMessage || userMessage.role !== "user") return;
 
     const baseContext = getContextBeforeIndex(conversation.messages, userIndex);
+    setStreamingMessage(null);
     updateConversationById(conversationId, (conversationItem) => ({
       ...conversationItem,
       context: baseContext,
@@ -477,6 +508,9 @@ ${smartInput.segmentedSolution}`.trim();
       ? [...conversation.messages.slice(0, index), ...conversation.messages.slice(index + 2)]
       : [...conversation.messages.slice(0, index), ...conversation.messages.slice(index + 1)];
 
+    setStreamingMessage((previous) => (
+      previous?.messageId === messageId || previous?.messageId === next?.id ? null : previous
+    ));
     updateConversationById(conversationId, (conversationItem) => ({
       ...conversationItem,
       messages: nextMessages,
