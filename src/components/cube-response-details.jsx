@@ -18,8 +18,8 @@ export function CubeResponseDetails({ response, toolCalls = [] }) {
                 <span>{formatToolCallStatus(toolCall.status)}</span>
               </div>
               <div className="tool-call-summary">
-                {formatToolCallSummary(toolCall).map((line) => (
-                  <p key={line}>{line}</p>
+                {formatToolCallSummary(toolCall).map((line, lineIndex) => (
+                  <p key={`${toolCall.name}-${index}-${lineIndex}`}>{line}</p>
                 ))}
               </div>
             </div>
@@ -30,8 +30,8 @@ export function CubeResponseDetails({ response, toolCalls = [] }) {
       ) : null}
       {response.evidence?.length > 0 && (
         <ul className="response-details-block response-details-evidence">
-          {response.evidence.map((item) => (
-            <li key={item}>{item}</li>
+          {response.evidence.map((item, index) => (
+            <li key={`evidence-${index}`}>{item}</li>
           ))}
         </ul>
       )}
