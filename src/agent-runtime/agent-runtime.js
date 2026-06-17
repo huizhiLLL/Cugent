@@ -1,11 +1,9 @@
-import { detectIntent } from "./intent-detector.js";
+import { detectIntent, isLikelyPllCaseQuery } from "./intent-detector.js";
 import { runLlmAgentLoop } from "./llm-agent-loop.js";
 import { enhanceAgentTurnResponse } from "./llm-client.js";
 import { buildChatLlmFallbackText, getUserFacingLlmError } from "./llm-error-presenter.js";
 import { composeResponse } from "./response-composer.js";
 import { executeAgentToolCall } from "./tool-registry.js";
-
-const BARE_PLL_CASE_PATTERN = /\b(Aa|Ab|Ua|Ub|Z|H|T|F|E|N|V|Y|Na|Nb|Ga|Gb|Gc|Gd|Ja|Jb|Ra|Rb)\b/i;
 
 export async function runAgentTurn(message, context = {}, options = {}) {
   if (shouldUseLlmAgentLoop(message, context, options)) {
@@ -211,7 +209,7 @@ function isLikelyToolDrivenTurn(message, context) {
     context.currentSolveReview
     || shouldInspectSelectedSegment(message, context)
     || /scramble|timedMoves|segmentedSolution|OLL|PLL|Cross|F2L|公式|推荐|复盘|分析/i.test(rawMessage)
-    || BARE_PLL_CASE_PATTERN.test(rawMessage)
+    || isLikelyPllCaseQuery(rawMessage)
   );
 }
 

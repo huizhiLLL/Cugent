@@ -694,6 +694,17 @@ test("detectIntent recognizes bare PLL case names as algorithm queries", () => {
   assert.equal(intent.params.caseId, "Aa");
 });
 
+test("detectIntent does not treat ordinary single letters as PLL cases", () => {
+  assert.equal(detectIntent("T").type, "chat");
+  assert.equal(detectIntent("Y").type, "chat");
+
+  const intent = detectIntent("PLL T 公式");
+
+  assert.equal(intent.type, "algorithm-query");
+  assert.equal(intent.params.set, "PLL");
+  assert.equal(intent.params.caseId, "T");
+});
+
 test("runAgentTurn imports solve and answers local followup", async () => {
   const scramble = "R U R' U'";
   const solution = invertAlg(scramble);

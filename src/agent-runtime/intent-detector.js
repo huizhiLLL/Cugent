@@ -3,7 +3,9 @@ const SEGMENT_PATTERN = /\/\/\s*(Cross|F2L|OLL|PLL)/i;
 const SCRAMBLE_PATTERN = /^[ \t]*(?:scramble|打乱)[ \t]*[:：][ \t]*(.*)$/im;
 const TIMED_MOVES_PATTERN = /^[ \t]*(?:timedMoves|timed moves|moves|review|复盘)[ \t]*[:：][ \t]*([\s\S]*?)(?=^[ \t]*(?:(?:segmentedSolution|segmented solution|segments|solution|scramble|打乱)[ \t]*[:：])|\s*$)/im;
 const SEGMENTED_SOLUTION_PATTERN = /^[ \t]*(?:segmentedSolution|segmented solution|segments|solution|分段)[ \t]*[:：][ \t]*([\s\S]*)$/im;
-const PLL_CASE_PATTERN = /\b(Aa|Ab|Ua|Ub|Z|H|T|F|E|N|V|Y|Na|Nb|Ga|Gb|Gc|Gd|Ja|Jb|Ra|Rb)\b/i;
+export const PLL_CASE_PATTERN = /\b(Aa|Ab|Ua|Ub|Z|H|T|F|E|N|V|Y|Na|Nb|Ga|Gb|Gc|Gd|Ja|Jb|Ra|Rb)\b/i;
+const SINGLE_LETTER_PLL_CASE_PATTERN = /^(?:Z|H|T|F|E|N|V|Y)$/i;
+const PLL_CASE_CONTEXT_PATTERN = /\b(?:PLL|case|perm|permutation)\b|公式|算法|置换/i;
 
 export function detectIntent(message) {
   const text = String(message ?? "");
@@ -61,7 +63,7 @@ function extractSolveImportParams(text) {
 
 function extractAlgorithmQuery(text) {
   const explicitSet = text.match(/\b(F2L|OLL|PLL)\b/i)?.[1]?.toUpperCase();
-  const barePllCase = text.match(PLL_CASE_PATTERN)?.[1];
+  const barePllCase = extractLikelyPllCase(text);
   const hasAlgorithmCue = Boolean(explicitSet || barePllCase);
 
   if (!hasAlgorithmCue) {
@@ -88,6 +90,23 @@ function extractAlgorithmQuery(text) {
     caseId: caseId ?? barePllCase ?? null,
     tags
   };
+}
+
+export function isLikelyPllCaseQuery(text) {
+  return Boolean(extractLikelyPllCase(String(text ?? "")));
+}
+
+function extractLikelyPllCase(text) {
+  const pllCase = text.match(PLL_CASE_PATTERN)?.[1] ?? null;
+  if (!pllCase) {
+    return null;
+  }
+
+  if (!SINGLE_LETTER_PLL_CASE_PATTERN.test(pllCase)) {
+    return pllCase;
+  }
+
+  return PLL_CASE_CONTEXT_PATTERN.test(text) ? pllCase : null;
 }
 
 function extractSegmentQuery(text) {
