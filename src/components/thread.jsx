@@ -95,7 +95,7 @@ const ThreadScrollToBottom = () => {
   return (
     <ThreadPrimitive.ScrollToBottom asChild>
       <TooltipIconButton
-        tooltip="Scroll to bottom"
+        tooltip="滚动到底部"
         variant="outline"
         className="aui-thread-scroll-to-bottom absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible dark:border-border dark:bg-background dark:hover:bg-accent">
         <ArrowDownIcon />
@@ -124,11 +124,11 @@ const Composer = ({ onOpenSmartCube }) => {
           className="flex w-full flex-col gap-2 rounded-(--composer-radius) border bg-background p-(--composer-padding) transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20 data-[dragging=true]:border-ring data-[dragging=true]:border-dashed data-[dragging=true]:bg-accent/50">
           <ComposerAttachments />
           <ComposerPrimitive.Input
-            placeholder="Send a message..."
+            placeholder="发送消息..."
             className="aui-composer-input max-h-32 min-h-10 w-full resize-none bg-transparent px-1.75 py-1 text-sm outline-none placeholder:text-muted-foreground/80"
             rows={1}
             autoFocus
-            aria-label="Message input" />
+            aria-label="消息输入框" />
           <ComposerAction onOpenSmartCube={onOpenSmartCube} />
         </div>
       </ComposerPrimitive.AttachmentDropzone>
@@ -154,13 +154,13 @@ const ComposerAction = ({ onOpenSmartCube }) => {
       <AuiIf condition={(s) => !s.thread.isRunning}>
         <ComposerPrimitive.Send asChild>
           <TooltipIconButton
-            tooltip="Send message"
+            tooltip="发送消息"
             side="bottom"
             type="button"
             variant="default"
             size="icon"
             className="aui-composer-send size-8 rounded-full"
-            aria-label="Send message">
+            aria-label="发送消息">
             <ArrowUpIcon className="aui-composer-send-icon size-4" />
           </TooltipIconButton>
         </ComposerPrimitive.Send>
@@ -172,7 +172,7 @@ const ComposerAction = ({ onOpenSmartCube }) => {
             variant="default"
             size="icon"
             className="aui-composer-cancel size-8 rounded-full"
-            aria-label="Stop generating">
+            aria-label="停止生成">
             <SquareIcon className="aui-composer-cancel-icon size-3 fill-current" />
           </Button>
         </ComposerPrimitive.Cancel>
@@ -271,7 +271,7 @@ const AssistantActionBar = ({ onDeleteMessage }) => {
       hideWhenRunning
       className="aui-assistant-action-bar-root col-start-3 row-start-2 -ms-1 flex gap-1 text-muted-foreground">
       <ActionBarPrimitive.Copy asChild>
-        <TooltipIconButton>
+        <TooltipIconButton tooltip="复制回复">
           <AuiIf condition={(s) => s.message.isCopied}>
             <CheckIcon />
           </AuiIf>
@@ -281,16 +281,16 @@ const AssistantActionBar = ({ onDeleteMessage }) => {
         </TooltipIconButton>
       </ActionBarPrimitive.Copy>
       <ActionBarPrimitive.Reload asChild>
-        <TooltipIconButton>
+        <TooltipIconButton tooltip="重新生成">
           <RefreshCwIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.Reload>
-      <TooltipIconButton onClick={() => onDeleteMessage?.(messageId)}>
+      <TooltipIconButton tooltip="删除回复" onClick={() => onDeleteMessage?.(messageId)}>
         <Trash2Icon />
       </TooltipIconButton>
       <ActionBarMorePrimitive.Root>
         <ActionBarMorePrimitive.Trigger asChild>
-          <TooltipIconButton className="data-[state=open]:bg-accent">
+          <TooltipIconButton tooltip="更多操作" className="data-[state=open]:bg-accent">
             <MoreHorizontalIcon />
           </TooltipIconButton>
         </ActionBarMorePrimitive.Trigger>
@@ -302,7 +302,7 @@ const AssistantActionBar = ({ onDeleteMessage }) => {
             <ActionBarMorePrimitive.Item
               className="aui-action-bar-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
               <DownloadIcon className="size-4" />
-              Export as Markdown
+              导出为 Markdown
             </ActionBarMorePrimitive.Item>
           </ActionBarPrimitive.ExportMarkdown>
         </ActionBarMorePrimitive.Content>
@@ -356,7 +356,7 @@ const UserActionBar = ({ onDeleteMessage }) => {
       autohide="not-last"
       className="aui-user-action-bar-root flex flex-col items-end">
       <ActionBarPrimitive.Copy asChild>
-        <TooltipIconButton className="aui-user-action-copy p-4">
+        <TooltipIconButton tooltip="复制消息" className="aui-user-action-copy p-4">
           <AuiIf condition={(s) => s.message.isCopied}>
             <CheckIcon />
           </AuiIf>
@@ -367,12 +367,12 @@ const UserActionBar = ({ onDeleteMessage }) => {
       </ActionBarPrimitive.Copy>
       {canEdit ? (
         <ActionBarPrimitive.Edit asChild>
-          <TooltipIconButton className="aui-user-action-edit p-4">
+          <TooltipIconButton tooltip="编辑消息" className="aui-user-action-edit p-4">
             <PencilIcon />
           </TooltipIconButton>
         </ActionBarPrimitive.Edit>
       ) : null}
-      <TooltipIconButton className="aui-user-action-delete p-4" onClick={() => onDeleteMessage?.(messageId)}>
+      <TooltipIconButton tooltip="删除消息" className="aui-user-action-delete p-4" onClick={() => onDeleteMessage?.(messageId)}>
         <Trash2Icon />
       </TooltipIconButton>
     </ActionBarPrimitive.Root>
@@ -441,7 +441,7 @@ const BranchPicker = ({
       )}
       {...rest}>
       <BranchPickerPrimitive.Previous asChild>
-        <TooltipIconButton tooltip="Previous">
+        <TooltipIconButton tooltip="上一条分支">
           <ChevronLeftIcon />
         </TooltipIconButton>
       </BranchPickerPrimitive.Previous>
@@ -449,7 +449,7 @@ const BranchPicker = ({
         <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
       </span>
       <BranchPickerPrimitive.Next asChild>
-        <TooltipIconButton tooltip="Next">
+        <TooltipIconButton tooltip="下一条分支">
           <ChevronRightIcon />
         </TooltipIconButton>
       </BranchPickerPrimitive.Next>

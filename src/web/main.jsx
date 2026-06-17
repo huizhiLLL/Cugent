@@ -605,10 +605,10 @@ ${smartInput.segmentedSolution}`.trim();
                     <span className="sidebar-label history-item-label">{conversation.title}</span>
                   </Button>
                   <div className="history-item-tools">
-                    <TooltipIconButton variant="ghost" size="icon" className="history-tool-button" onClick={() => renameConversation(conversation.id)}>
+                    <TooltipIconButton tooltip="重命名会话" variant="ghost" size="icon" className="history-tool-button" onClick={() => renameConversation(conversation.id)}>
                       <Pencil />
                     </TooltipIconButton>
-                    <TooltipIconButton variant="ghost" size="icon" className="history-tool-button" onClick={() => deleteConversation(conversation.id)}>
+                    <TooltipIconButton tooltip="删除会话" variant="ghost" size="icon" className="history-tool-button" onClick={() => deleteConversation(conversation.id)}>
                       <Trash2 />
                     </TooltipIconButton>
                   </div>
@@ -663,10 +663,10 @@ ${smartInput.segmentedSolution}`.trim();
                       <span className="history-item-label">{conversation.title}</span>
                     </Button>
                     <div className="history-item-tools">
-                      <TooltipIconButton variant="ghost" size="icon" className="history-tool-button" onClick={() => renameConversation(conversation.id)}>
+                      <TooltipIconButton tooltip="重命名会话" variant="ghost" size="icon" className="history-tool-button" onClick={() => renameConversation(conversation.id)}>
                         <Pencil />
                       </TooltipIconButton>
-                      <TooltipIconButton variant="ghost" size="icon" className="history-tool-button" onClick={() => deleteConversation(conversation.id)}>
+                      <TooltipIconButton tooltip="删除会话" variant="ghost" size="icon" className="history-tool-button" onClick={() => deleteConversation(conversation.id)}>
                         <Trash2 />
                       </TooltipIconButton>
                     </div>
