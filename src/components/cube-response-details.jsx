@@ -72,10 +72,7 @@ export function CubeResponseToolCall({ response, toolCalls = [], status, toolNam
   useEffect(() => {
     if (isRunning) {
       setOpen(true);
-      return;
     }
-
-    setOpen(false);
   }, [isRunning]);
 
   return (
